@@ -5,6 +5,7 @@ from http.server import BaseHTTPRequestHandler
 from urllib.parse import parse_qs
 
 import cleaner
+import export_preview
 
 from collector import collect_candidates, load_candidates_file
 from config import DEFAULT_SUBJECT, DEFAULT_INTRO
@@ -39,6 +40,82 @@ class Handler(BaseHTTPRequestHandler):
                 self.send_header("Location", f"/?status=Refresh+failed:+{str(e).replace(' ','+')}")
                 self.end_headers()
             return
+
+
+        # ----------------------------
+        # Preview page: /preview
+        # ----------------------------
+        if self.path.startswith("/preview"):
+            try:
+                # IMPORTANT: return HTML directly, do NOT redirect to /preview
+                html_bytes = export_preview.build_preview_html()  # <-- whatever your function is named
+                if isinstance(html_bytes, str):
+                    html_bytes = html_bytes.encode("utf-8")
+
+                self.send_response(200)
+                self.send_header("Content-Type", "text/html; charset=utf-8")
+                self.send_header("Content-Length", str(len(html_bytes)))
+                self.end_headers()
+                self.wfile.write(html_bytes)
+            except Exception as e:
+                # On error, redirect BACK TO LIST PAGE (not /preview)
+                msg = str(e).replace(" ", "+")
+                self.send_response(302)
+                self.send_header("Location", f"/?status=Preview+failed:+{msg}")
+                self.end_headers()
+            return
+
+
+
+        if self.path.startswith("/preview/file"):
+            try:
+                p = (Path(__file__).resolve().parent / "output" / "preview" / "index.html")
+                html = p.read_bytes()
+                self.send_response(200)
+                self.send_header("Content-Type", "text/html; charset=utf-8")
+                self.send_header("Content-Length", str(len(html)))
+                self.end_headers()
+                self.wfile.write(html)
+            except Exception as e:
+                body = f"<pre>Preview file error: {e}</pre>".encode("utf-8")
+                self.send_response(404)
+                self.send_header("Content-Type", "text/html; charset=utf-8")
+                self.send_header("Content-Length", str(len(body)))
+                self.end_headers()
+                self.wfile.write(body)
+            return
+
+        if self.path.startswith("/preview/images/"):
+            # serve cached images
+            try:
+                rel = self.path[len("/preview/"):]  # 'images/xxx.jpg'
+                img_path = (Path(__file__).resolve().parent / "output" / "preview" / rel).resolve()
+                base = (Path(__file__).resolve().parent / "output" / "preview").resolve()
+                if not str(img_path).startswith(str(base)):
+                    raise ValueError("Invalid image path")
+                data = img_path.read_bytes()
+
+                # naive content-type
+                ct = "image/jpeg"
+                if img_path.suffix.lower() == ".png":
+                    ct = "image/png"
+                elif img_path.suffix.lower() == ".webp":
+                    ct = "image/webp"
+
+                self.send_response(200)
+                self.send_header("Content-Type", ct)
+                self.send_header("Content-Length", str(len(data)))
+                self.end_headers()
+                self.wfile.write(data)
+            except Exception as e:
+                body = f"Not found: {e}".encode("utf-8")
+                self.send_response(404)
+                self.send_header("Content-Type", "text/plain; charset=utf-8")
+                self.send_header("Content-Length", str(len(body)))
+                self.end_headers()
+                self.wfile.write(body)
+            return
+
 
         # ----------------------------
         # API: clean

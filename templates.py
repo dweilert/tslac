@@ -94,6 +94,7 @@ def html_page(
 
   <div class="toolbar">
     <button class="btn" type="button" onclick="location.href='/refresh'">Refresh candidates</button>
+    <button class="btn" type="button" onclick="location.href='/preview'">Preview newsletter</button>
     <button class="btn" type="button" onclick="selectAll(true)">Select all</button>
     <button class="btn" type="button" onclick="selectAll(false)">Select none</button>
     <input class="field" type="text" id="q" placeholder="Search titles / sources..." onkeypress="if(event.key==='Enter'){{event.preventDefault();applySearch();}}" />

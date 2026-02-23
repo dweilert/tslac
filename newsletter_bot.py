@@ -1,4 +1,5 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python3ython
+
 from __future__ import annotations
 
 # macOS TLS fix: validate like curl (Keychain trust store)
@@ -12,6 +13,14 @@ from http.server import HTTPServer
 
 from config import HOST, PORT, OUT_DIR, STATE_DIR
 from server import Handler
+
+import http.server
+import socketserver
+import urllib.parse
+import json
+import yaml
+import cleaner
+import export_preview
 
 
 def run_server():
