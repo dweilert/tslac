@@ -158,6 +158,10 @@ def get_curated_image_crops(cur: dict[str, Any], url: str) -> dict[str, Any]:
     return {}
 
 
+
+#SAVE CROP (image px) {ix: 88, iy: 69, iw: 436, ih: 458, img_w: 1201, img_h: 1201} 
+# canvas {cw: 860, ch: 860} rect {x: 62.897327707454295, y: 49.59212376933896, w: 312.0675105485232, h: 327.7918424753868}
+
 def upsert_curated_image_crop(url: str, img_src: str, crop: dict[str, Any]) -> None:
     """
     Stores a crop box for a given image src.
@@ -172,7 +176,7 @@ def upsert_curated_image_crop(url: str, img_src: str, crop: dict[str, Any]) -> N
         return
 
     # basic validation
-    for k in ("x", "y", "w", "h", "iw", "ih", "cw", "ch"):
+    for k in ("ix", "iy", "iw", "ih", "img_w", "img_h"):
         if k not in crop:
             return
 
@@ -190,3 +194,41 @@ def upsert_curated_image_crop(url: str, img_src: str, crop: dict[str, Any]) -> N
     crops[img_src] = crop
     rec["updated_at"] = datetime.now().isoformat(timespec="seconds")
     save_curation(cur)    
+
+# ----------------------------
+# Selected image (curation.yaml)
+# ----------------------------
+def get_curated_selected_image(cur: dict[str, Any], url: str) -> str:
+    rec = cur.get(norm_url(url))
+    if isinstance(rec, dict):
+        v = rec.get("selected_image")
+        if isinstance(v, str):
+            return v.strip()
+    return ""
+
+
+def upsert_curated_selected_image(url: str, img_src: str) -> None:
+    url = norm_url(url)
+    img_src = (img_src or "").strip()
+    if not url or not img_src:
+        return
+
+    cur = load_curation()
+    rec = _get_rec(cur, url)
+    rec["selected_image"] = img_src
+    rec["updated_at"] = datetime.now().isoformat(timespec="seconds")
+    save_curation(cur)
+
+
+def clear_curated_selected_image(url: str) -> None:
+    url = norm_url(url)
+    if not url:
+        return
+    cur = load_curation()
+    rec = cur.get(url)
+    if not isinstance(rec, dict):
+        return
+    if "selected_image" in rec:
+        rec.pop("selected_image", None)
+        rec["updated_at"] = datetime.now().isoformat(timespec="seconds")
+        save_curation(cur)    

@@ -1,0 +1,22 @@
+sites:
+- crawl https://statearchivists.org/
+- home https://texashistory.unt.edu/
+topics:
+- dallas
+- austn
+- archives
+settings:
+  max_links_per_site: 25
+  fetch_timeout_seconds: 15
+  same_domain_only: true
+  exclude_patterns:
+  - search
+  - advanced
+  - browse
+  - facet
+  - filter
+  - sort=
+  - page=
+  - '?'
+  max_total_pages: 60
+  max_seconds: 45

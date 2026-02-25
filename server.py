@@ -2,10 +2,13 @@ from __future__ import annotations
 
 import json
 from http.server import BaseHTTPRequestHandler
-from urllib.parse import parse_qs
+from urllib.parse import parse_qs, urlparse, unquote, urljoin, quote
 
 import cleaner
 import export_preview
+import watcher
+import watch_store
+import templates
 
 from collector import collect_candidates, load_candidates_file
 from config import DEFAULT_SUBJECT, DEFAULT_INTRO
@@ -20,8 +23,21 @@ from state_store import (
     pop_curated_excerpt,
     clear_curated_excerpts,
     upsert_curated_image_crop,
+    get_curated_selected_image, 
+    upsert_curated_selected_image, 
+    clear_curated_selected_image
 )
+
+
 from templates import html_page, curate_page_html
+
+
+def _is_http_url(u: str) -> bool:
+    try:
+        p = urlparse(u)
+        return p.scheme in ("http", "https") and bool(p.netloc)
+    except Exception:
+        return False
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -39,6 +55,80 @@ class Handler(BaseHTTPRequestHandler):
                 self.send_response(302)
                 self.send_header("Location", f"/?status=Refresh+failed:+{str(e).replace(' ','+')}")
                 self.end_headers()
+            return
+
+
+        # ----------------------------
+        # Watch: /watch
+        # ----------------------------
+
+        if self.path.startswith("/watch/status"):
+            st = watcher.get_watch_status()
+            body = json.dumps(st, ensure_ascii=False).encode("utf-8")
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json; charset=utf-8")
+            self.send_header("Content-Length", str(len(body)))
+            self.end_headers()
+            self.wfile.write(body)
+            return
+
+        if self.path.startswith("/watch/scan"):
+            try:
+                started = watcher.start_watch_scan_async()
+                self.send_response(302)
+                self.send_header("Location", "/watch?status=" + ("Scan+started" if started else "Scan+already+running"))
+                self.end_headers()
+                return
+            except Exception as e:
+                msg = str(e).replace(" ", "+")
+                self.send_response(302)
+                self.send_header("Location", f"/watch?status=Scan+failed:+{msg}")
+                self.end_headers()
+            return
+        
+        if self.path.startswith("/watch/cancel"):
+            watcher.cancel_watch_scan()
+            self.send_response(302)
+            self.send_header("Location", "/watch?status=Cancel+requested")
+            self.end_headers()
+            return
+
+        if self.path.startswith("/watch"):
+            try:
+                qs = ""
+                if "?" in self.path:
+                    _, qs = self.path.split("?", 1)
+                status = ""
+                if qs:
+                    qd = parse_qs(qs)
+                    status = (qd.get("status", [""])[0] or "")
+
+                cfg = watch_store.load_watch()
+                latest = watcher.load_latest_results()
+
+                sites_text = "\n".join(cfg.sites or [])
+                topics_text = "\n".join(cfg.topics or [])
+
+                body = templates.watch_page_html(
+                    sites_text=sites_text,
+                    topics_text=topics_text,
+                    status=status,
+                    latest=latest,
+                )
+                self.send_response(200)
+                self.send_header("Content-Type", "text/html; charset=utf-8")
+                self.send_header("Content-Length", str(len(body)))
+                self.end_headers()
+                self.wfile.write(body)
+            except Exception:
+                import traceback
+                tb = traceback.format_exc()
+                body = f"<pre>Watch error:\n{tb}</pre>".encode("utf-8")
+                self.send_response(400)
+                self.send_header("Content-Type", "text/html; charset=utf-8")
+                self.send_header("Content-Length", str(len(body)))
+                self.end_headers()
+                self.wfile.write(body)
             return
 
 
@@ -195,9 +285,13 @@ class Handler(BaseHTTPRequestHandler):
 
                 blurb = get_curated_blurb(cur, c.url)
                 excerpts = get_curated_excerpts(cur, c.url)
-
+                selected_image = get_curated_selected_image(cur, c.url)
 
                 crops = {}  # key: src -> crop dict
+
+                # Add this to the JSON object
+                cleaned["image_crops"] = crops
+
                 try:
                     from state_store import get_curated_image_crops
                     crops = get_curated_image_crops(cur, c.url)
@@ -212,7 +306,9 @@ class Handler(BaseHTTPRequestHandler):
                     cleaned,
                     final_blurb=blurb,
                     excerpts=excerpts,
+                    selected_image=selected_image,
                     status=status,
+                    crops=crops,
                 )
 
                 self.send_response(200)
@@ -231,6 +327,113 @@ class Handler(BaseHTTPRequestHandler):
                 self.end_headers()
                 self.wfile.write(body)
             return
+
+
+
+        # ----------------------------
+        # Image proxy: /img?u=<url>
+        # ----------------------------
+        if self.path.startswith("/img"):
+            try:
+                qs = ""
+                if "?" in self.path:
+                    _, qs = self.path.split("?", 1)
+                qd = parse_qs(qs)
+
+                # read params
+                u = (qd.get("u", [""])[0] or "").strip()
+                base = (qd.get("base", [""])[0] or "").strip()
+
+                # allow either raw or urlencoded
+                u = unquote(u)
+                base = unquote(base)
+
+                # --- NEW: resolve relative URL against base ---
+                # If u is "/sites/..." and base is "https://www.tsl.texas.gov/some/page",
+                # urljoin will produce "https://www.tsl.texas.gov/sites/..."
+                if base:
+                    try:
+                        u = urljoin(base, u)
+                    except Exception:
+                        pass
+
+                # --- NEW: percent-encode unsafe characters (spaces etc.) ---
+                # urllib will reject URLs containing raw spaces/control chars
+                p = urlparse(u)
+                if p.scheme in ("http", "https") and p.netloc:
+                    safe_path = quote(p.path, safe="/%")
+                    safe_query = quote(p.query, safe="=&?/%")
+                    u = p._replace(path=safe_path, query=safe_query).geturl()
+
+                # validate final URL
+                if not _is_http_url(u):
+                    body = f"Bad image url: {u}".encode("utf-8")
+                    self.send_response(400)
+                    self.send_header("Content-Type", "text/plain; charset=utf-8")
+                    self.send_header("Content-Length", str(len(body)))
+                    self.end_headers()
+                    self.wfile.write(body)
+                    return
+
+                import urllib.request
+
+                # --- NEW: send Referer (helps with some hotlink protection) ---
+                referer = ""
+                try:
+                    pp = urlparse(u)
+                    referer = f"{pp.scheme}://{pp.netloc}/"
+                except Exception:
+                    referer = ""
+
+                req = urllib.request.Request(
+                    u,
+                    headers={
+                        "User-Agent": "tslac-newsletter-helper/1.0",
+                        "Accept": "image/*,*/*;q=0.8",
+                        **({"Referer": referer} if referer else {}),
+                    },
+                )
+
+                with urllib.request.urlopen(req, timeout=15) as resp:
+                    data = resp.read()
+                    ctype = resp.headers.get("Content-Type") or "application/octet-stream"
+
+                # --- OPTIONAL: if upstream isn't an image, return error (helps debugging) ---
+                if not (ctype or "").lower().startswith("image/"):
+                    snippet = data[:300].decode("utf-8", errors="replace")
+                    body = (
+                        f"Upstream did not return an image.\n"
+                        f"Content-Type: {ctype}\n"
+                        f"URL: {u}\n"
+                        f"---\n{snippet}"
+                    ).encode("utf-8")
+                    self.send_response(502)
+                    self.send_header("Content-Type", "text/plain; charset=utf-8")
+                    self.send_header("Content-Length", str(len(body)))
+                    self.end_headers()
+                    self.wfile.write(body)
+                    return
+
+                self.send_response(200)
+                self.send_header("Content-Type", ctype)
+                self.send_header("Content-Length", str(len(data)))
+                self.send_header("Cache-Control", "public, max-age=3600")
+                self.end_headers()
+                self.wfile.write(data)
+                return
+
+            except Exception as e:
+                body = f"Image proxy error: {e}".encode("utf-8")
+                self.send_response(502)
+                self.send_header("Content-Type", "text/plain; charset=utf-8")
+                self.send_header("Content-Length", str(len(body)))
+                self.end_headers()
+                self.wfile.write(body)
+                return
+
+
+
+
 
         # ----------------------------
         # Main page
@@ -289,6 +492,22 @@ class Handler(BaseHTTPRequestHandler):
             self.send_response(302)
             self.send_header("Location", f"/?status=Saved+{len(picked)}+item(s)+to+selected.yaml")
             self.end_headers()
+            return
+
+        # Save watch config
+        if self.path == "/watch/save":
+            sites_text = (form.get("sites", [""])[0] or "")
+            topics_text = (form.get("topics", [""])[0] or "")
+            try:
+                watch_store.save_watch_from_lines(sites_text, topics_text)
+                self.send_response(302)
+                self.send_header("Location", "/watch?status=Saved+watch.yaml")
+                self.end_headers()
+            except Exception as e:
+                msg = str(e).replace(" ", "+")
+                self.send_response(302)
+                self.send_header("Location", f"/watch?status=Save+failed:+{msg}")
+                self.end_headers()
             return
 
         # Save blurb
@@ -371,6 +590,54 @@ class Handler(BaseHTTPRequestHandler):
             self.end_headers()
             return
 
+
+        # ----------------------------
+        # Select image for newsletter
+        # ----------------------------
+        if self.path == "/curate/select_image":
+            idx_str = (form.get("index", ["0"])[0] or "0").strip()
+            url = (form.get("url", [""])[0] or "").strip()
+            img_src = (form.get("img_src", [""])[0] or "").strip()
+
+            try:
+                idx = int(idx_str)
+            except Exception:
+                idx = 0
+
+            # Basic safety: only allow http(s)
+            if img_src and not (img_src.startswith("http://") or img_src.startswith("https://")):
+                img_src = ""
+
+            if url and img_src:
+                upsert_curated_selected_image(url, img_src)
+
+            self.send_response(302)
+            self.send_header("Location", f"/curate/{idx}?status=Selected+image")
+            self.end_headers()
+            return
+
+
+        # ----------------------------
+        # Clear selected image
+        # ----------------------------
+        if self.path == "/curate/clear_selected_image":
+            idx_str = (form.get("index", ["0"])[0] or "0").strip()
+            url = (form.get("url", [""])[0] or "").strip()
+
+            try:
+                idx = int(idx_str)
+            except Exception:
+                idx = 0
+
+            if url:
+                clear_curated_selected_image(url)
+
+            self.send_response(302)
+            self.send_header("Location", f"/curate/{idx}?status=Cleared+selected+image")
+            self.end_headers()
+            return
+
+
         # Clear excerpts
         if self.path == "/curate/clear_excerpts":
             idx_str = (form.get("index", ["0"])[0] or "0").strip()
@@ -395,3 +662,4 @@ class Handler(BaseHTTPRequestHandler):
 
     def log_message(self, fmt, *args):
         return
+    

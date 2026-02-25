@@ -1,9 +1,10 @@
-# export_preview.py
 from __future__ import annotations
 
 import html
 from pathlib import Path
+from turtle import width
 from typing import Any
+from urllib.parse import quote, unquote
 
 import yaml
 
@@ -17,6 +18,9 @@ DEFAULT_INTRO = (
     "and Archives Commission."
 )
 
+def _norm_img_key(s: str) -> str:
+    return (s or "").strip()
+
 def _load_yaml(p: Path) -> dict[str, Any]:
     if not p.exists():
         return {}
@@ -25,6 +29,52 @@ def _load_yaml(p: Path) -> dict[str, Any]:
 
 def _esc(s: str) -> str:
     return html.escape(s or "", quote=True)
+
+def _img_proxy(u: str) -> str:
+    # Use your local proxy so hotlink/CORS policies don’t matter
+    return "/img?u=" + quote(u or "", safe="")
+
+
+
+def _crop_style(crop: dict[str, Any]) -> str:
+    """
+    Responsive crop for <img class="heroCropImg"> inside .heroCrop.
+
+    Uses:
+      width/height as % so it scales with container
+      left/top as % of container (reliable)
+    Crop format (image px):
+      ix, iy, iw, ih, img_w, img_h
+    """
+    try:
+        ix = float(crop["ix"])
+        iy = float(crop["iy"])
+        cw = float(crop["iw"])
+        ch = float(crop["ih"])
+        img_w = float(crop["img_w"])
+        img_h = float(crop["img_h"])
+
+        if cw <= 0 or ch <= 0 or img_w <= 0 or img_h <= 0:
+            return ""
+
+        # scale image so crop fills container
+        w_pct = (img_w / cw) * 100.0
+        h_pct = (img_h / ch) * 100.0
+
+        # shift image so crop origin aligns with container origin
+        left_pct = -(ix / cw) * 100.0
+        top_pct  = -(iy / ch) * 100.0
+
+        return (
+            f"width:{w_pct:.3f}%;"
+            f"height:{h_pct:.3f}%;"
+            f"left:{left_pct:.3f}%;"
+            f"top:{top_pct:.3f}%;"
+        )
+    except Exception:
+        return ""
+
+
 
 def build_preview_html() -> bytes:
     sel = _load_yaml(SELECTED_FILE)
@@ -48,14 +98,23 @@ def build_preview_html() -> bytes:
         rec = cur.get(url) if isinstance(cur, dict) else None
         title = ""
         blurb = ""
+
         img = ""
+        crops = {}
 
         if isinstance(rec, dict):
             title = (rec.get("title") or "").strip()
             blurb = (rec.get("final_blurb") or "").strip()
 
-            # optional: if you store selected image in curation.yaml later
             img = (rec.get("selected_image") or "").strip()
+
+            crops = rec.get("image_crops") if isinstance(rec.get("image_crops"), dict) else {}
+
+        # If no selected_image, but we have crops saved, use the first cropped image as the image
+        if not img and isinstance(crops, dict) and crops:
+            # choose the first key deterministically
+            img = sorted([k for k in crops.keys() if isinstance(k, str) and k.strip()])[0]
+
 
         # fallbacks if title not stored
         if not title:
@@ -69,7 +128,41 @@ def build_preview_html() -> bytes:
                 if ex2:
                     blurb = " ".join(ex2)
 
-        img_html = f'<img class="hero" src="{_esc(img)}" alt="" />' if img else ""
+
+        # --- Pick crop record for the chosen image (IMPORTANT) ---
+        crop = None
+        if isinstance(crops, dict) and img:
+            crop = crops.get(img) or crops.get(_norm_img_key(img)) or crops.get(unquote(img))    
+
+
+        img_html = ""
+        if img:
+            # Use proxy so image always loads locally
+            # img_src = "/img?u=" + quote(img, safe=":/%?=&")
+            img_src = "/img?u=" + quote(img, safe=":/%?=&")
+            if isinstance(crop, dict) and all(k in crop for k in ("ix", "iy", "iw", "ih", "img_w", "img_h")):
+                style = _crop_style(crop)
+
+                # Aspect ratio box based on crop
+                try:
+                    pad = (float(crop["ih"]) / float(crop["iw"])) * 100.0
+                    if pad <= 0 or pad > 300:
+                        pad = 56.25
+                except Exception:
+                    pad = 56.25
+
+                # compute style as before
+                style = _crop_style(crop)
+
+                img_html = (
+                    f'<div class="heroCrop" style="padding-top:{pad:.3f}%;">'
+                    f'  <img class="heroCropImg" src="{_esc(img_src)}" alt="" style="{style}" />'
+                    f'</div>'
+                )
+            else:
+                # no crop saved for this image, show full image
+                img_html = f'<img class="hero" src="{_esc(img_src)}" alt="" />'
+
 
         blocks.append(f"""
           <div class="item">
@@ -108,7 +201,38 @@ def build_preview_html() -> bytes:
     .link a:hover {{ text-decoration:underline; }}
     .hero {{ width: 100%; height: auto; border-radius: 12px; border: 1px solid #eee; margin-bottom: 10px; }}
     .note {{ margin-top: 14px; font-size: 12px; color:#6b7280; }}
-  </style>
+
+
+.heroCrop{{
+  position: relative;
+  width: 100%;
+  border-radius: 12px;
+  border: 1px solid #eee;
+  margin-bottom: 10px;
+  overflow: hidden;
+  background: #f3f4f6;
+}}
+
+.heroCropImg{{
+  position: absolute;
+  left: 0;
+  top: 0;
+  transform-origin: top left;
+  display: block;
+}}
+
+.heroCrop{{
+  outline: 2px solid red;
+}}
+.heroCropImg{{
+  outline: 2px solid blue;
+}}
+
+
+.heroCrop {{ position: relative; overflow: hidden; }}
+.heroCropImg {{ position: absolute; display: block; }}
+
+</style>
 </head>
 <body>
   <div class="wrap">

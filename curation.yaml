@@ -5,7 +5,8 @@ https://www.tsl.texas.gov/txbookchat:
     open to the public. Parking is available at the Capitol Visitors Parking Garage
     across the street. Additional parking options, including handicapped parking,
     along with directions and maps, are available on TSLAC’s website at www.tsl.texas.gov/visit.
-  updated_at: '2026-02-22T14:52:00'
+  updated_at: '2026-02-23T15:45:48'
+  selected_image: https://www.tsl.texas.gov/sites/default/files/public/tslac/exec/TXBookChat_main.png
 https://www.tsl.texas.gov/tbp/authortalks:
   excerpts:
   - 'Join the Talking Book Program for an author talk on Tuesday, February 24 at 7:00
@@ -19,7 +20,16 @@ https://www.tsl.texas.gov/tbp/authortalks:
     also home to four beautifully restored Spanish missions, which in 2015 UNESCO
     designated a World Heritage Site and have become integral to San Antonio's robust
     tourist economy along with the fabled River Walk. Some violence. 2018.
-  updated_at: '2026-02-22T15:20:18'
+  updated_at: '2026-02-23T17:59:30'
+  image_crops:
+    ? https://www.tsl.texas.gov/sites/default/files/public/tslac/tbp/authortalks/TBP%20-%20Author%20Talks%20Char%20Miller%20-%20SQ_0.png
+    : ix: 787
+      iy: 443
+      iw: 346
+      ih: 486
+      img_w: 1201
+      img_h: 1201
+  selected_image: https://www.tsl.texas.gov/sites/default/files/public/tslac/tbp/authortalks/TBP%20-%20Author%20Talks%20Char%20Miller%20-%20SQ_0.png
 https://www.tsl.texas.gov/speedtest:
   excerpts:
   - Email invitations with the testing link were sent out via email to all public
@@ -28,13 +38,14 @@ https://www.tsl.texas.gov/speedtest:
     internet speeds at main libraries and branch libraries.
   - If you do not receive the invitation, please contact TSLAC Digital Opportunity
     Program Cooridnator Henry Stokes at hstokes@tsl.texas.gov, 512-463-6624.
-  updated_at: '2026-02-22T19:34:32'
+  updated_at: '2026-02-23T15:46:03'
   final_blurb: "Email invitations with the testing link were sent out via email to\
     \ all public library directors on February 6. \r\n\r\nPlease use the link from\
     \ the email and conduct your test at the library location(s) by Friday, February\
     \ 28. TSLAC is collecting internet speeds at main libraries and branch libraries.\
     \ \r\n\r\nIf you do not receive the invitation, please contact TSLAC Digital Opportunity\
     \ Program Cooridnator Henry Stokes at hstokes@tsl.texas.gov, 512-463-6624."
+  selected_image: https://www.tsl.texas.gov/sites/default/files/public/tslac/distancelearning/Speed-Test-Logo-400.png
 https://www.tsl.texas.gov/workshops:
   image:
     src: https://www.tsl.texas.gov/sites/default/files/public/tslac/exec/2026%20SAA%20workshop%20Project%20Management%20-%20HPSLIDER_0.png

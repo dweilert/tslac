@@ -17,6 +17,8 @@ SEEN_FILE = STATE_DIR / "seen_urls.json"
 CANDIDATES_FILE = OUT_DIR / "candidates_latest.json"
 SELECTED_FILE = APP_DIR / "selected.yaml"
 CURATION_FILE = APP_DIR / "curation.yaml"
+WATCH_FILE = APP_DIR / "watch.yaml"
+WATCH_RESULTS_FILE = OUT_DIR / "watch_results_latest.json"
 
 HOST = "127.0.0.1"
 PORT = 5055

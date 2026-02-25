@@ -6,6 +6,7 @@ from typing import Any
 from config import CANDIDATES_FILE, SELECTED_FILE, CURATION_FILE
 from models import Candidate
 
+import json
 
 def _esc(s: str) -> str:
     s = s or ""
@@ -95,6 +96,7 @@ def html_page(
   <div class="toolbar">
     <button class="btn" type="button" onclick="location.href='/refresh'">Refresh candidates</button>
     <button class="btn" type="button" onclick="location.href='/preview'">Preview newsletter</button>
+    <button class="btn" type="button" onclick="location.href='/watch'">Watch sites</button>
     <button class="btn" type="button" onclick="selectAll(true)">Select all</button>
     <button class="btn" type="button" onclick="selectAll(false)">Select none</button>
     <input class="field" type="text" id="q" placeholder="Search titles / sources..." onkeypress="if(event.key==='Enter'){{event.preventDefault();applySearch();}}" />
@@ -253,9 +255,12 @@ _CURATE_TMPL = Template(r"""<!doctype html>
     </div>
 
     <hr/>
-
+                        
     <div id="imagesPanel">
-      <div class="small">Detected images (click to open full size)</div>
+      <div class="small" style="display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;">
+        <span>Detected images (click to open full size)</span>
+        <button class="btn" type="button" onclick="clearSelectedImage()">Clear selected image</button>
+      </div>
       ${images_html}
       <hr/>
     </div>
@@ -301,35 +306,67 @@ let __cropSrc = "";
 let __cropRect = null; // {x,y,w,h} in canvas coords
 let __drag = null;     // {sx,sy}
 
+const SAVED_CROPS = ${crops_json};                        
+
+console.log('Loaded saved crops:', SAVED_CROPS);                        
+
 // Show modal and load image
-function openCrop(src) {
+function openCrop(src, pageUrl) {                     
+  const back = document.getElementById('cropBack');
+  const label = document.getElementById('cropSrc');
+  const canvas = document.getElementById('cropCanvas');
+
+  if (!back || !label || !canvas) {
+    alert('Crop UI is not available on this page (missing modal elements).');
+    return;
+  }
+
   __cropSrc = src;
   __cropRect = null;
   __drag = null;
 
-  const back = document.getElementById('cropBack');
-  const label = document.getElementById('cropSrc');
-  const canvas = document.getElementById('cropCanvas');
-  const ctx = canvas.getContext('2d');
-
   if (label) label.textContent = src;
   if (back) back.style.display = 'flex';
 
+  // Create a fresh image object for this crop session
   __cropImg = new Image();
-  __cropImg.crossOrigin = "anonymous"; // best effort; may still be blocked by remote headers
+                  
   __cropImg.onload = () => {
-    // Fit image to a reasonable canvas width
     const maxW = 860;
     const scale = (__cropImg.width > maxW) ? (maxW / __cropImg.width) : 1.0;
     canvas.width = Math.round(__cropImg.width * scale);
     canvas.height = Math.round(__cropImg.height * scale);
+
+    // --- NEW: restore saved crop if it exists ---
+    const saved = SAVED_CROPS[__cropSrc];
+    if (saved && saved.ix !== undefined) {
+      const imgW = __cropImg.naturalWidth || __cropImg.width;
+      const imgH = __cropImg.naturalHeight || __cropImg.height;
+
+      const sx = canvas.width / imgW;
+      const sy = canvas.height / imgH;
+
+      __cropRect = {
+        x: saved.ix * sx,
+        y: saved.iy * sy,
+        w: saved.iw * sx,
+        h: saved.ih * sy,
+      };
+
+      __cropRect = normalizeRect(__cropRect);
+    }
+
     drawCrop();
   };
+
+
   __cropImg.onerror = () => {
-    alert('Could not load image for cropping (CORS or fetch issue). You can still open it in a new tab.');
+    alert('Could not load image for cropping. The site may block fetching, or the proxy failed.');
     closeCrop();
   };
-  __cropImg.src = src;
+
+  // Load via local proxy to avoid CORS-tainted canvas
+  __cropImg.src = '/img?u=' + encodeURIComponent(src) + '&base=' + encodeURIComponent(pageUrl || '');                      
 }
 
 function closeCrop() {
@@ -404,29 +441,48 @@ function canvasPos(evt) {
   const canvas = document.getElementById('cropCanvas');
   if (!canvas) return;
 
-  canvas.addEventListener('mousedown', (e) => {
+  function posFromEvent(e) {
+    // offsetX/Y are in CSS pixels relative to the canvas element
+    // convert to canvas pixels
+    const cx = canvas.width / canvas.clientWidth;
+    const cy = canvas.height / canvas.clientHeight;
+    return { x: e.offsetX * cx, y: e.offsetY * cy };
+  }
+
+  canvas.addEventListener('pointerdown', (e) => {
     if (!__cropImg) return;
-    const p = canvasPos(e);
-    __drag = {sx: p.x, sy: p.y};
-    __cropRect = {x: p.x, y: p.y, w: 1, h: 1};
+
+    canvas.setPointerCapture(e.pointerId);
+
+    const p = posFromEvent(e);
+    __drag = { sx: p.x, sy: p.y };
+    __cropRect = { x: p.x, y: p.y, w: 1, h: 1 };
     drawCrop();
   });
 
-  window.addEventListener('mousemove', (e) => {
+  canvas.addEventListener('pointermove', (e) => {
     if (!__drag || !__cropRect) return;
-    const p = canvasPos(e);
+    const p = posFromEvent(e);
     __cropRect.w = p.x - __drag.sx;
     __cropRect.h = p.y - __drag.sy;
     drawCrop();
   });
 
-  window.addEventListener('mouseup', () => {
+  canvas.addEventListener('pointerup', (e) => {
     if (!__drag) return;
     __drag = null;
     if (__cropRect) __cropRect = normalizeRect(__cropRect);
     drawCrop();
+
+    try { canvas.releasePointerCapture(e.pointerId); } catch (_) {}
+  });
+
+  canvas.addEventListener('pointercancel', (e) => {
+    __drag = null;
+    try { canvas.releasePointerCapture(e.pointerId); } catch (_) {}
   });
 })();
+
 
 async function saveCrop() {
   if (!__cropImg || !__cropSrc) return;
@@ -435,17 +491,24 @@ async function saveCrop() {
   const canvas = document.getElementById('cropCanvas');
   const r = normalizeRect(__cropRect);
 
-  // Save crop metadata (not the pixels) so you can crop later in a tool
+  // Convert canvas-space crop -> original image pixel crop
+  const imgW = __cropImg.naturalWidth || __cropImg.width;
+  const imgH = __cropImg.naturalHeight || __cropImg.height;
+
+  const sx = imgW / canvas.width;
+  const sy = imgH / canvas.height;
+
   const payload = {
-    x: Math.round(r.x),
-    y: Math.round(r.y),
-    w: Math.round(r.w),
-    h: Math.round(r.h),
-    iw: __cropImg.width,
-    ih: __cropImg.height,
-    cw: canvas.width,
-    ch: canvas.height
+    ix: Math.round(r.x * sx),
+    iy: Math.round(r.y * sy),
+    iw: Math.round(r.w * sx),
+    ih: Math.round(r.h * sy),
+    img_w: Math.round(imgW),
+    img_h: Math.round(imgH),
   };
+
+  // Debug (leave in until you're confident)
+  console.log('SAVE CROP (image px)', payload, 'canvas', {cw: canvas.width, ch: canvas.height}, 'rect', r);
 
   await postForm('/curate/save_crop', {
     index: '${index}',
@@ -456,7 +519,25 @@ async function saveCrop() {
 
   closeCrop();
   location.reload();
+}                       
+
+
+async function selectImage(src) {
+  await postForm('/curate/select_image', {
+    index: '${index}',
+    url: '${url_esc}',
+    img_src: src
+  });
+  location.reload();
 }
+
+async function clearSelectedImage() {
+  await postForm('/curate/clear_selected_image', {
+    index: '${index}',
+    url: '${url_esc}'
+  });
+  location.reload();
+}                        
 
 function copyText(t) {
   navigator.clipboard.writeText(t).then(() => {});
@@ -577,14 +658,17 @@ def curate_page_html(
     cleaned: dict[str, Any],
     final_blurb: str,
     excerpts: list[str],
+    selected_image: str,
     status: str,
+    crops: dict[str, Any],
 ) -> bytes:
     title = cleaned.get("title") or c.title
     pub = cleaned.get("published_date") or "n/a"
     conf = cleaned.get("date_confidence") or "n/a"
     imgs = cleaned.get("images") or []
-    crops = cleaned.get("image_crops") or {}
+    #crops = cleaned.get("image_crops") or {}
     clean_html = cleaned.get("clean_html") or "<p><em>No cleaned HTML returned.</em></p>"
+    selected_image = (selected_image or "").strip()
 
     msg_html = f'<div class="msg">{_esc(status)}</div>' if status else ""
 
@@ -597,6 +681,9 @@ def curate_page_html(
     img_cards = []
     for im in imgs[:12]:
         src = _esc((im or {}).get("src") or "")
+        raw_src = (im or {}).get("src") or ""
+        is_selected = (selected_image == raw_src)
+        sel_badge = '<span class="badge">selected</span>' if is_selected else ""
         alt = _esc((im or {}).get("alt") or "")
         score = _esc(str((im or {}).get("score") or ""))
         if not src:
@@ -611,10 +698,18 @@ def curate_page_html(
             <a href="{src}" target="_blank" rel="noopener">
               <img src="{src}" alt="{alt}" loading="lazy"/>
             </a>
-            <div class="small">score: <code>{score}</code></div>
+            <div class="small">
+              score: <code>{score}</code>
+              {crop_badge}
+              {sel_badge}
+            </div>
             <div style="margin-top:8px; display:flex; gap:8px; flex-wrap:wrap;">
-              <button class="btn" type="button" onclick="openCrop('{src}')">Crop</button>
+              <button class="btn" type="button" onclick="openCrop('{src}', '{_esc(c.url)}')">Crop</button>
               <button class="btn" type="button" onclick="copyText('{src}')">Copy URL</button>
+
+              <button class="btn" type="button" onclick="selectImage('{src}')">
+                {"Selected" if is_selected else "Use in newsletter"}
+              </button>
             </div>
           </div>
         """)
@@ -640,6 +735,11 @@ def curate_page_html(
         else f"<div class='exlist'>{''.join(excerpt_rows)}</div>"
     )
 
+    #crops_json = json.dumps(crops or {})
+    #import json
+    crops_json = json.dumps(crops or {}, ensure_ascii=False)
+
+
     rendered = _CURATE_TMPL.safe_substitute(
         title_esc=_esc(title),
         index=str(index),
@@ -656,5 +756,206 @@ def curate_page_html(
         excerpts_html=excerpts_html,
         images_html=images_html,
         clean_html=clean_html,
+        crops_json=crops_json,
+        selected_image_esc=_esc(selected_image),
     )
     return rendered.encode("utf-8")
+
+
+def watch_page_html(
+    sites_text: str,
+    topics_text: str,
+    status: str,
+    latest: dict[str, Any],
+) -> bytes:
+    msg = f"""
+    <div class="status">{_esc(status)}</div>
+    """ if status else ""
+
+    results = latest.get("results") if isinstance(latest, dict) else None
+    errors = latest.get("errors") if isinstance(latest, dict) else None
+    ran_at = (latest.get("ran_at") if isinstance(latest, dict) else "") or ""
+
+    # Show parsing/runtime error if present
+    latest_error = (latest.get("_error") or "") if isinstance(latest, dict) else ""
+    error_html = ""
+    if latest_error:
+        error_html = f"""
+        <div class="status" style="background:#f8d7da; color:#842029;">
+          Results error: {_esc(str(latest_error))}
+        </div>
+    """    
+
+    rows = []
+    if isinstance(results, list):
+        for r in results[:200]:
+            url = _esc((r or {}).get("url") or "")
+            title = _esc((r or {}).get("title") or "")
+            site = _esc((r or {}).get("site") or "")
+            score = _esc(str((r or {}).get("score") or ""))
+            mts = (r or {}).get("matched_topics") or []
+            if isinstance(mts, list):
+                mt = ", ".join(_esc(str(x)) for x in mts[:6])
+            else:
+                mt = ""
+            snippet = _esc((r or {}).get("snippet") or "")
+            rows.append(f"""
+            <div class="watch-card">
+              <div class="watch-title"><a href="{url}" target="_blank" rel="noreferrer">{title or url}</a></div>
+              <div class="watch-meta">Site: <code>{site}</code> • score: <code>{score}</code> • topics: <code>{mt}</code></div>
+              <div class="watch-snippet">{snippet}</div>
+            </div>
+            """)
+
+    err_rows = []
+    if isinstance(errors, list) and errors:
+        for e in errors[:50]:
+            s = _esc((e or {}).get("site") or "")
+            u = _esc((e or {}).get("url") or "")
+            m = _esc((e or {}).get("error") or "")
+            err_rows.append(f"<li><code>{s}</code> — <code>{u}</code><br>{m}</li>")
+
+    save_status_html = ""
+    if status:
+        save_status_html = f"""
+        <div id="save-status" class="status">
+          {_esc(status)}
+        </div>
+        """
+
+
+    html = f"""
+    <!doctype html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <title>Watch Sites</title>
+      <style>
+        body {{ font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; margin: 16px; }}
+        .topbar a {{ margin-right: 12px; }}
+        textarea {{ width: 100%; min-height: 140px; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; }}
+        .row {{ display: flex; gap: 16px; }}
+        .col {{ flex: 1; }}
+        .status {{ background: #fff3cd; padding: 8px 10px; border-radius: 8px; margin: 10px 0; }}
+        .watch-card {{ border: 1px solid #ddd; border-radius: 10px; padding: 10px 12px; margin: 10px 0; }}
+        .watch-title {{ font-weight: 700; margin-bottom: 4px; }}
+        .watch-meta {{ font-size: 12px; opacity: 0.8; margin-bottom: 6px; }}
+        .watch-snippet {{ font-size: 13px; }}
+        .muted {{ opacity: 0.7; }}
+      </style>
+    </head>
+    <body>
+
+      <div class="toolbar">
+        <button class="btn" type="button" onclick="location.href='/'">Back</button>
+        <button class="btn" type="button" onclick="location.href='/watch/scan'">Scan now</button>
+        <button class="btn" type="button" onclick="location.href='/watch/cancel'">Cancel</button>
+      </div>
+
+      <div id="watch-progress" class="status" style="display:none;"></div>
+      <div id="watch-progress-detail" class="muted" style="display:none;"></div>
+
+      <script>
+      let lastState = null;
+      let doneHandled = false;
+
+      async function pollWatchStatus() {{
+        try {{
+          const r = await fetch('/watch/status', {{ cache: 'no-store' }});
+          const st = await r.json();
+
+          const box = document.getElementById('watch-progress');
+          const detail = document.getElementById('watch-progress-detail');
+
+          if (!st || !st.state) return;
+
+          // If we've already handled "done", keep it hidden and stop touching it.
+          if (doneHandled && st.state === 'done') {{
+            return;
+          }}
+
+          if (st.state === 'running') {{
+            doneHandled = false;
+            box.style.display = '';
+            detail.style.display = '';
+            box.textContent = 'Scan running: ' + (st.message || '');
+            detail.textContent =
+              'Site: ' + (st.current_site || '') +
+              ' | Page: ' + (st.pages_done || 0) + '/' + (st.pages_cap || 0) +
+              ' | Found: ' + (st.results_found || 0) +
+              (st.current_url ? ' | URL: ' + st.current_url : '');
+          }} else {{
+            box.style.display = '';
+            detail.style.display = '';
+            box.textContent = 'Scan ' + st.state + ': ' + (st.message || '');
+            detail.textContent =
+              'Started: ' + (st.started_at || '') +
+              ' | Ended: ' + (st.ended_at || '') +
+              ' | Found: ' + (st.results_found || 0);
+
+            // Only schedule hide once per completion transition
+            if (st.state === 'done' && lastState === 'running' && !doneHandled) {{
+              doneHandled = true;
+              setTimeout(() => {{
+                box.textContent = '';
+                detail.textContent = '';
+                box.style.display = 'none';
+                detail.style.display = 'none';
+              }}, 5000);
+            }}
+          }}
+
+          lastState = st.state;
+        }} catch (e) {{
+          // ignore
+        }}
+      }}
+
+      setInterval(pollWatchStatus, 700);
+      pollWatchStatus();
+      </script>      
+
+      <script>
+      setTimeout(function() {{
+        const el = document.getElementById('save-status');
+        if (el) el.style.display = 'none';
+      }}, 4000);
+      </script>
+
+
+      <h1>Watch sites</h1>
+      {save_status_html}
+      {error_html}
+
+      <div id="watch-progress" class="status" style="display:none;"></div>
+      <div id="watch-progress-detail" class="muted" style="display:none;"></div>      
+
+      <form method="POST" action="/watch/save">
+        <div class="row">
+          <div class="col">
+            <h3>Sites (one URL per line)</h3>
+            <textarea name="sites">{_esc(sites_text)}</textarea>
+          </div>
+          <div class="col">
+            <h3>Topics (order matters)</h3>
+            <textarea name="topics">{_esc(topics_text)}</textarea>
+          </div>
+        </div>
+        <p>
+          <button type="submit">Save</button>
+        </p>
+      </form>
+
+      <h2>Results</h2>
+      {("".join(rows) if rows else "<div class='muted'>No matches yet. Add sites/topics and click Scan now.</div>")}
+
+      <h2>Errors</h2>
+      {("<ul>" + "".join(err_rows) + "</ul>" if err_rows else "<div class='muted'>No errors.</div>")}
+
+    </body>
+
+    </html>
+    """
+    return html.encode("utf-8")
+
+
