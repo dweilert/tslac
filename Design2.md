@@ -37,14 +37,14 @@ It consists of:
 
 ```mermaid
 flowchart TD
-    Browser[Browser UI]
-    Server[server.py]
-    Watcher[watcher.py]
-    Preview[export_preview.py]
-    Store[store_state.py]
-    Files[(YAML / JSON Files)]
-    Proxy[/img Proxy Endpoint]
-    External[External Websites]
+    Browser["Browser UI"]
+    Server["server.py"]
+    Watcher["watcher.py"]
+    Preview["export_preview.py"]
+    Store["store_state.py"]
+    Files[("YAML / JSON Files")]
+    Proxy["/img Proxy Endpoint"]
+    External["External Websites"]
 
     Browser -->|HTTP Requests| Server
     Server --> Watcher
@@ -59,6 +59,7 @@ flowchart TD
     Proxy --> External
     Browser -->|Image Request| Proxy
 ```
+
 
 ---
 

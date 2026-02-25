@@ -1,11 +1,3 @@
-# tslac
-
-Good. Let’s turn the pain into a repeatable solution so this never happens again.
-
-The issue wasn’t markdown itself — it was **nested code fences colliding**. When you ask for “raw markdown” and that markdown itself contains triple backticks, the outer fence gets terminated early unless it’s handled correctly.
-
-Here’s how to avoid that permanently.
-
 ---
 
 # ✅ How To Avoid Markdown Fence Breakage
@@ -106,3 +98,29 @@ If you want, next we can:
 * Or harden the architecture for future expansion
 
 Your system is actually getting solid now.
+
+
+
+---
+flowchart TD
+    Browser["Browser UI"]
+    Server["server.py"]
+    Watcher["watcher.py"]
+    Preview["export_preview.py"]
+    Store["store_state.py"]
+    Files[("YAML / JSON Files")]
+    Proxy["/img Proxy Endpoint"]
+    External["External Websites"]
+
+    Browser -->|HTTP Requests| Server
+    Server --> Watcher
+    Server --> Preview
+    Server --> Store
+    Server --> Proxy
+
+    Watcher --> External
+    Preview --> Store
+    Store --> Files
+
+    Proxy --> External
+    Browser -->|Image Request| Proxy
