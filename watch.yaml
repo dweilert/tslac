@@ -1,5 +1,5 @@
 sites:
-- crawl https://statearchivists.org/
+- home https://statearchivists.org/
 - home https://texashistory.unt.edu/
 topics:
 - dallas

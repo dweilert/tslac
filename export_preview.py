@@ -164,14 +164,31 @@ def build_preview_html() -> bytes:
                 img_html = f'<img class="hero" src="{_esc(img_src)}" alt="" />'
 
 
+        # blocks.append(f"""
+        #   <div class="item">
+        #     {img_html}
+        #     <div class="kicker">Texas State Library and Archives Commission</div>
+        #     <div class="title">{_esc(title)}</div>
+        #     <div class="body">{_esc(blurb) if blurb else '<em class="muted">No blurb saved yet. Use Curate to write one.</em>'}</div>
+        #     <div class="link"><a href="{_esc(url)}" target="_blank" rel="noopener">Read more</a></div>
+        #   </div>
+        # """)
+
         blocks.append(f"""
-          <div class="item">
-            {img_html}
-            <div class="kicker">Texas State Library and Archives Commission</div>
-            <div class="title">{_esc(title)}</div>
-            <div class="body">{_esc(blurb) if blurb else '<em class="muted">No blurb saved yet. Use Curate to write one.</em>'}</div>
-            <div class="link"><a href="{_esc(url)}" target="_blank" rel="noopener">Read more</a></div>
-          </div>
+          <tr>
+            <td style="padding: 0 18px 18px 18px; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;">
+              {img_html}
+              <div style="font-size:12px; color:#666; margin: 0 0 6px 0;">Texas State Library and Archives Commission</div>
+              <div style="font-size:16px; font-weight:700; color:#111; margin: 0 0 6px 0;">{_esc(title)}</div>
+              <div style="font-size:14px; color:#333; line-height:1.45;">
+                {(_esc(blurb) if blurb else "<em style='color:#777;'>No blurb saved yet. Use Curate to write one.</em>")}
+              </div>
+              <div style="margin-top:10px; font-size:14px;">
+                <a href="{_esc(url)}" target="_blank" rel="noopener" style="color:#0b57d0; text-decoration:none;">Read more</a>
+              </div>
+            </td>
+          </tr>
+          <tr><td><hr style="border:0; border-bottom:1px solid #666; margin:10px 18px 10px 18px;"></td></tr>
         """)
 
     if not blocks:
@@ -179,73 +196,195 @@ def build_preview_html() -> bytes:
     else:
         blocks_html = "\n".join(blocks)
 
+
+    # ---- Constant Contact-ish HTML shell for Preview ----
+    # NOTE:
+    # - This is preview-only, but uses table layout + inline styles like CC templates.
+    # - No rounded corners, no borders on images, no topic borders/separators.
+    # - Keep using your existing img_html generation (hero / heroCrop), but we
+    #   override the CSS so it behaves like email HTML (tables + inline styles).
+
+    PREHEADER_TEXT = "Donate to Texas Library and Archives Foundation today!"
+    HEADER_LOGO_URL = "https://files.constantcontact.com/d9aacb82801/f364e9d2-e7dd-4a1b-bee9-59bc4186acc6.png"
+    HEADER_BANNER_URL = "https://files.constantcontact.com/d9aacb82801/08d6a7b0-f1ab-4e9e-807e-6662fcad75ba.png"
+
     html_doc = f"""<!doctype html>
 <html>
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
   <title>{_esc(subject)}</title>
+
   <style>
-    body {{ font-family: -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif; margin: 0; background:#f3f4f6; }}
-    .wrap {{ max-width: 720px; margin: 0 auto; padding: 18px; }}
-    .card {{ background:#fff; border:1px solid #e5e7eb; border-radius: 14px; padding: 18px; }}
-    h1 {{ margin: 0 0 10px; font-size: 22px; }}
-    .intro {{ color:#374151; margin: 0 0 14px; line-height: 1.4; }}
-    .item {{ border-top: 1px solid #eee; padding-top: 14px; margin-top: 14px; }}
-    .item:first-of-type {{ border-top: none; padding-top: 0; margin-top: 0; }}
-    .kicker {{ font-size: 12px; color:#6b7280; margin-bottom: 6px; }}
-    .title {{ font-size: 18px; font-weight: 650; margin-bottom: 6px; color:#111827; }}
-    .body {{ color:#374151; line-height: 1.45; }}
-    .muted {{ color:#6b7280; }}
-    .link a {{ display:inline-block; margin-top: 10px; color:#0b57d0; text-decoration:none; }}
-    .link a:hover {{ text-decoration:underline; }}
-    .hero {{ width: 100%; height: auto; border-radius: 12px; border: 1px solid #eee; margin-bottom: 10px; }}
-    .note {{ margin-top: 14px; font-size: 12px; color:#6b7280; }}
+    /* Preview-only helpers (keep it light; CC relies heavily on inline styles) */
+    img {{ display:block; height:auto; max-width:100%; border:0; outline:none; text-decoration:none; }}
+    table {{ border-collapse:collapse; }}
+    .shell_width-row {{ width: 622px; }}
+    @media only screen and (max-width: 660px) {{
+      .shell_width-row {{ width: 100% !important; }}
+      .scale {{ width: 100% !important; }}
+      .stack {{ display:block !important; width:100% !important; }}
+      .pad10 {{ padding-left:10px !important; padding-right:10px !important; }}
+    }}
 
+    /* Your preview hero styles, but without borders/rounding */
+    .hero {{ width:100%; height:auto; margin: 0 0 10px 0; }}
+    .heroCrop {{ position: relative; width:100%; overflow:hidden; margin: 0 0 10px 0; }}
+    .heroCropImg {{ position:absolute; left:0; top:0; }}
 
-.heroCrop{{
-  position: relative;
-  width: 100%;
-  border-radius: 12px;
-  border: 1px solid #eee;
-  margin-bottom: 10px;
-  overflow: hidden;
-  background: #f3f4f6;
-}}
-
-.heroCropImg{{
-  position: absolute;
-  left: 0;
-  top: 0;
-  transform-origin: top left;
-  display: block;
-}}
-
-.heroCrop{{
-  outline: 2px solid red;
-}}
-.heroCropImg{{
-  outline: 2px solid blue;
-}}
-
-
-.heroCrop {{ position: relative; overflow: hidden; }}
-.heroCropImg {{ position: absolute; display: block; }}
-
-</style>
+    .heroCropImg {{
+        max-width: none !important;   /* allow >100% scaling for crop */
+        max-height: none !important;
+    }}
+  </style>
 </head>
-<body>
-  <div class="wrap">
-    <div class="card">
-      <h1>{_esc(subject)}</h1>
-      <p class="intro">{_esc(intro)}</p>
-      {blocks_html}
-      <div class="note">
-        Preview only. Next step: add “Copy block” buttons and Constant Contact-ready HTML snippets.
-      </div>
-    </div>
+
+<body class="body template template--en-US"
+  data-template-version="1.41.0"
+  data-canonical-name="CPE-PT1001"
+  lang="en-US"
+  align="center"
+  style="-ms-text-size-adjust:100%; -webkit-text-size-adjust:100%; min-width:100%; width:100%; margin:0; padding:0;">
+
+  <div id="preheader"
+    style="color:transparent; display:none; font-size:1px; line-height:1px; max-height:0; max-width:0; opacity:0; overflow:hidden;">
+    <span data-entity-ref="preheader">{_esc(PREHEADER_TEXT)}</span>
+  </div>
+
+  <div id="tracking-image"
+    style="color:transparent; display:none; font-size:1px; line-height:1px; max-height:0; max-width:0; opacity:0; overflow:hidden;">
+  </div>
+
+  <div class="shell" lang="en-US" style="background-color:#e6e6e6;">
+    <table class="shell_panel-row" width="100%" border="0" cellpadding="0" cellspacing="0"
+      style="background-color:#e6e6e6;" bgcolor="#e6e6e6">
+      <tbody>
+        <tr>
+          <td class="shell_panel-cell" align="center" valign="top">
+            <table class="shell_width-row scale" style="width:622px;" align="center" border="0" cellpadding="0" cellspacing="0">
+              <tbody>
+                <tr>
+                  <td class="shell_width-cell pad10" style="padding:15px 10px;" align="center" valign="top">
+
+                    <table class="shell_content-row" width="100%" align="center" border="0" cellpadding="0" cellspacing="0">
+                      <tbody>
+                        <tr>
+                          <td class="shell_content-cell"
+                            style="border-radius:0; background-color:#ffffff; padding:0; border:1px solid #869198;"
+                            align="center" valign="top" bgcolor="#ffffff">
+
+                            <!-- Header logo -->
+                            <table width="100%" border="0" cellpadding="0" cellspacing="0">
+                            <tbody>
+                                <tr>
+                                <td align="center" valign="top" style="padding-top:10px; padding-bottom:10px;">
+                                    <div style="position:relative; display:inline-block; max-width:100%;">
+                                    <img width="447"
+                                        src="{_esc(HEADER_LOGO_URL)}"
+                                        alt=""
+                                        style="display:block; height:auto; max-width:100%;" />
+
+                                    <!-- DRAFT overlay -->
+                                    <div style="
+                                        position:absolute;
+                                        top:50%;
+                                        left:50%;
+                                        transform:translate(-50%, -50%);
+                                        font-family:Arial, sans-serif;
+                                        font-weight:900;
+                                        font-size:96px;
+                                        color: rgba(255,0,0, 0.5) ;
+                                        letter-spacing:3px;
+                                        opacity:0.85;
+                                        pointer-events:none;
+                                    ">
+                                        DRAFT
+                                    </div>
+                                    </div>
+                                </td>
+                                </tr>
+                            </tbody>
+                            </table>
+
+                            <!-- Header banner -->
+                            <table class="image image--mobile-scale image--mobile-center" width="100%" border="0" cellpadding="0" cellspacing="0">
+                              <tbody>
+                                <tr>
+                                  <td class="image_container" align="center" valign="top">
+                                    <img class="image_content" width="600" src="{_esc(HEADER_BANNER_URL)}" alt=""
+                                      style="display:block; height:auto; max-width:100%;" />
+                                  </td>
+                                </tr>
+                              </tbody>
+                            </table>
+
+                            <!-- spacer -->
+                            <table width="100%" border="0" cellpadding="0" cellspacing="0">
+                              <tbody><tr><td style="line-height:22px; height:22px;">&nbsp;</td></tr></tbody>
+                            </table>
+
+                            <!-- Content column -->
+                            <table class="layout layout--1-column" style="table-layout:fixed;" width="100%" border="0" cellpadding="0" cellspacing="0">
+                              <tbody>
+                                <tr>
+                                  <td class="column column--1 scale stack" style="width:100%;" align="center" valign="top">
+
+                                    <!-- Subject + intro -->
+                                    <table width="100%" border="0" cellpadding="0" cellspacing="0">
+                                      <tbody>
+                                        <tr>
+                                          <td style="padding: 0 18px 10px 18px; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;">
+                                            <div style="font-size:20px; font-weight:700; color:#111; line-height:1.25; margin:0 0 8px 0;">
+                                              {_esc(subject)}
+                                            </div>
+                                            <div style="font-size:14px; color:#333; line-height:1.45; margin:0;">
+                                              {_esc(intro)}
+                                            </div>
+                                          </td>
+                                        </tr>
+                                      </tbody>
+                                    </table>
+
+                                    <!-- Items -->
+                                    <table width="100%" border="0" cellpadding="0" cellspacing="0">
+                                      <tbody>
+                                        {blocks_html if blocks_html else "<tr><td style='padding: 0 18px 18px 18px; color:#666; font-family:Arial,sans-serif;'>No selected items found in selected.yaml.</td></tr>"}
+                                      </tbody>
+                                    </table>
+
+                                    <!-- Footer note -->
+                                    <table width="100%" border="0" cellpadding="0" cellspacing="0">
+                                      <tbody>
+                                        <tr>
+                                          <td style="padding: 12px 18px 18px 18px; font-family:Arial,sans-serif; font-size:12px; color:#777;">
+                                            Preview only (styled close to Constant Contact). Export will generate a ZIP with real cropped images.
+                                          </td>
+                                        </tr>
+                                      </tbody>
+                                    </table>
+
+                                  </td>
+                                </tr>
+                              </tbody>
+                            </table>
+
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+
+          </td>
+        </tr>
+      </tbody>
+    </table>
   </div>
 </body>
 </html>
 """
     return html_doc.encode("utf-8")
+

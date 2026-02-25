@@ -1,12 +1,12 @@
 {
-  "ran_at": "2026-02-23T14:45:37",
+  "ran_at": "2026-02-25T10:56:43",
   "topics": [
     "dallas",
     "austn",
     "archives"
   ],
   "sites": [
-    "crawl https://statearchivists.org/",
+    "home https://statearchivists.org/",
     "home https://texashistory.unt.edu/"
   ],
   "settings": {
@@ -33,186 +33,11 @@
       "title": "The Portal to Texas History",
       "snippet": "The Portal to Texas History is a gateway to rare, historical, and primary source materials from or about Texas. The Portal to Texas History Your Search Terms: Any Type Everything Set As Default Filter Popular Resource Types Newspapers Set A",
       "matched_topics": [
-        "dallas"
+        "dallas",
+        "archives"
       ],
       "best_topic_index": 0,
       "score": 60
-    },
-    {
-      "site": "https://statearchivists.org/",
-      "url": "https://statearchivists.org/archives-month/",
-      "title": "Archives Month - Council Of State Archivists",
-      "snippet": "Skip to content Member Login facebook linked in youtube donate About Us Mission & Strategic Plan Policies & Bylaws Board of Directors Our Team Member Directory Funded Projects Store Work With CoSA Contact Us Get Involved Membership Advocacy",
-      "matched_topics": [
-        "archives"
-      ],
-      "best_topic_index": 2,
-      "score": 100
-    },
-    {
-      "site": "https://statearchivists.org/",
-      "url": "https://statearchivists.org/advocacy-for-archives-award/",
-      "title": "Advocacy for Archives Award - Council Of State Archivists",
-      "snippet": "Skip to content Member Login facebook linked in youtube donate About Us Mission & Strategic Plan Policies & Bylaws Board of Directors Our Team Member Directory Funded Projects Store Work With CoSA Contact Us Get Involved Membership Advocacy",
-      "matched_topics": [
-        "archives"
-      ],
-      "best_topic_index": 2,
-      "score": 100
-    },
-    {
-      "site": "https://statearchivists.org/",
-      "url": "https://statearchivists.org/about-us/",
-      "title": "About Us - Council Of State Archivists",
-      "snippet": "Skip to content Member Login facebook linked in youtube donate About Us Mission & Strategic Plan Policies & Bylaws Board of Directors Our Team Member Directory Funded Projects Store Work With CoSA Contact Us Get Involved Membership Advocacy",
-      "matched_topics": [
-        "archives"
-      ],
-      "best_topic_index": 2,
-      "score": 70
-    },
-    {
-      "site": "https://statearchivists.org/",
-      "url": "https://statearchivists.org/mission-strategic-plan/",
-      "title": "Mission & Strategic Plan - Council Of State Archivists",
-      "snippet": "Skip to content Member Login facebook linked in youtube donate About Us Mission & Strategic Plan Policies & Bylaws Board of Directors Our Team Member Directory Funded Projects Store Work With CoSA Contact Us Get Involved Membership Advocacy",
-      "matched_topics": [
-        "archives"
-      ],
-      "best_topic_index": 2,
-      "score": 70
-    },
-    {
-      "site": "https://statearchivists.org/",
-      "url": "https://statearchivists.org/board-of-directors/",
-      "title": "Board of Directors - Council Of State Archivists",
-      "snippet": "Skip to content Member Login facebook linked in youtube donate About Us Mission & Strategic Plan Policies & Bylaws Board of Directors Our Team Member Directory Funded Projects Store Work With CoSA Contact Us Get Involved Membership Advocacy",
-      "matched_topics": [
-        "archives"
-      ],
-      "best_topic_index": 2,
-      "score": 70
-    },
-    {
-      "site": "https://statearchivists.org/",
-      "url": "https://statearchivists.org/work-with-cosa/",
-      "title": "Work With CoSA - Council Of State Archivists",
-      "snippet": "Skip to content Member Login facebook linked in youtube donate About Us Mission & Strategic Plan Policies & Bylaws Board of Directors Our Team Member Directory Funded Projects Store Work With CoSA Contact Us Get Involved Membership Advocacy",
-      "matched_topics": [
-        "archives"
-      ],
-      "best_topic_index": 2,
-      "score": 70
-    },
-    {
-      "site": "https://statearchivists.org/",
-      "url": "https://statearchivists.org/get-involved/",
-      "title": "Get Involved - Council Of State Archivists",
-      "snippet": "Skip to content Member Login facebook linked in youtube donate About Us Mission & Strategic Plan Policies & Bylaws Board of Directors Our Team Member Directory Funded Projects Store Work With CoSA Contact Us Get Involved Membership Advocacy",
-      "matched_topics": [
-        "archives"
-      ],
-      "best_topic_index": 2,
-      "score": 70
-    },
-    {
-      "site": "https://statearchivists.org/",
-      "url": "https://statearchivists.org/membership/",
-      "title": "Membership - Council Of State Archivists",
-      "snippet": "Skip to content Member Login facebook linked in youtube donate About Us Mission & Strategic Plan Policies & Bylaws Board of Directors Our Team Member Directory Funded Projects Store Work With CoSA Contact Us Get Involved Membership Advocacy",
-      "matched_topics": [
-        "archives"
-      ],
-      "best_topic_index": 2,
-      "score": 70
-    },
-    {
-      "site": "https://statearchivists.org/",
-      "url": "https://statearchivists.org/advocacy/",
-      "title": "Advocacy - Council Of State Archivists",
-      "snippet": "Skip to content Member Login facebook linked in youtube donate About Us Mission & Strategic Plan Policies & Bylaws Board of Directors Our Team Member Directory Funded Projects Store Work With CoSA Contact Us Get Involved Membership Advocacy",
-      "matched_topics": [
-        "archives"
-      ],
-      "best_topic_index": 2,
-      "score": 70
-    },
-    {
-      "site": "https://statearchivists.org/",
-      "url": "https://statearchivists.org/sponsorship/",
-      "title": "Sponsorship - Council Of State Archivists",
-      "snippet": "Skip to content Member Login facebook linked in youtube donate About Us Mission & Strategic Plan Policies & Bylaws Board of Directors Our Team Member Directory Funded Projects Store Work With CoSA Contact Us Get Involved Membership Advocacy",
-      "matched_topics": [
-        "archives"
-      ],
-      "best_topic_index": 2,
-      "score": 70
-    },
-    {
-      "site": "https://statearchivists.org/",
-      "url": "https://statearchivists.org/programs/",
-      "title": "Programs - Council Of State Archivists",
-      "snippet": "Skip to content Member Login facebook linked in youtube donate About Us Mission & Strategic Plan Policies & Bylaws Board of Directors Our Team Member Directory Funded Projects Store Work With CoSA Contact Us Get Involved Membership Advocacy",
-      "matched_topics": [
-        "archives"
-      ],
-      "best_topic_index": 2,
-      "score": 70
-    },
-    {
-      "site": "https://statearchivists.org/",
-      "url": "https://statearchivists.org/annual-meeting/",
-      "title": "Annual Meeting - Council Of State Archivists",
-      "snippet": "Skip to content Member Login facebook linked in youtube donate About Us Mission & Strategic Plan Policies & Bylaws Board of Directors Our Team Member Directory Funded Projects Store Work With CoSA Contact Us Get Involved Membership Advocacy",
-      "matched_topics": [
-        "archives"
-      ],
-      "best_topic_index": 2,
-      "score": 70
-    },
-    {
-      "site": "https://statearchivists.org/",
-      "url": "https://statearchivists.org/cosa-awards-program/",
-      "title": "CoSA Awards Program - Council Of State Archivists",
-      "snippet": "Skip to content Member Login facebook linked in youtube donate About Us Mission & Strategic Plan Policies & Bylaws Board of Directors Our Team Member Directory Funded Projects Store Work With CoSA Contact Us Get Involved Membership Advocacy",
-      "matched_topics": [
-        "archives"
-      ],
-      "best_topic_index": 2,
-      "score": 70
-    },
-    {
-      "site": "https://statearchivists.org/",
-      "url": "https://statearchivists.org/cosa-lifetime-achievement-award/",
-      "title": "CoSA Lifetime Achievement Award - Council Of State Archivists",
-      "snippet": "Skip to content Member Login facebook linked in youtube donate About Us Mission & Strategic Plan Policies & Bylaws Board of Directors Our Team Member Directory Funded Projects Store Work With CoSA Contact Us Get Involved Membership Advocacy",
-      "matched_topics": [
-        "archives"
-      ],
-      "best_topic_index": 2,
-      "score": 70
-    },
-    {
-      "site": "https://statearchivists.org/",
-      "url": "https://statearchivists.org/viw-leadership-award/",
-      "title": "Victoria Irons Walch Leadership Award - Council Of State Archivists",
-      "snippet": "Skip to content Member Login facebook linked in youtube donate About Us Mission & Strategic Plan Policies & Bylaws Board of Directors Our Team Member Directory Funded Projects Store Work With CoSA Contact Us Get Involved Membership Advocacy",
-      "matched_topics": [
-        "archives"
-      ],
-      "best_topic_index": 2,
-      "score": 70
-    },
-    {
-      "site": "https://statearchivists.org/",
-      "url": "https://statearchivists.org/viw-emerging-leader-award/",
-      "title": "Victoria Irons Walch Emerging Leader Award - Council Of State Archivists",
-      "snippet": "Skip to content Member Login facebook linked in youtube donate About Us Mission & Strategic Plan Policies & Bylaws Board of Directors Our Team Member Directory Funded Projects Store Work With CoSA Contact Us Get Involved Membership Advocacy",
-      "matched_topics": [
-        "archives"
-      ],
-      "best_topic_index": 2,
-      "score": 70
     },
     {
       "site": "https://statearchivists.org/",
@@ -224,94 +49,6 @@
       ],
       "best_topic_index": 2,
       "score": 60
-    },
-    {
-      "site": "https://statearchivists.org/",
-      "url": "https://statearchivists.org/individual-donations/",
-      "title": "Individual Donations - Council Of State Archivists",
-      "snippet": "Skip to content Member Login facebook linked in youtube donate About Us Mission & Strategic Plan Policies & Bylaws Board of Directors Our Team Member Directory Funded Projects Store Work With CoSA Contact Us Get Involved Membership Advocacy",
-      "matched_topics": [
-        "archives"
-      ],
-      "best_topic_index": 2,
-      "score": 50
-    },
-    {
-      "site": "https://statearchivists.org/",
-      "url": "https://statearchivists.org/policies-bylaws/",
-      "title": "Policies & Bylaws - Council Of State Archivists",
-      "snippet": "Skip to content Member Login facebook linked in youtube donate About Us Mission & Strategic Plan Policies & Bylaws Board of Directors Our Team Member Directory Funded Projects Store Work With CoSA Contact Us Get Involved Membership Advocacy",
-      "matched_topics": [
-        "archives"
-      ],
-      "best_topic_index": 2,
-      "score": 50
-    },
-    {
-      "site": "https://statearchivists.org/",
-      "url": "https://statearchivists.org/funded-projects/",
-      "title": "Funded Projects - Council Of State Archivists",
-      "snippet": "Skip to content Member Login facebook linked in youtube donate About Us Mission & Strategic Plan Policies & Bylaws Board of Directors Our Team Member Directory Funded Projects Store Work With CoSA Contact Us Get Involved Membership Advocacy",
-      "matched_topics": [
-        "archives"
-      ],
-      "best_topic_index": 2,
-      "score": 50
-    },
-    {
-      "site": "https://statearchivists.org/",
-      "url": "https://statearchivists.org/committees/",
-      "title": "Committees & Working Groups - Council Of State Archivists",
-      "snippet": "Skip to content Member Login facebook linked in youtube donate About Us Mission & Strategic Plan Policies & Bylaws Board of Directors Our Team Member Directory Funded Projects Store Work With CoSA Contact Us Get Involved Membership Advocacy",
-      "matched_topics": [
-        "archives"
-      ],
-      "best_topic_index": 2,
-      "score": 50
-    },
-    {
-      "site": "https://statearchivists.org/",
-      "url": "https://statearchivists.org/2025-annual-meeting/",
-      "title": "2025 Annual Meeting - Council Of State Archivists",
-      "snippet": "Skip to content Member Login facebook linked in youtube donate About Us Mission & Strategic Plan Policies & Bylaws Board of Directors Our Team Member Directory Funded Projects Store Work With CoSA Contact Us Get Involved Membership Advocacy",
-      "matched_topics": [
-        "archives"
-      ],
-      "best_topic_index": 2,
-      "score": 50
-    },
-    {
-      "site": "https://statearchivists.org/",
-      "url": "https://statearchivists.org/chatting-with-cosa-colleagues/",
-      "title": "Chatting with Colleagues - Council Of State Archivists",
-      "snippet": "Skip to content Member Login facebook linked in youtube donate About Us Mission & Strategic Plan Policies & Bylaws Board of Directors Our Team Member Directory Funded Projects Store Work With CoSA Contact Us Get Involved Membership Advocacy",
-      "matched_topics": [
-        "archives"
-      ],
-      "best_topic_index": 2,
-      "score": 50
-    },
-    {
-      "site": "https://statearchivists.org/",
-      "url": "https://statearchivists.org/affinity-user-groups/",
-      "title": "Affinity/User Groups - Council Of State Archivists",
-      "snippet": "Skip to content Member Login facebook linked in youtube donate About Us Mission & Strategic Plan Policies & Bylaws Board of Directors Our Team Member Directory Funded Projects Store Work With CoSA Contact Us Get Involved Membership Advocacy",
-      "matched_topics": [
-        "archives"
-      ],
-      "best_topic_index": 2,
-      "score": 30
-    },
-    {
-      "site": "https://statearchivists.org/",
-      "url": "https://statearchivists.org/our-team/",
-      "title": "Our Team - Council Of State Archivists",
-      "snippet": "Skip to content Member Login facebook linked in youtube donate About Us Mission & Strategic Plan Policies & Bylaws Board of Directors Our Team Member Directory Funded Projects Store Work With CoSA Contact Us Get Involved Membership Advocacy",
-      "matched_topics": [
-        "archives"
-      ],
-      "best_topic_index": 2,
-      "score": 20
     }
   ],
   "errors": []
