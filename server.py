@@ -10,6 +10,9 @@ import watcher
 import watch_store
 import templates
 
+from pathlib import Path
+import export_cc
+
 from collector import collect_candidates, load_candidates_file
 from config import DEFAULT_SUBJECT, DEFAULT_INTRO
 from state_store import (
@@ -432,7 +435,25 @@ class Handler(BaseHTTPRequestHandler):
                 return
 
 
+        # ----------------------------
+        # Constant Contact Export: /export/cc
+        # ----------------------------
+        if self.path.startswith("/export/cc"):
+            try:
+                data, fname = export_cc.build_constant_contact_zip()
 
+                self.send_response(200)
+                self.send_header("Content-Type", "application/zip")
+                self.send_header("Content-Length", str(len(data)))
+                self.send_header("Content-Disposition", f'attachment; filename="{fname}"')
+                self.end_headers()
+                self.wfile.write(data)
+            except Exception as e:
+                msg = str(e).replace(" ", "+")
+                self.send_response(302)
+                self.send_header("Location", f"/?status=Export+failed:+{msg}")
+                self.end_headers()
+            return
 
 
         # ----------------------------
