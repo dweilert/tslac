@@ -164,16 +164,6 @@ def build_preview_html() -> bytes:
                 img_html = f'<img class="hero" src="{_esc(img_src)}" alt="" />'
 
 
-        # blocks.append(f"""
-        #   <div class="item">
-        #     {img_html}
-        #     <div class="kicker">Texas State Library and Archives Commission</div>
-        #     <div class="title">{_esc(title)}</div>
-        #     <div class="body">{_esc(blurb) if blurb else '<em class="muted">No blurb saved yet. Use Curate to write one.</em>'}</div>
-        #     <div class="link"><a href="{_esc(url)}" target="_blank" rel="noopener">Read more</a></div>
-        #   </div>
-        # """)
-
         blocks.append(f"""
           <tr>
             <td style="padding: 0 18px 18px 18px; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;">
