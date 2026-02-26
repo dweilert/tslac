@@ -1,10 +1,10 @@
 from __future__ import annotations
-
 from string import Template
 from typing import Any
-
+from urllib.parse import quote
 from config import CANDIDATES_FILE, SELECTED_FILE, CURATION_FILE
 from models import Candidate
+from logutil import debug, warn, info
 
 import json
 
@@ -30,6 +30,7 @@ def html_page(
     # ----------------------------
     # Article cards (existing)
     # ----------------------------
+    info(f"UI: html_page: web candidates={len(candidates)} doc candidates={len(doc_candidates)}")
     cards = []
     for i, c in enumerate(candidates):
         chk = "checked" if c.url in prechecked else ""
@@ -83,6 +84,10 @@ def html_page(
         open_link = f'<a href="/doc/open?doc_id={_esc(doc_id)}" target="_blank" rel="noopener">Open document</a>'
         curate_link = f'<a href="/curate_doc?doc_id={_esc(doc_id)}">Curate</a>'
 
+        doc_q = quote(doc_id, safe="")
+        curate_link = f'<a href="/curate_doc?doc_id={doc_q}">Curate</a>'
+        open_link   = f'<a href="/doc/open?doc_id={doc_q}" target="_blank" rel="noopener">Open document</a>'
+
         doc_cards.append(f"""
         <div class="card" data-title="{_esc(title.lower())}" data-source="{_esc(source.lower())}">
           <div class="row">
@@ -100,7 +105,7 @@ def html_page(
               <div class="small">{_esc(summary) if summary else "<span class='muted'>(no summary)</span>"}</div>
             </div>
             <div style="display:flex; gap:8px; align-items:flex-start;">
-              <a class="btn" href="/curate_doc?doc_id={_esc(doc_id)}">Curate</a>
+              <a class="btn" href="/curate_doc?doc_id={doc_q}">Curate</a>
             </div>
           </div>
         </div>
@@ -1044,4 +1049,102 @@ def watch_page_html(
     """
     return html.encode("utf-8")
 
+def curate_doc_page_html(
+    doc: dict,
+    status: str = "",
+) -> bytes:
+    """
+    Curate page for document candidates coming from
+    Google Drive or Local folders.
+    """
 
+    doc_id = doc.get("id", "")
+    title = doc.get("title", "Document")
+    summary = doc.get("summary", "")
+    source = doc.get("source", "doc")
+
+    msg = f'<div class="msg">{_esc(status)}</div>' if status else ""
+
+    html = f"""<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <title>Curate Document</title>
+
+  <style>
+    body {{
+        font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial;
+        margin:24px;
+    }}
+    .wrap {{ max-width:900px; margin:auto; }}
+    .btn {{
+        padding:8px 12px;
+        border:1px solid #ccc;
+        background:#f7f7f7;
+        border-radius:8px;
+        text-decoration:none;
+        color:#111;
+    }}
+    .panel {{
+        border:1px solid #ddd;
+        border-radius:12px;
+        padding:16px;
+        background:#fff;
+        margin-top:16px;
+    }}
+    textarea {{
+        width:100%;
+        padding:10px;
+        border-radius:8px;
+        border:1px solid #ccc;
+        font-size:14px;
+    }}
+    .small {{ color:#666; font-size:12px; }}
+    .msg {{
+        background:#e7f3ff;
+        border:1px solid #b6daff;
+        padding:10px;
+        border-radius:10px;
+        margin:12px 0;
+    }}
+  </style>
+</head>
+
+<body>
+<div class="wrap">
+
+<a class="btn" href="/">← Back to list</a>
+
+<h1>{_esc(title)}</h1>
+
+<div class="small">
+Source: <code>{_esc(source)}</code><br/>
+Doc ID: <code>{_esc(doc_id)}</code>
+</div>
+
+{msg}
+
+<div class="panel">
+<form method="POST" action="/curate_doc/save">
+
+<input type="hidden" name="doc_id" value="{_esc(doc_id)}"/>
+
+<div class="small">Document Summary (editable)</div>
+
+<textarea name="final_blurb" rows="6">{_esc(summary)}</textarea>
+
+<br/><br/>
+
+<button class="btn" type="submit">
+Save curated document
+</button>
+
+</form>
+</div>
+
+</div>
+</body>
+</html>
+"""
+
+    return html.encode("utf-8")

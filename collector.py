@@ -24,6 +24,7 @@ from config import (
     EXCLUDE_TEXTS,
     LAST_3_MONTHS_DAYS,
 )
+from doc_store import save_doc_candidates
 from models import Candidate
 from state_store import load_seen, save_seen, norm_url
 from pathlib import Path
@@ -92,21 +93,6 @@ def extract_links_from_section_by_heading(soup: BeautifulSoup, heading_text: str
             out.append((t, u))
             seen.add(u)
     return out
-
-DOC_CANDIDATES_FILE = Path("state") / "doc_candidates.json"
-
-def save_doc_candidates_file(doc_candidates: list[dict]) -> None:
-    DOC_CANDIDATES_FILE.parent.mkdir(parents=True, exist_ok=True)
-    DOC_CANDIDATES_FILE.write_text(json.dumps(doc_candidates, indent=2, ensure_ascii=False), encoding="utf-8")
-    info(f"Docs: wrote {len(doc_candidates)} doc candidate(s) -> {DOC_CANDIDATES_FILE}")
-
-def load_doc_candidates_file() -> list[dict]:
-    if not DOC_CANDIDATES_FILE.exists():
-        return []
-    try:
-        return json.loads(DOC_CANDIDATES_FILE.read_text(encoding="utf-8"))
-    except Exception:
-        return []
 
 
 # ----------------------------
@@ -304,7 +290,7 @@ def collect_candidates() -> list[Candidate]:
 
     # Document candidates
     doc_candidates = build_document_candidates()
-    save_doc_candidates_file(doc_candidates)
+    save_doc_candidates(doc_candidates)
 
     # Keep ordering: carousel -> featured -> info
     ordered = carousel_candidates + featured_candidates + info_candidates
@@ -361,3 +347,20 @@ def build_document_candidates() -> list[dict]:
     docs = build_doc_candidates(src)
     info(f"Docs: collector: built {len(docs)} doc candidate(s)")
     return docs    
+
+def build_document_candidates():
+    mode = os.getenv("DOC_INPUT_MODE", "gdrive").lower()
+    info(f"Docs: building doc candidates (mode={mode})")
+    if mode == "gdrive":
+        src = GDriveSource(
+            os.getenv("GDRIVE_INPUT_FOLDER_NAME", "tslac_input"),
+            os.getenv("GDRIVE_ARCHIVE_FOLDER_NAME", "tslac_saved"),
+        )
+    elif mode == "local":
+        src = LocalDirSource(
+            os.environ["LOCAL_INPUT_DIR"],
+            os.environ["LOCAL_ARCHIVE_DIR"],
+        )
+    else:
+        raise RuntimeError(f"Unknown DOC_INPUT_MODE: {mode}")
+    return build_doc_candidates(src)

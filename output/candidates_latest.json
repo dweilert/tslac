@@ -1,10 +1,5 @@
 [
   {
-    "title": "#TXBookChat LIVE at TSLAC, Feb. 25 with Sam Haynes",
-    "url": "https://www.tsl.texas.gov/txbookchat",
-    "source": "homepage:carousel"
-  },
-  {
     "title": "Attention Public Libraries: February is Speed Test Month!",
     "url": "https://www.tsl.texas.gov/speedtest",
     "source": "homepage:carousel"
@@ -22,6 +17,11 @@
   {
     "title": "Public Libraries Invited to Apply for TSLAC Texas Reads Grants",
     "url": "https://www.tsl.texas.gov/node/70476",
+    "source": "homepage:carousel"
+  },
+  {
+    "title": "Join the Texas America250 Statewide Reading Challenge!",
+    "url": "https://www.tsl.texas.gov/node/70426",
     "source": "homepage:carousel"
   },
   {
@@ -52,11 +52,6 @@
   {
     "title": "Students Invited to Participate in 2025-2026 Letters About Literature Texas Competition—Deadline Jan. 26 (Jan 09, 2026)",
     "url": "https://www.tsl.texas.gov/node/70432",
-    "source": "tsl:/info(last_3_months)"
-  },
-  {
-    "title": "Texas State Library and Archives Commission Announces Launch of Texas America250 Reading Challenge (Jan 07, 2026)",
-    "url": "https://www.tsl.texas.gov/node/70426",
     "source": "tsl:/info(last_3_months)"
   },
   {

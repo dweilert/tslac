@@ -1,18 +1,10 @@
 from __future__ import annotations
-
-import json
+from curses import raw
 from http.server import BaseHTTPRequestHandler
 from urllib.parse import parse_qs, urlparse, unquote, urljoin, quote
-
-import cleaner
-import export_preview
-import watcher
-import watch_store
-import templates
-import os
-import export_cc
-
 from pathlib import Path
+
+from annotated_types import doc
 from collector import collect_candidates, load_candidates_file
 from config import DEFAULT_SUBJECT, DEFAULT_INTRO
 from state_store import (
@@ -28,21 +20,27 @@ from state_store import (
     upsert_curated_image_crop,
     get_curated_selected_image, 
     upsert_curated_selected_image, 
-    clear_curated_selected_image
+    clear_curated_selected_image,
+    get_curated_image_crops
 )
-
 from templates import html_page, curate_page_html
 from doc_archive import archive_docs
+from logutil import debug, info, warn
+from doc_store import load_doc_candidates, clear_doc_candidates
+from logutil import debug, warn, info
 
-from collector import (
-    collect_candidates, 
-    load_candidates_file, 
-    load_doc_candidates_file, 
-    load_doc_candidates_file  
-)
+import cleaner
+import export_preview
+import watcher
+import watch_store
+import templates
+import os
+import export_cc
+import json
 
-doc_candidates = load_doc_candidates_file()
-from logutil import info
+
+doc_candidates = load_doc_candidates()
+
 
 def _is_http_url(u: str) -> bool:
     try:
@@ -55,13 +53,14 @@ def _is_http_url(u: str) -> bool:
 
 class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
+        debug(F"Received GET request: path={self.path}")
         # ----------------------------
         # Refresh candidates
         # ----------------------------
         if self.path.startswith("/refresh"):
             try:
                 collect_candidates()
-                doc_cnt = len(load_doc_candidates_file())
+                doc_cnt = len(load_doc_candidates())
                 self.send_response(302)
                 self.send_header("Location", f"/?status=Refreshed+candidate+list+(docs:{doc_cnt})")
                 self.end_headers()
@@ -263,6 +262,98 @@ class Handler(BaseHTTPRequestHandler):
             return
 
         # ----------------------------
+        # Curate Document: /curate_doc?doc_id=...
+        # ----------------------------
+        #if self.path.startswith("/curate_doc"):
+        if self.path.startswith("/curate_doc?") or self.path == "/curate_doc":    
+            debug(f"===============================================")
+            debug(f" Entered /curate/doc")
+            debug(f"===============================================")
+            try:
+                qs = ""
+                if "?" in self.path:
+                    _, qs = self.path.split("?", 1)
+
+                qd = parse_qs(qs)
+                doc_id = (qd.get("doc_id", [""])[0] or "").strip()
+
+                status = (qd.get("status", [""])[0] or "").strip()
+                debug(f"DOC CURATE: status={status!r}")
+                debug(f"DOC CURATE: doc_id={doc_id!r}")
+
+                if not doc_id:
+                    raise ValueError("Missing doc_id")
+
+                # Load candidates
+                doc_candidates = load_doc_candidates()
+                debug(f"DOC CURATE: loaded doc candidates={len(doc_candidates)}")
+
+                d = next(
+                    (x for x in doc_candidates
+                    if isinstance(x, dict) and x.get("id") == doc_id),
+                    None
+                )
+
+                if not d:
+                    raise ValueError(f"Doc not found: {doc_id}")
+
+                # Load saved curation
+                cur = load_curation()
+                final_blurb = get_curated_blurb(cur, doc_id)
+
+                # Build doc object expected by template
+                doc_d = dict(d)
+                if final_blurb:
+                    doc_d["summary"] = final_blurb   # show saved edit instead
+
+                debug(f"===============================================")
+                debug(f"DOC TEMPLATE INPUT: {doc_d}")
+                debug(f"DOC CURATE: doc dict keys={list(d.keys())}")
+                debug(f"DOC CURATE: doc['id']={d.get('id')!r}")
+                debug(f"DOC CURATE: rendering template with status={status!r}")
+                debug(f"===============================================")
+                body = templates.curate_doc_page_html(
+                    doc=doc_d,
+                    status=status
+                )
+
+                self.send_response(200)
+                self.send_header("Content-Type", "text/html; charset=utf-8")
+                self.send_header("Content-Length", str(len(body)))
+                self.end_headers()
+                self.wfile.write(body)
+
+            except Exception as e:
+                warn(f"DOC CURATE: failed: {e}")
+                msg = str(e).replace(" ", "+")
+                self.send_response(302)
+                self.send_header("Location", f"/?status=Doc+curate+failed:+{msg}")
+                self.end_headers()
+
+            return
+
+
+        # ----------------------------
+        # External docs: /doc
+        # ----------------------------
+
+        if self.path.startswith("/doc/"):
+            doc_id = self.path.split("/doc/", 1)[1].split("?", 1)[0]
+            debug(f"DOC CURATE: server: doc_id={doc_id}")
+
+            # load doc candidates (from your stored doc candidates file)
+            doc_candidates = load_doc_candidates()
+            debug(f"DOC CURATE: server: loaded doc candidates={len(doc_candidates)}")
+
+            # find doc by id
+            d = next((x for x in doc_candidates if x.get("id") == doc_id), None)
+            if not d:
+                raise ValueError(f"Doc not found: {doc_id}")
+
+            # render a simple curate page that shows:
+            # title, summary, extracted text snippet, textarea for final blurb
+
+        # ----------------------------
         # Curate: /curate/<index>
         # ----------------------------
         if self.path.startswith("/curate/"):
@@ -271,7 +362,10 @@ class Handler(BaseHTTPRequestHandler):
                 idx_str = path_only[len("/curate/") :].strip("/")
                 idx = int(idx_str)
 
+                debug(f"CURATE: server: path={self.path} idx={idx}")
                 candidates = load_candidates_file()
+                debug(f"CURATE: server: loaded candidates={len(candidates)}")
+
                 if not candidates:
                     raise ValueError("No candidates available. Go back and click Refresh candidates first.")
                 if idx < 0 or idx >= len(candidates):
@@ -284,6 +378,7 @@ class Handler(BaseHTTPRequestHandler):
                     status = (qd.get("status", [""])[0] or "")
 
                 c = candidates[idx]
+                debug(f"CURATE: server: selected title={c.title!r} source={c.source!r} url={c.url!r}")
                 res = cleaner.clean_article(c.url)
                 cleaned = {
                     "title": res.title,
@@ -307,7 +402,6 @@ class Handler(BaseHTTPRequestHandler):
                 cleaned["image_crops"] = crops
 
                 try:
-                    from state_store import get_curated_image_crops
                     crops = get_curated_image_crops(cur, c.url)
                 except Exception:
                     crops = {}
@@ -494,7 +588,7 @@ class Handler(BaseHTTPRequestHandler):
         cur = load_curation()
         has_blurb_by_url = {c.url: bool(get_curated_blurb(cur, c.url)) for c in candidates}
 
-        doc_candidates = load_doc_candidates_file()
+        doc_candidates = load_doc_candidates()
         has_blurb_by_docid = {
             d["id"]: bool(get_curated_blurb(cur, d["id"]))
             for d in (doc_candidates or [])
@@ -502,7 +596,6 @@ class Handler(BaseHTTPRequestHandler):
         }
 
         debug(f"UI: web candidates={len(candidates)} doc candidates={len(doc_candidates)}")
-
 
         body = html_page(
             candidates=candidates,
@@ -524,9 +617,50 @@ class Handler(BaseHTTPRequestHandler):
 
 
     def do_POST(self):
-        length = int(self.headers.get("Content-Length", "0"))
+        # Read body ONCE
+        length = int(self.headers.get("Content-Length", "0") or "0")
         raw = self.rfile.read(length).decode("utf-8", errors="replace")
-        form = parse_qs(raw)
+        form = parse_qs(raw, keep_blank_values=True)
+
+        debug(f"UI POST: path={self.path} len={length} keys={list(form.keys())}")
+
+        path_only = self.path.split("?", 1)[0]
+
+        if path_only == "/curate_doc/save":
+            try:
+                debug("DOC SAVE: handler entered")
+                debug(f"DOC SAVE: Content-Type={self.headers.get('Content-Type')!r}")
+                debug(f"DOC SAVE: raw={raw!r}")
+                debug(f"DOC SAVE: parsed keys={list(form.keys())}")
+                debug(f"DOC SAVE: doc_id field raw={form.get('doc_id')!r}")
+
+                doc_id = (form.get("doc_id", [""])[0] or "").strip()
+                final_blurb = (form.get("final_blurb", [""])[0] or "").strip()
+
+                warn(f"DOC SAVE: doc_id={doc_id!r} blurb_len={len(final_blurb)}")
+
+                if not doc_id:
+                    raise ValueError("Missing doc_id (hidden field not posted)")
+
+                # IMPORTANT: use doc-specific upsert if you have it.
+                # If you only have upsert_curated_blurb(url, blurb), this will still work
+                # as long as it doesn't norm_url() and destroy the key.
+                from state_store import upsert_curated_blurb
+                upsert_curated_blurb(doc_id, final_blurb)
+
+                self.send_response(302)
+                self.send_header("Location", f"/curate_doc?doc_id={quote(doc_id)}&status=Saved")
+                self.end_headers()
+                return
+
+            except Exception as e:
+                warn(f"DOC SAVE FAILED: {e}")
+                self.send_response(302)
+                self.send_header("Location", f"/?status=Doc+save+failed:+{str(e).replace(' ','+')}")
+                self.end_headers()
+                return
+
+    # ... other POST handlers here, using the SAME raw/form ...
 
         # Save selection list
         if self.path == "/save":
@@ -668,7 +802,10 @@ class Handler(BaseHTTPRequestHandler):
         # ----------------------------
         if self.path == "/archive_docs":
             try:
+
                 moved = archive_docs()
+                clear_doc_candidates()
+
                 self.send_response(302)
                 self.send_header("Location", f"/?status=Archived+{moved}+document(s)")
                 self.end_headers()

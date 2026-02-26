@@ -1,11 +1,12 @@
 from __future__ import annotations
-
-import html
 from pathlib import Path
 from turtle import width
 from typing import Any
 from urllib.parse import quote, unquote
+from doc_store import load_doc_candidates
+from state_store import load_curation, get_curated_blurb
 
+import html
 import yaml
 
 APP_DIR = Path(__file__).resolve().parent
@@ -74,6 +75,12 @@ def _crop_style(crop: dict[str, Any]) -> str:
     except Exception:
         return ""
 
+
+def _is_doc_id(u: str) -> bool:
+    return (u or "").startswith(("gdrive:", "local:"))
+
+def _is_http_url(u: str) -> bool:
+    return (u or "").startswith(("http://", "https://"))
 
 
 def build_preview_html() -> bytes:

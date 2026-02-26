@@ -232,3 +232,4 @@ def clear_curated_selected_image(url: str) -> None:
         rec.pop("selected_image", None)
         rec["updated_at"] = datetime.now().isoformat(timespec="seconds")
         save_curation(cur)    
+

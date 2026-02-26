@@ -15,45 +15,6 @@ https://www.tsl.texas.gov/txbookchat:
       img_w: 600
       img_h: 600
   selected_image: https://www.tsl.texas.gov/sites/default/files/public/tslac/exec/txbookchat/2026%20TCFB%20TXBookChat%20with%20Sam%20Haynes%20-%20SQ.png
-https://www.tsl.texas.gov/tbp/authortalks:
-  excerpts:
-  - 'Join the Talking Book Program for an author talk on Tuesday, February 24 at 7:00
-    p.m. (Central) with author Char Miller.
-
-    Reader’s Advisory Librarian Laura Jean will discuss his career and his book, SAN
-    ANTONIO: A TRICENTENNIAL HISTORY. Following the talk, there will be a Q&A session.'
-  - 'SAN ANTONIO: A TRICENTENNIAL HISTORY by Char Miller (DBC 18818)'
-  - historians believe San Antonio may be the most fought-over city in U.S. history—it
-    is perhaps most celebrated for the iconic 1836 Battle of the Alamo. The city is
-    also home to four beautifully restored Spanish missions, which in 2015 UNESCO
-    designated a World Heritage Site and have become integral to San Antonio's robust
-    tourist economy along with the fabled River Walk. Some violence. 2018.
-  updated_at: '2026-02-23T17:59:30'
-  image_crops:
-    ? https://www.tsl.texas.gov/sites/default/files/public/tslac/tbp/authortalks/TBP%20-%20Author%20Talks%20Char%20Miller%20-%20SQ_0.png
-    : ix: 787
-      iy: 443
-      iw: 346
-      ih: 486
-      img_w: 1201
-      img_h: 1201
-  selected_image: https://www.tsl.texas.gov/sites/default/files/public/tslac/tbp/authortalks/TBP%20-%20Author%20Talks%20Char%20Miller%20-%20SQ_0.png
-https://www.tsl.texas.gov/speedtest:
-  excerpts:
-  - Email invitations with the testing link were sent out via email to all public
-    library directors on February 6. Please use the link from the email and conduct
-    your test at the library location(s) by Friday, February 28. TSLAC is collecting
-    internet speeds at main libraries and branch libraries.
-  - If you do not receive the invitation, please contact TSLAC Digital Opportunity
-    Program Cooridnator Henry Stokes at hstokes@tsl.texas.gov, 512-463-6624.
-  updated_at: '2026-02-23T15:46:03'
-  final_blurb: "Email invitations with the testing link were sent out via email to\
-    \ all public library directors on February 6. \r\n\r\nPlease use the link from\
-    \ the email and conduct your test at the library location(s) by Friday, February\
-    \ 28. TSLAC is collecting internet speeds at main libraries and branch libraries.\
-    \ \r\n\r\nIf you do not receive the invitation, please contact TSLAC Digital Opportunity\
-    \ Program Cooridnator Henry Stokes at hstokes@tsl.texas.gov, 512-463-6624."
-  selected_image: https://www.tsl.texas.gov/sites/default/files/public/tslac/distancelearning/Speed-Test-Logo-400.png
 https://www.tsl.texas.gov/workshops:
   image:
     src: https://www.tsl.texas.gov/sites/default/files/public/tslac/exec/2026%20SAA%20workshop%20Project%20Management%20-%20HPSLIDER_0.png
@@ -76,3 +37,20 @@ https://www.tsl.texas.gov/workshops:
 
     Funding provided by the National Historical Publications and Records Commission
     (NHPRC).'
+gdrive:1mz2GnMqbsdhFMOKLFzXEKrf0Lgt_NzEM:
+  final_blurb: The document recommends that the Texas State Library and Archives Commission
+    collaborate with the Lyndon B. Johnson Presidential Library to enhance archival
+    preservation, digitization, and public engagement efforts. It suggests joint initiatives
+    such as shared exhibits, digitization projects, professional exchanges, and outreach
+    programs to strengthen historical literacy and improve access to important historical
+    records across Texas. This partnership is presented as a valuable opportunity
+    to advance archival practices and educational programming statewide.
+  updated_at: '2026-02-26T10:50:13'
+gdrive:1VICkJFCZ0KjJ7FpW4laX_KD8xkpBP7J8:
+  final_blurb: DAV? The document recommends preserving Texas’s historical records
+    by creating and maintaining a comprehensive Texas Digital Archive, ensuring both
+    official and everyday citizens' histories are safeguarded from loss. It emphasizes
+    the importance of making these digital archives accessible to all, supporting
+    genealogical research and public knowledge. The work is presented as an ongoing
+    responsibility to honor the past and educate future generations.
+  updated_at: '2026-02-26T12:27:36'
