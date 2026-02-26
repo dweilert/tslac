@@ -1,6 +1,12 @@
 #!/usr/bin/env python3ython
 
 from __future__ import annotations
+from annotated_types import doc
+from dotenv import load_dotenv
+from logutil import info
+from http.server import HTTPServer
+from config import HOST, PORT, OUT_DIR, STATE_DIR
+from server import Handler
 
 # macOS TLS fix: validate like curl (Keychain trust store)
 try:
@@ -9,24 +15,13 @@ try:
 except Exception:
     pass
 
-from http.server import HTTPServer
-
-from config import HOST, PORT, OUT_DIR, STATE_DIR
-from server import Handler
-
-import http.server
-import socketserver
-import urllib.parse
-import json
-import yaml
-import cleaner
-import export_preview
+load_dotenv()
 
 
 def run_server():
     httpd = HTTPServer((HOST, PORT), Handler)
-    print(f"Serving on http://{HOST}:{PORT}")
-    print("Open that URL in a browser. Use 'Refresh candidates' to fetch latest.")
+    info(f"Server running on http://{HOST}:{PORT}")
+    info(f"Open that URL in a browser. Use 'Refresh candidates' to fetch latest.")
     httpd.serve_forever()
 
 

@@ -9,10 +9,10 @@ import export_preview
 import watcher
 import watch_store
 import templates
-
-from pathlib import Path
+import os
 import export_cc
 
+from pathlib import Path
 from collector import collect_candidates, load_candidates_file
 from config import DEFAULT_SUBJECT, DEFAULT_INTRO
 from state_store import (
@@ -31,9 +31,18 @@ from state_store import (
     clear_curated_selected_image
 )
 
-
 from templates import html_page, curate_page_html
+from doc_archive import archive_docs
 
+from collector import (
+    collect_candidates, 
+    load_candidates_file, 
+    load_doc_candidates_file, 
+    load_doc_candidates_file  
+)
+
+doc_candidates = load_doc_candidates_file()
+from logutil import info
 
 def _is_http_url(u: str) -> bool:
     try:
@@ -41,6 +50,7 @@ def _is_http_url(u: str) -> bool:
         return p.scheme in ("http", "https") and bool(p.netloc)
     except Exception:
         return False
+
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -51,8 +61,9 @@ class Handler(BaseHTTPRequestHandler):
         if self.path.startswith("/refresh"):
             try:
                 collect_candidates()
+                doc_cnt = len(load_doc_candidates_file())
                 self.send_response(302)
-                self.send_header("Location", "/?status=Refreshed+candidate+list")
+                self.send_header("Location", f"/?status=Refreshed+candidate+list+(docs:{doc_cnt})")
                 self.end_headers()
             except Exception as e:
                 self.send_response(302)
@@ -483,13 +494,25 @@ class Handler(BaseHTTPRequestHandler):
         cur = load_curation()
         has_blurb_by_url = {c.url: bool(get_curated_blurb(cur, c.url)) for c in candidates}
 
+        doc_candidates = load_doc_candidates_file()
+        has_blurb_by_docid = {
+            d["id"]: bool(get_curated_blurb(cur, d["id"]))
+            for d in (doc_candidates or [])
+            if isinstance(d, dict) and d.get("id")
+        }
+
+        debug(f"UI: web candidates={len(candidates)} doc candidates={len(doc_candidates)}")
+
+
         body = html_page(
             candidates=candidates,
+            doc_candidates=doc_candidates,
             prechecked=prechecked,
             subject=subject,
             intro=intro,
             status=status,
             has_blurb_by_url=has_blurb_by_url,
+            has_blurb_by_docid=has_blurb_by_docid,
         )
 
         self.send_response(200)
@@ -497,6 +520,8 @@ class Handler(BaseHTTPRequestHandler):
         self.send_header("Content-Length", str(len(body)))
         self.end_headers()
         self.wfile.write(body)
+
+
 
     def do_POST(self):
         length = int(self.headers.get("Content-Length", "0"))
@@ -635,6 +660,23 @@ class Handler(BaseHTTPRequestHandler):
             self.send_response(302)
             self.send_header("Location", f"/curate/{idx}?status=Selected+image")
             self.end_headers()
+            return
+
+
+        # ----------------------------
+        # Archive documents (Drive or Local)
+        # ----------------------------
+        if self.path == "/archive_docs":
+            try:
+                moved = archive_docs()
+                self.send_response(302)
+                self.send_header("Location", f"/?status=Archived+{moved}+document(s)")
+                self.end_headers()
+            except Exception as e:
+                msg = str(e).replace(" ", "+")
+                self.send_response(302)
+                self.send_header("Location", f"/?status=Archive+failed:+{msg}")
+                self.end_headers()
             return
 
 

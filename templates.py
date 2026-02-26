@@ -17,15 +17,19 @@ def _esc(s: str) -> str:
          .replace('"', "&quot;")
     )
 
-
 def html_page(
     candidates: list[Candidate],
+    doc_candidates: list[dict],              # NEW
     prechecked: set[str],
     subject: str,
     intro: str,
     status: str,
     has_blurb_by_url: dict[str, bool],
+    has_blurb_by_docid: dict[str, bool],     # NEW
 ) -> bytes:
+    # ----------------------------
+    # Article cards (existing)
+    # ----------------------------
     cards = []
     for i, c in enumerate(candidates):
         chk = "checked" if c.url in prechecked else ""
@@ -53,7 +57,82 @@ def html_page(
         </div>
         """)
 
+    # ----------------------------
+    # Document cards (NEW)
+    # doc_id acts like the "url" key for selection + blurbs
+    # ----------------------------
+    doc_cards = []
+    for d in (doc_candidates or []):
+        if not isinstance(d, dict):
+            continue
+
+        doc_id = (d.get("id") or "").strip()
+        if not doc_id:
+            continue
+
+        title = (d.get("title") or doc_id).strip()
+        summary = (d.get("summary") or "").strip()
+        source = (d.get("source") or "doc").strip()
+
+        chk = "checked" if doc_id in prechecked else ""
+        blurb_badge = '<span class="badge">blurb</span>' if has_blurb_by_docid.get(doc_id) else ""
+
+        # IMPORTANT:
+        # doc_id is NOT an http URL, so don't use it in <a href="{doc_id}">
+        # We'll use a handler you can implement later.
+        open_link = f'<a href="/doc/open?doc_id={_esc(doc_id)}" target="_blank" rel="noopener">Open document</a>'
+        curate_link = f'<a href="/curate_doc?doc_id={_esc(doc_id)}">Curate</a>'
+
+        doc_cards.append(f"""
+        <div class="card" data-title="{_esc(title.lower())}" data-source="{_esc(source.lower())}">
+          <div class="row">
+            <input type="checkbox" name="picked" value="{_esc(doc_id)}" onchange="updateCount()" {chk}/>
+            <div style="flex:1;">
+              <div class="title">{_esc(title)} {blurb_badge}</div>
+              <div class="small">
+                <span>Source: <code>{_esc(source)}</code></span>
+                &nbsp;•&nbsp;
+                {open_link}
+                &nbsp;•&nbsp;
+                {curate_link}
+              </div>
+              <div class="small"><code>{_esc(doc_id)}</code></div>
+              <div class="small">{_esc(summary) if summary else "<span class='muted'>(no summary)</span>"}</div>
+            </div>
+            <div style="display:flex; gap:8px; align-items:flex-start;">
+              <a class="btn" href="/curate_doc?doc_id={_esc(doc_id)}">Curate</a>
+            </div>
+          </div>
+        </div>
+        """)
+
     msg = f'<div class="msg">{_esc(status)}</div>' if status else ""
+
+    # NEW: sections
+    article_section = (
+        "<h2 style='margin-top:18px;'>Article Candidates</h2>"
+        + ("<p class='muted'>No article candidates yet. Click <b>Refresh candidates</b>.</p>" if not candidates else "")
+        + f"<div class='cards' id='cards_articles'>{''.join(cards)}</div>"
+    )
+
+    doc_section = ""
+    if doc_candidates is not None:
+        # Always show the header once doc support is wired, even if empty
+        if doc_cards:
+            doc_section = f"""
+            <h2 style="margin-top:22px;">Document Candidates</h2>
+            <div class="small muted" style="margin-bottom:10px;">
+              Documents are summarized and selectable like articles. (IDs are stored in your selection file.)
+            </div>
+            <div class="cards" id="cards_docs">
+              {''.join(doc_cards)}
+            </div>
+            """
+        else:
+            doc_section = """
+            <h2 style="margin-top:22px;">Document Candidates</h2>
+            <p class="muted">No document candidates found (Drive/local input empty or not processed yet). Click <b>Refresh candidates</b>.</p>
+            """
 
     html = f"""<!doctype html>
 <html>
@@ -104,8 +183,6 @@ def html_page(
     <button class="btn" type="button" onclick="applySearch()">Filter</button>
   </div>
 
-  {"<p class='muted'>No candidates yet. Click <b>Refresh candidates</b> to collect from TSL.</p>" if not candidates else ""}
-
   <form method="POST" action="/save" id="form">
     <div style="margin: 16px 0;">
       <div class="small">Subject</div>
@@ -122,10 +199,16 @@ def html_page(
       <span class="small">Selected: <span id="selCount">0</span></span>
     </div>
 
-    <div class="cards" id="cards">
-      {''.join(cards)}
-    </div>
+    <!-- NEW: Article section + Doc section both inside same form -->
+    {article_section}
+    {doc_section}
+
   </form>
+
+  <form method="POST" action="/archive_docs" style="margin-top: 12px;">
+    <button type="submit">Archive Document Candidates</button>
+  </form>
+
 </div>
 
 <script>
@@ -139,7 +222,8 @@ function updateCount() {{
 }}
 function applySearch() {{
   const q = (document.getElementById('q').value || '').trim().toLowerCase();
-  document.querySelectorAll('#cards .card').forEach(card => {{
+  // filter both article and doc cards since they share class "card"
+  document.querySelectorAll('.card').forEach(card => {{
     const t = card.getAttribute('data-title') || '';
     const s = card.getAttribute('data-source') || '';
     const ok = !q || t.includes(q) || s.includes(q);
@@ -152,6 +236,7 @@ updateCount();
 </html>
 """
     return html.encode("utf-8")
+
 
 
 _CURATE_TMPL = Template(r"""<!doctype html>
