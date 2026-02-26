@@ -106,3 +106,18 @@ If you want, next we can:
 * Or harden the architecture for future expansion
 
 Your system is actually getting solid now.
+
+
+## Starting a new chat
+
+### g-Drive
+I’m working on a local newsletter helper app for tsl.texas.gov. The repo for the current code is in: https://github.com/dweilert/tslac Please read Design.md and Design2.md design documents. 
+
+I'd like to add a new feature that allows me to retrieve information from a Google g-drive that contains a folder with one or more documents. These documents can be created with many different products including Microsoft Word, Google Docs, RTF, plain text, html, and PDF files. I need to review each document and provide a summary of what each is suggesting. The results need to be incorporated into the primary / first page of the application where the Candidate Review List is created. I should be able to select the document via a check box and have the ability to Curate like the other documents. 
+
+Please let me know what else I need to provide. Also, do I need to modify this code base to start using Flask or FastAPI to support a more robust solution?
+
+### Re-factor
+I’m working on a local newsletter helper app for tsl.texas.gov. The repo for the current code is in: https://github.com/dweilert/tslac Please read Design.md, Design2.md and Design3.mddesign documents. 
+
+I'd like to review the code and re-factor as many of the modules have gotten very large, some almost a 1000 lines of code.  I would like to separate the templates.py into separate html for each page, possibly separate the do_GET do_POST defs into individual modules these are in server.py right now. Along with a general review of the repository and other possible suggestions to improve how the code is maintained and tested.   
