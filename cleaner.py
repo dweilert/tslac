@@ -10,6 +10,10 @@ from urllib.parse import urljoin, urlparse
 import requests
 from bs4 import BeautifulSoup
 
+# import certifi
+# requests.get(url, verify=certifi.where())
+# httpx.Client(verify=certifi.where())
+
 # ----------------------------
 # Cleaner config
 # ----------------------------

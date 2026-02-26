@@ -1,5 +1,5 @@
 {
-  "ran_at": "2026-02-25T10:56:43",
+  "ran_at": "2026-02-26T14:35:08",
   "topics": [
     "dallas",
     "austn",
@@ -27,18 +27,6 @@
     "max_seconds": 45
   },
   "results": [
-    {
-      "site": "https://texashistory.unt.edu/",
-      "url": "https://texashistory.unt.edu/",
-      "title": "The Portal to Texas History",
-      "snippet": "The Portal to Texas History is a gateway to rare, historical, and primary source materials from or about Texas. The Portal to Texas History Your Search Terms: Any Type Everything Set As Default Filter Popular Resource Types Newspapers Set A",
-      "matched_topics": [
-        "dallas",
-        "archives"
-      ],
-      "best_topic_index": 0,
-      "score": 60
-    },
     {
       "site": "https://statearchivists.org/",
       "url": "https://statearchivists.org/",

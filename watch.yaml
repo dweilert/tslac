@@ -5,6 +5,7 @@ topics:
 - dallas
 - austn
 - archives
+- bob
 settings:
   max_links_per_site: 25
   fetch_timeout_seconds: 15

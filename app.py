@@ -6,6 +6,7 @@ from http.server import ThreadingHTTPServer
 from web.router import Router
 from web.handler import make_handler
 from routes import preview, home
+from routes import home, preview, watch, api
 
 
 def build_router() -> Router:
@@ -13,6 +14,8 @@ def build_router() -> Router:
     # Register per-feature routes here:
     home.register(r)
     preview.register(r)
+    watch.register(r)
+    api.register(r)
     return r
 
 
