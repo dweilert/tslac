@@ -10,6 +10,13 @@ from urllib.parse import urljoin, urlparse
 import requests
 from bs4 import BeautifulSoup
 
+# macOS TLS fix: validate like curl (Keychain trust store)
+try:
+    import truststore
+    truststore.inject_into_ssl()
+except Exception:
+    pass
+
 # import certifi
 # requests.get(url, verify=certifi.where())
 # httpx.Client(verify=certifi.where())
