@@ -1,6 +1,5 @@
 from __future__ import annotations
 from pathlib import Path
-from turtle import width
 from typing import Any
 from urllib.parse import quote, unquote
 from doc_store import load_doc_candidates
@@ -83,9 +82,118 @@ def _is_http_url(u: str) -> bool:
     return (u or "").startswith(("http://", "https://"))
 
 
+# def build_preview_html() -> bytes:
+#     sel = _load_yaml(SELECTED_FILE)
+#     cur = _load_yaml(CURATION_FILE)
+
+#     subject = (sel.get("subject") or "").strip() or DEFAULT_SUBJECT
+#     intro = (sel.get("intro") or "").strip() or DEFAULT_INTRO
+#     items = sel.get("items") or []
+#     if not isinstance(items, list):
+#         items = []
+
+#     # Build sections
+#     blocks = []
+#     for it in items:
+#         if not isinstance(it, dict):
+#             continue
+#         url = (it.get("url") or "").strip()
+#         if not url:
+#             continue
+
+#         rec = cur.get(url) if isinstance(cur, dict) else None
+#         title = ""
+#         blurb = ""
+
+#         img = ""
+#         crops = {}
+
+#         if isinstance(rec, dict):
+#             title = (rec.get("title") or "").strip()
+#             blurb = (rec.get("final_blurb") or "").strip()
+
+#             img = (rec.get("selected_image") or "").strip()
+
+#             crops = rec.get("image_crops") if isinstance(rec.get("image_crops"), dict) else {}
+
+#         # If no selected_image, but we have crops saved, use the first cropped image as the image
+#         if not img and isinstance(crops, dict) and crops:
+#             # choose the first key deterministically
+#             img = sorted([k for k in crops.keys() if isinstance(k, str) and k.strip()])[0]
+
+
+#         # fallbacks if title not stored
+#         if not title:
+#             title = url
+
+#         # if no blurb, show excerpts as fallback
+#         if not blurb and isinstance(rec, dict):
+#             ex = rec.get("excerpts")
+#             if isinstance(ex, list):
+#                 ex2 = [x.strip() for x in ex if isinstance(x, str) and x.strip()]
+#                 if ex2:
+#                     blurb = " ".join(ex2)
+
+
+#         # --- Pick crop record for the chosen image (IMPORTANT) ---
+#         crop = None
+#         if isinstance(crops, dict) and img:
+#             crop = crops.get(img) or crops.get(_norm_img_key(img)) or crops.get(unquote(img))    
+
+
+#         img_html = ""
+#         if img:
+#             # Use proxy so image always loads locally
+#             # img_src = "/img?u=" + quote(img, safe=":/%?=&")
+#             img_src = "/img?u=" + quote(img, safe=":/%?=&")
+#             if isinstance(crop, dict) and all(k in crop for k in ("ix", "iy", "iw", "ih", "img_w", "img_h")):
+#                 style = _crop_style(crop)
+
+#                 # Aspect ratio box based on crop
+#                 try:
+#                     pad = (float(crop["ih"]) / float(crop["iw"])) * 100.0
+#                     if pad <= 0 or pad > 300:
+#                         pad = 56.25
+#                 except Exception:
+#                     pad = 56.25
+
+#                 # compute style as before
+#                 style = _crop_style(crop)
+
+#                 img_html = (
+#                     f'<div class="heroCrop" style="padding-top:{pad:.3f}%;">'
+#                     f'  <img class="heroCropImg" src="{_esc(img_src)}" alt="" style="{style}" />'
+#                     f'</div>'
+#                 )
+#             else:
+#                 # no crop saved for this image, show full image
+#                 img_html = f'<img class="hero" src="{_esc(img_src)}" alt="" />'
+
+
+#         blocks.append(f"""
+#           <tr>
+#             <td style="padding: 0 18px 18px 18px; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;">
+#               {img_html}
+#               <div style="font-size:12px; color:#666; margin: 0 0 6px 0;">Texas State Library and Archives Commission</div>
+#               <div style="font-size:16px; font-weight:700; color:#111; margin: 0 0 6px 0;">{_esc(title)}</div>
+#               <div style="font-size:14px; color:#333; line-height:1.45;">
+#                 {(_esc(blurb) if blurb else "<em style='color:#777;'>No blurb saved yet. Use Curate to write one.</em>")}
+#               </div>
+#               <div style="margin-top:10px; font-size:14px;">
+#                 <a href="{_esc(url)}" target="_blank" rel="noopener" style="color:#0b57d0; text-decoration:none;">Read more</a>
+#               </div>
+#             </td>
+#           </tr>
+#           <tr><td><hr style="border:0; border-bottom:1px solid #666; margin:10px 18px 10px 18px;"></td></tr>
+#         """)
+
+
+
 def build_preview_html() -> bytes:
     sel = _load_yaml(SELECTED_FILE)
-    cur = _load_yaml(CURATION_FILE)
+
+    # IMPORTANT: use the same curation loader everyone else uses
+    cur = load_curation()  # instead of _load_yaml(CURATION_FILE)
 
     subject = (sel.get("subject") or "").strip() or DEFAULT_SUBJECT
     intro = (sel.get("intro") or "").strip() or DEFAULT_INTRO
@@ -93,41 +201,95 @@ def build_preview_html() -> bytes:
     if not isinstance(items, list):
         items = []
 
-    # Build sections
+    # Build doc lookup (id -> doc dict)
+    doc_candidates = load_doc_candidates()
+    doc_by_id: dict[str, dict[str, Any]] = {}
+    for d in (doc_candidates or []):
+        if isinstance(d, dict):
+            did = (d.get("id") or "").strip()
+            if did:
+                doc_by_id[did] = d
+
     blocks = []
     for it in items:
         if not isinstance(it, dict):
             continue
-        url = (it.get("url") or "").strip()
-        if not url:
+
+        key = (it.get("url") or "").strip()   # still called "url" in selected.yaml
+        if not key:
             continue
 
+        # ----------------------------
+        # DOCUMENT ITEM (gdrive:/local:)
+        # ----------------------------
+        if _is_doc_id(key):
+            d = doc_by_id.get(key) or {}
+
+            # Title: prefer doc candidate title, else curation-stored title, else id
+            rec = cur.get(key) if isinstance(cur, dict) else None
+
+            title = (d.get("title") or "").strip()
+            if not title and isinstance(rec, dict):
+                title = (rec.get("title") or "").strip()
+            if not title:
+                title = key
+
+            # Blurb: prefer curated final_blurb, else doc summary, else placeholder
+            blurb = get_curated_blurb(cur, key).strip() if isinstance(cur, dict) else ""
+            if not blurb:
+                blurb = (d.get("summary") or "").strip()
+
+            # Docs usually don't have images/crops, so skip hero image
+            img_html = ""
+
+            # Link: point to your doc open handler (implement/verify separately)
+            doc_href = f"/doc/open?doc_id={quote(key, safe='')}"
+
+            blocks.append(f"""
+              <tr>
+                <td style="padding: 0 18px 18px 18px; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;">
+                  {img_html}
+                  <div style="font-size:12px; color:#666; margin: 0 0 6px 0;">Texas State Library and Archives Commission</div>
+                  <div style="font-size:16px; font-weight:700; color:#111; margin: 0 0 6px 0;">{_esc(title)}</div>
+                  <div style="font-size:14px; color:#333; line-height:1.45;">
+                    {(_esc(blurb) if blurb else "<em style='color:#777;'>No blurb saved yet. Use Curate to write one.</em>")}
+                  </div>
+                  <div style="margin-top:10px; font-size:14px;">
+                    <a href="{_esc(doc_href)}" target="_blank" rel="noopener" style="color:#0b57d0; text-decoration:none;">Open document</a>
+                  </div>
+                </td>
+              </tr>
+              <tr><td><hr style="border:0; border-bottom:1px solid #666; margin:10px 18px 10px 18px;"></td></tr>
+            """)
+            continue
+
+        # ----------------------------
+        # ARTICLE ITEM (http/https)
+        # ----------------------------
+        if not _is_http_url(key):
+            # Unknown key type; skip rather than breaking preview
+            continue
+
+        url = key
         rec = cur.get(url) if isinstance(cur, dict) else None
+
         title = ""
         blurb = ""
-
         img = ""
-        crops = {}
+        crops: dict[str, Any] = {}
 
         if isinstance(rec, dict):
             title = (rec.get("title") or "").strip()
             blurb = (rec.get("final_blurb") or "").strip()
-
             img = (rec.get("selected_image") or "").strip()
-
             crops = rec.get("image_crops") if isinstance(rec.get("image_crops"), dict) else {}
 
-        # If no selected_image, but we have crops saved, use the first cropped image as the image
         if not img and isinstance(crops, dict) and crops:
-            # choose the first key deterministically
             img = sorted([k for k in crops.keys() if isinstance(k, str) and k.strip()])[0]
 
-
-        # fallbacks if title not stored
         if not title:
             title = url
 
-        # if no blurb, show excerpts as fallback
         if not blurb and isinstance(rec, dict):
             ex = rec.get("excerpts")
             if isinstance(ex, list):
@@ -135,22 +297,14 @@ def build_preview_html() -> bytes:
                 if ex2:
                     blurb = " ".join(ex2)
 
-
-        # --- Pick crop record for the chosen image (IMPORTANT) ---
         crop = None
         if isinstance(crops, dict) and img:
-            crop = crops.get(img) or crops.get(_norm_img_key(img)) or crops.get(unquote(img))    
-
+            crop = crops.get(img) or crops.get(_norm_img_key(img)) or crops.get(unquote(img))
 
         img_html = ""
         if img:
-            # Use proxy so image always loads locally
-            # img_src = "/img?u=" + quote(img, safe=":/%?=&")
             img_src = "/img?u=" + quote(img, safe=":/%?=&")
             if isinstance(crop, dict) and all(k in crop for k in ("ix", "iy", "iw", "ih", "img_w", "img_h")):
-                style = _crop_style(crop)
-
-                # Aspect ratio box based on crop
                 try:
                     pad = (float(crop["ih"]) / float(crop["iw"])) * 100.0
                     if pad <= 0 or pad > 300:
@@ -158,18 +312,14 @@ def build_preview_html() -> bytes:
                 except Exception:
                     pad = 56.25
 
-                # compute style as before
                 style = _crop_style(crop)
-
                 img_html = (
                     f'<div class="heroCrop" style="padding-top:{pad:.3f}%;">'
                     f'  <img class="heroCropImg" src="{_esc(img_src)}" alt="" style="{style}" />'
                     f'</div>'
                 )
             else:
-                # no crop saved for this image, show full image
                 img_html = f'<img class="hero" src="{_esc(img_src)}" alt="" />'
-
 
         blocks.append(f"""
           <tr>
@@ -187,6 +337,9 @@ def build_preview_html() -> bytes:
           </tr>
           <tr><td><hr style="border:0; border-bottom:1px solid #666; margin:10px 18px 10px 18px;"></td></tr>
         """)
+
+
+
 
     if not blocks:
         blocks_html = "<p class='muted'>No selected items found in selected.yaml.</p>"
