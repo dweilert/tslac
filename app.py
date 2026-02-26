@@ -7,12 +7,12 @@ from web.router import Router
 from web.handler import make_handler
 from routes import preview, home
 from routes import home, preview, watch, api, curate_doc, curate_article, img_proxy
-
+from routes import candidates
 
 def build_router() -> Router:
     r = Router()
     # Register per-feature routes here:
-    home.register(r)
+    candidates.register(r)
     preview.register(r)
     watch.register(r)
     api.register(r)
