@@ -1,0 +1,149 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="toolbar">
+  <button class="btn" type="button" onclick="location.href='/'">Back</button>
+  <button class="btn" type="button" onclick="location.href='/watch/scan'">Scan now</button>
+  <button class="btn" type="button" onclick="location.href='/watch/cancel'">Cancel</button>
+</div>
+
+<div id="watch-progress" class="status" style="display:none;"></div>
+<div id="watch-progress-detail" class="muted" style="display:none;"></div>
+
+<script>
+let lastState = null;
+let doneHandled = false;
+
+async function pollWatchStatus() {
+  try {
+    const r = await fetch('/watch/status', { cache: 'no-store' });
+    const st = await r.json();
+
+    const box = document.getElementById('watch-progress');
+    const detail = document.getElementById('watch-progress-detail');
+
+    if (!st || !st.state) return;
+
+    if (doneHandled && st.state === 'done') return;
+
+    if (st.state === 'running') {
+      doneHandled = false;
+      box.style.display = '';
+      detail.style.display = '';
+      box.textContent = 'Scan running: ' + (st.message || '');
+      detail.textContent =
+        'Site: ' + (st.current_site || '') +
+        ' | Page: ' + (st.pages_done || 0) + '/' + (st.pages_cap || 0) +
+        ' | Found: ' + (st.results_found || 0) +
+        (st.current_url ? ' | URL: ' + st.current_url : '');
+    } else {
+      box.style.display = '';
+      detail.style.display = '';
+      box.textContent = 'Scan ' + st.state + ': ' + (st.message || '');
+      detail.textContent =
+        'Started: ' + (st.started_at || '') +
+        ' | Ended: ' + (st.ended_at || '') +
+        ' | Found: ' + (st.results_found || 0);
+
+      if (st.state === 'done' && lastState === 'running' && !doneHandled) {
+        doneHandled = true;
+        setTimeout(() => {
+          box.textContent = '';
+          detail.textContent = '';
+          box.style.display = 'none';
+          detail.style.display = 'none';
+        }, 5000);
+      }
+    }
+
+    lastState = st.state;
+  } catch (e) {
+    // ignore
+  }
+}
+
+setInterval(pollWatchStatus, 700);
+pollWatchStatus();
+</script>
+
+<script>
+setTimeout(function() {
+  const el = document.getElementById('save-status');
+  if (el) el.style.display = 'none';
+}, 4000);
+</script>
+
+<h1>Watch sites</h1>
+
+{% if status %}
+  <div id="save-status" class="status">{{ status }}</div>
+{% endif %}
+
+{% if latest_error %}
+  <div class="status" style="background:#f8d7da; color:#842029;">
+    Results error: {{ latest_error }}
+  </div>
+{% endif %}
+
+<form method="POST" action="/watch/save">
+  <div class="row">
+    <div class="col">
+      <h3>Sites (one URL per line)</h3>
+      <textarea name="sites">{{ sites_text }}</textarea>
+    </div>
+    <div class="col">
+      <h3>Topics (order matters)</h3>
+      <textarea name="topics">{{ topics_text }}</textarea>
+    </div>
+  </div>
+  <p>
+    <button class="btn" type="submit">Save</button>
+  </p>
+</form>
+
+<h2>Results</h2>
+
+{% if results and results is iterable %}
+  {% for r in results[:200] %}
+    {% set url = (r.get("url") or "") %}
+    {% set title = (r.get("title") or "") %}
+    {% set site = (r.get("site") or "") %}
+    {% set score = (r.get("score") or "") %}
+    {% set mts = (r.get("matched_topics") or []) %}
+    {% set snippet = (r.get("snippet") or "") %}
+
+    <div class="watch-card">
+      <div class="watch-title">
+        <a href="{{ url }}" target="_blank" rel="noreferrer">{{ title or url }}</a>
+      </div>
+      <div class="watch-meta">
+        Site: <code>{{ site }}</code> • score: <code>{{ score }}</code> • topics:
+        <code>
+          {% if mts is iterable and mts is not string %}
+            {{ mts[:6] | join(", ") }}
+          {% endif %}
+        </code>
+      </div>
+      <div class="watch-snippet">{{ snippet }}</div>
+    </div>
+  {% endfor %}
+{% else %}
+  <div class="muted">No matches yet. Add sites/topics and click Scan now.</div>
+{% endif %}
+
+<h2>Errors</h2>
+
+{% if errors and errors is iterable and errors|length > 0 %}
+  <ul>
+    {% for e in errors[:50] %}
+      <li>
+        <code>{{ e.get("site") or "" }}</code> — <code>{{ e.get("url") or "" }}</code><br/>
+        {{ e.get("error") or "" }}
+      </li>
+    {% endfor %}
+  </ul>
+{% else %}
+  <div class="muted">No errors.</div>
+{% endif %}
+
+{% endblock %}

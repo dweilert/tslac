@@ -1,13 +1,9 @@
 from __future__ import annotations
 
-import json
 from urllib.parse import parse_qs
-
 from web.request import Request
 from web.response import Response
 from web.router import Router
-
-import cleaner
 from collector import load_candidates_file
 from state_store import (
     load_curation,
@@ -24,6 +20,9 @@ from state_store import (
     get_curated_image_crops,
 )
 from templates import curate_page_html
+
+import json
+import cleaner
 
 
 def register(router: Router) -> None:

@@ -1,0 +1,19 @@
+body { font-family: -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif; margin: 24px; }
+.wrap { max-width: 980px; margin: 0 auto; }
+h1 { margin: 0 0 8px 0; font-size: 24px; }
+.meta { color: #555; margin-bottom: 16px; }
+.toolbar { display:flex; gap:12px; align-items:center; margin:16px 0; flex-wrap:wrap; }
+.btn { padding:8px 12px; border:1px solid #ccc; background:#f7f7f7; border-radius:8px; cursor:pointer; text-decoration:none; color:#111; display:inline-block; }
+.btn:hover { background:#eee; }
+.field { width:100%; padding:10px; border-radius:8px; border:1px solid #ccc; font-size:14px; }
+.cards { display:flex; flex-direction:column; gap:10px; }
+.card { border:1px solid #ddd; border-radius:12px; padding:12px; background:#fff; }
+.row { display:flex; align-items:flex-start; gap:10px; }
+.title { font-weight:600; margin-bottom:6px; }
+.small { color:#666; font-size:12px; }
+a { color:#0b57d0; text-decoration:none; }
+a:hover { text-decoration:underline; }
+.msg { background:#e7f3ff; border:1px solid #b6daff; padding:10px; border-radius:10px; margin:12px 0; }
+.muted { color:#777; }
+code { background:#f3f3f3; padding:2px 4px; border-radius:6px; }
+.badge { font-size: 11px; padding: 2px 6px; border: 1px solid #ccc; border-radius: 999px; margin-left: 6px; color:#444; background:#fafafa; }

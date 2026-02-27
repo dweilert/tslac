@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="toolbar">
+  <a class="btn" href="/">← Back to list</a>
+</div>
+
+<h1>{{ title }}</h1>
+
+<div class="small">
+  Source: <code>{{ source }}</code><br/>
+  Doc ID: <code>{{ doc_id }}</code>
+</div>
+
+{% if status %}
+  <div class="msg">{{ status }}</div>
+{% endif %}
+
+<div class="card">
+  <form method="POST" action="/curate_doc/save">
+    <input type="hidden" name="doc_id" value="{{ doc_id }}"/>
+
+    <div class="small">Document Summary (editable)</div>
+    <textarea class="field" name="final_blurb" rows="6">{{ summary }}</textarea>
+
+    <div class="toolbar" style="margin-top:12px;">
+      <button class="btn" type="submit">Save curated document</button>
+    </div>
+  </form>
+</div>
+
+{% endblock %}

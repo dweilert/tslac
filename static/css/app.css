@@ -1,0 +1,105 @@
+body { background: #eee; }
+
+/* static/css/app.css */
+
+:root {
+  --bg: #eee;              /* you requested */
+  --card-bg: #fff;
+  --text: #111;
+  --muted: #666;
+  --border: #d0d0d0;
+  --btn-bg: #f7f7f7;
+  --btn-bg-hover: #ececec;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  font-family: -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
+  margin: 24px;
+  background: var(--bg);
+  color: var(--text);
+}
+
+/* Make the page wider (this is what affects textarea width) */
+.wrap {
+  max-width: 1100px;       /* wider than before */
+  margin: 0 auto;
+}
+
+a { color: #0b57d0; text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+/* Toolbar */
+.toolbar {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin: 16px 0;
+  flex-wrap: wrap;
+}
+
+/* IMPORTANT: style both <a class="btn"> and <button class="btn"> */
+a.btn, button.btn, input.btn {
+  appearance: none;
+  -webkit-appearance: none;
+  display: inline-flex;         /* makes anchors act like buttons */
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  background: var(--btn-bg);
+  border-radius: 10px;
+
+  color: #111 !important;       /* prevents link purple */
+  text-decoration: none !important;
+
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 1;
+}
+
+a.btn:visited { color: #111 !important; }  /* kills purple visited */
+a.btn:hover, button.btn:hover, input.btn:hover {
+  background: var(--btn-bg-hover);
+}
+
+/* Cards */
+.cards { display: flex; flex-direction: column; gap: 14px; }
+.card {
+  border: 1px solid #ddd;
+  border-radius: 14px;
+  padding: 14px;
+  background: var(--card-bg);
+}
+
+/* Form fields */
+.field, textarea, input[type="text"] {
+  width: 100%;
+  padding: 12px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  font-size: 14px;
+  background: #fff;
+}
+
+/* Make your blurb textarea “not tiny” */
+textarea.field {
+  min-height: 180px;
+}
+
+.title { font-weight: 600; margin-bottom: 8px; }
+.small { color: var(--muted); font-size: 12px; }
+.muted { color: #777; }
+
+.msg {
+  background: #e7f3ff;
+  border: 1px solid #b6daff;
+  padding: 10px;
+  border-radius: 10px;
+  margin: 12px 0;
+}
+
+code { background: #f3f3f3; padding: 2px 6px; border-radius: 8px; }

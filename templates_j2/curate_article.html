@@ -1,0 +1,248 @@
+{% extends "base.html" %}
+
+{% block page_css %}
+<link rel="stylesheet" href="/static/css/curate_article.css">
+{% endblock %}
+
+{% block content %}
+
+<div class="toolbar">
+  <a class="btn" href="/">← Back to list</a>
+
+  {% if prev_url %}<a class="btn" href="{{ prev_url }}">◀ Prev</a>{% endif %}
+  {% if next_url %}<a class="btn" href="{{ next_url }}">Next ▶</a>{% endif %}
+
+  {% if original_url %}
+    <a class="btn" href="{{ original_url }}" target="_blank" rel="noopener">Open original ↗</a>
+  {% endif %}
+
+  {% if json_url %}
+    <a class="btn" href="{{ json_url }}" target="_blank" rel="noopener">View JSON ↗</a>
+  {% endif %}
+</div>
+
+<h1 class="page-title">{{ title }}</h1>
+
+<div class="small meta">
+  Item: <code>{{ item_num }}</code> / <code>{{ total }}</code><br/>
+  Source: <code>{{ source }}</code><br/>
+  Published: <code>{{ pub }}</code> (confidence: <code>{{ conf }}</code>)<br/>
+  URL: <a href="{{ url }}" target="_blank" rel="noreferrer">{{ url }}</a>
+</div>
+
+{% if status %}
+  <div class="msg">{{ status }}</div>
+{% endif %}
+
+<div class="cards">
+
+  <!-- Final blurb -->
+  <div class="card">
+    <div class="title">Final blurb (editable)</div>
+
+    <form method="POST" action="/curate/save">
+      <input type="hidden" name="index" value="{{ index }}"/>
+      <input type="hidden" name="url" value="{{ url }}"/>
+
+      <textarea class="field" name="final_blurb" rows="6">{{ final_blurb }}</textarea>
+
+      <div class="toolbar" style="margin-top:10px;">
+        <button class="btn" type="submit">Save blurb</button>
+      </div>
+    </form>
+  </div>
+
+  <!-- Excerpts -->
+  <div class="card">
+    <div class="title">Excerpt capture (highlight text in the article below)</div>
+
+    <div class="toolbar">
+      <button class="btn" type="button" onclick="previewSelection()">Preview selection</button>
+      <button class="btn" type="button" id="btnAddExcerpt" onclick="addSelectedText()" disabled>Add Selected Text</button>
+
+      <button class="btn" type="button" onclick="removeLastExcerpt()">Remove last excerpt</button>
+      <button class="btn" type="button" onclick="clearExcerpts()">Clear all excerpts</button>
+    </div>
+
+    <div class="panel">
+      <div class="small muted">Selection preview</div>
+      <div id="selectionPreview" class="selection-preview">Nothing selected yet.</div>
+    </div>
+
+    <div style="margin-top:12px;">
+      <div class="small muted">Saved excerpts</div>
+
+      {% if excerpts and excerpts|length > 0 %}
+        <div class="exlist">
+          {% for x in excerpts %}
+            <div class="exrow">
+              <div class="extext" id="ex_{{ loop.index0 }}">{{ x }}</div>
+              <button class="btn" type="button"
+                      onclick="copyText(document.getElementById('ex_{{ loop.index0 }}').innerText)">Copy</button>
+            </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <div class="muted">No excerpts saved yet. Highlight text in the article and click <b>Add Selected Text</b>.</div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Images -->
+  <div class="card">
+    <div class="title">Detected images</div>
+
+    {% if images and images|length > 0 %}
+      <div class="imggrid">
+        {% for im in images[:12] %}
+          {% set src = im.get("src") or "" %}
+          {% if src %}
+            {% set alt = im.get("alt") or "" %}
+            {% set score = im.get("score") or "" %}
+            {% set is_selected = (selected_image == src) %}
+            {% set is_cropped = (src in crops) %}
+
+            <div class="imgcard">
+              <a href="{{ src }}" target="_blank" rel="noopener">
+                <img src="{{ src }}" alt="{{ alt }}" loading="lazy"/>
+              </a>
+
+              <div class="small">
+                score: <code>{{ score }}</code>
+                {% if is_cropped %}<span class="badge">cropped</span>{% endif %}
+                {% if is_selected %}<span class="badge">selected</span>{% endif %}
+              </div>
+
+              <div class="img-actions">
+                <button class="btn" type="button" onclick="openCrop('{{ src }}', '{{ url }}')">Crop</button>
+                <button class="btn" type="button" onclick="copyText('{{ src }}')">Copy URL</button>
+
+                <button class="btn" type="button" onclick="selectImage('{{ src }}')">
+                  {{ "Selected" if is_selected else "Use in newsletter" }}
+                </button>
+              </div>
+            </div>
+          {% endif %}
+        {% endfor %}
+      </div>
+
+      <div class="toolbar" style="margin-top:12px;">
+        <button class="btn" type="button" onclick="clearSelectedImage()">Clear selected image</button>
+      </div>
+
+    {% else %}
+      <div class="muted">No images detected for this page.</div>
+    {% endif %}
+  </div>
+
+  <!-- Cleaned HTML -->
+  <div class="card">
+    <div class="title">Cleaned Article</div>
+    <div class="small muted">This is the cleaned HTML preview.</div>
+    <div class="clean-html" id="cleanHtml">
+      {{ clean_html | safe }}
+    </div>
+  </div>
+
+</div>
+
+<script>
+/* Server state available to JS */
+const INDEX = {{ index }};
+const URL = {{ url | tojson }};
+const CROPS = {{ crops | tojson }};
+
+function copyText(t) {
+  navigator.clipboard?.writeText(t);
+}
+
+function postForm(action, fields) {
+  const form = document.createElement("form");
+  form.method = "POST";
+  form.action = action;
+
+  for (const [k, v] of Object.entries(fields)) {
+    const inp = document.createElement("input");
+    inp.type = "hidden";
+    inp.name = k;
+    inp.value = String(v ?? "");
+    form.appendChild(inp);
+  }
+  document.body.appendChild(form);
+  form.submit();
+}
+
+/* --- Image selection: persist immediately --- */
+function selectImage(src) {
+  postForm("/curate/select_image", {
+    index: INDEX,
+    url: URL,
+    img_src: src
+  });
+}
+
+function clearSelectedImage() {
+  postForm("/curate/clear_selected_image", {
+    index: INDEX,
+    url: URL
+  });
+}
+
+/* --- Crop --- */
+function openCrop(imgUrl, pageUrl) {
+  window.open(`/crop?img=${encodeURIComponent(imgUrl)}&page=${encodeURIComponent(pageUrl)}`, "_blank");
+}
+
+/* --- Excerpts --- */
+function getSelectionText() {
+  const sel = window.getSelection?.();
+  return (sel && sel.toString()) ? sel.toString().trim() : "";
+}
+
+function previewSelection() {
+  const txt = getSelectionText();
+  const box = document.getElementById("selectionPreview");
+  const btn = document.getElementById("btnAddExcerpt");
+
+  if (!txt) {
+    box.textContent = "Nothing selected yet.";
+    btn.disabled = true;
+    return;
+  }
+  box.textContent = txt.length > 800 ? (txt.slice(0, 800) + "…") : txt;
+  btn.disabled = false;
+}
+
+document.addEventListener("selectionchange", () => {
+  // lightweight: enable Add button only when there is a selection
+  const txt = getSelectionText();
+  const btn = document.getElementById("btnAddExcerpt");
+  if (btn) btn.disabled = !txt;
+});
+
+function addSelectedText() {
+  const txt = getSelectionText();
+  if (!txt) return;
+  postForm("/curate/add_excerpt", {
+    index: INDEX,
+    url: URL,
+    excerpt: txt
+  });
+}
+
+function removeLastExcerpt() {
+  postForm("/curate/pop_excerpt", {
+    index: INDEX,
+    url: URL
+  });
+}
+
+function clearExcerpts() {
+  postForm("/curate/clear_excerpts", {
+    index: INDEX,
+    url: URL
+  });
+}
+</script>
+
+{% endblock %}

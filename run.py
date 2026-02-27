@@ -1,4 +1,4 @@
-# server.py (compat shim)
+# run.py
 from __future__ import annotations
 
 from app import main

@@ -1,0 +1,159 @@
+{% extends "base.html" %}
+{% block content %}
+
+<h1>TSL Candidate Review</h1>
+
+<div class="meta">
+  Candidates file: <code>{{ candidates_path }}</code><br/>
+  Selection file: <code>{{ selected_path }}</code><br/>
+  Curation file: <code>{{ curation_path }}</code>
+</div>
+
+<div class="toolbar">
+  <a class="btn" href="/refresh">Refresh candidates</a>
+  <a class="btn" href="/preview">Preview newsletter</a>
+  <a class="btn" href="/watch">Watch sites</a>
+
+  <button class="btn" type="button" onclick="selectAll(true)">Select all</button>
+  <button class="btn" type="button" onclick="selectAll(false)">Select none</button>
+
+  <form method="post" action="/quit" style="display:inline;">
+    <button class="btn" type="submit"
+            onclick="return confirm('Stop the newsletter helper?');">
+        Quit
+    </button>
+  </form>
+
+  {% if show_export_zip %}
+    <a class="btn" href="/export/constant-contact.zip">Export Constant Contact ZIP</a>
+  {% endif %}
+</div>
+
+<div class="toolbar">
+  <input id="search" class="field" type="text" placeholder="Search titles / sources..." oninput="filterCards()">
+  <button class="btn" type="button" onclick="filterCards()">Filter</button>
+</div>
+
+<form method="post" action="/save">
+
+  <div style="margin-top: 12px;">
+    <div class="small muted">Subject</div>
+    <input class="field" type="text" name="subject" value="{{ subject }}"/>
+  </div>
+
+  <div style="margin-top: 12px;">
+    <div class="small muted">Intro</div>
+    <textarea class="field" name="intro" rows="5">{{ intro }}</textarea>
+  </div>
+
+  <div class="toolbar">
+    <button class="btn" type="submit">Save Selection</button>
+    <div class="small muted">Selected: <span id="selCount">{{ selected_count }}</span></div>
+  </div>
+
+  <h2>Article Candidates</h2>
+
+  <div class="cards" id="webCards">
+    {% for c in candidates %}
+      <div class="card candidate-card"
+           data-title="{{ (c.title or '')|lower }}"
+           data-source="{{ (c.source or '')|lower }}">
+        <div class="row">
+          <div>
+            <input type="checkbox" name="picked" value="{{ c.url }}"
+                   {% if c.url in prechecked %}checked{% endif %}
+                   onchange="updateSelectedCount()"/>
+          </div>
+
+          <div style="flex:1;">
+            <div class="title">
+              {{ c.title }}
+              {% if has_blurb_by_url.get(c.url) %}
+                <span class="badge">curated</span>
+              {% endif %}
+            </div>
+
+            <div class="small">
+              Source: {{ c.source or "" }}
+            </div>
+
+            <div class="small">
+              <a href="{{ c.url }}" target="_blank" rel="noreferrer">Open article</a>
+              &nbsp;•&nbsp;
+              <a href="/curate/{{ loop.index0 }}">Curate</a>
+            </div>
+
+            <div class="small muted"><code>{{ c.url }}</code></div>
+          </div>
+
+          <div>
+            <a class="btn" href="/curate/{{ loop.index0 }}">Curate</a>
+          </div>
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+
+  <h2>Doc candidates ({{ doc_candidates|length }})</h2>
+
+  <div class="cards" id="docCards">
+    {% for d in doc_candidates %}
+      {% if d is mapping and d.get("id") %}
+        <div class="card candidate-card"
+             data-title="{{ (d.get('title') or d.get('id') or '')|lower }}"
+             data-source="doc">
+          <div class="row">
+            <div style="flex:1;">
+              <div class="title">
+                {{ d.get("title") or d.get("id") }}
+                {% if has_blurb_by_docid.get(d.get("id")) %}
+                  <span class="badge">curated</span>
+                {% endif %}
+              </div>
+
+              <div class="small">
+                <a href="{{ d.get('url') or '#' }}" target="_blank" rel="noreferrer">Open doc</a>
+                &nbsp;•&nbsp;
+                <a href="/curate_doc?doc_id={{ d.get('id')|urlencode }}">Curate Doc</a>
+              </div>
+
+              <div class="small muted"><code>{{ d.get("id") }}</code></div>
+            </div>
+
+            <div>
+              <a class="btn" href="/curate_doc?doc_id={{ d.get('id')|urlencode }}">Curate</a>
+            </div>
+          </div>
+        </div>
+      {% endif %}
+    {% endfor %}
+  </div>
+
+</form>
+
+<script>
+function selectAll(on) {
+  document.querySelectorAll('input[type="checkbox"][name="picked"]').forEach(cb => cb.checked = on);
+  updateSelectedCount();
+}
+
+function updateSelectedCount() {
+  const n = document.querySelectorAll('input[type="checkbox"][name="picked"]:checked').length;
+  const el = document.getElementById('selCount');
+  if (el) el.textContent = String(n);
+}
+
+function filterCards() {
+  const q = (document.getElementById('search')?.value || '').toLowerCase().trim();
+  document.querySelectorAll('.candidate-card').forEach(card => {
+    const t = card.getAttribute('data-title') || '';
+    const s = card.getAttribute('data-source') || '';
+    const ok = !q || t.includes(q) || s.includes(q);
+    card.style.display = ok ? '' : 'none';
+  });
+}
+
+updateSelectedCount();
+</script>
+
+{% endblock %}

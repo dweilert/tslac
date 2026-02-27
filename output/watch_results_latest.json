@@ -1,9 +1,10 @@
 {
-  "ran_at": "2026-02-26T14:35:08",
+  "ran_at": "2026-02-26T20:29:09",
   "topics": [
     "dallas",
     "austn",
-    "archives"
+    "archives",
+    "bob"
   ],
   "sites": [
     "home https://statearchivists.org/",
@@ -36,7 +37,7 @@
         "archives"
       ],
       "best_topic_index": 2,
-      "score": 60
+      "score": 120
     }
   ],
   "errors": []

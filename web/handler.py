@@ -6,7 +6,7 @@ from typing import Callable
 from web.request import build_request
 from web.router import Router
 from web.response import Response
-
+from web.request import Request
 
 class RoutedHandler(BaseHTTPRequestHandler):
     router: Router  # set by factory
@@ -20,6 +20,17 @@ class RoutedHandler(BaseHTTPRequestHandler):
 
     def do_POST(self) -> None:
         self._handle("POST")
+
+    # def do_GET(self):
+    #     assert self.router is not None
+    #     req = Request.from_handler(self)  # if you have this helper
+    #     self.router.dispatch(req, self)
+
+    # def do_POST(self):
+    #     assert self.router is not None
+    #     req = Request.from_handler(self)
+    #     self.router.dispatch(req, self)
+
 
     def _handle(self, method: str) -> None:
         try:
@@ -43,10 +54,14 @@ class RoutedHandler(BaseHTTPRequestHandler):
             self.wfile.write(resp.body)
 
 
-def make_handler(router: Router) -> type[RoutedHandler]:
-    # Create a bound subclass so the HTTPServer can instantiate it without args.
-    class _H(RoutedHandler):
-        pass
+# def make_handler():
+#     class Handler(BaseHTTPRequestHandler):
+#         router = None
 
-    _H.router = router
-    return _H
+#         def do_GET(self):
+#             self.router.dispatch(self)
+
+#         def do_POST(self):
+#             self.router.dispatch(self)
+
+#     return Handler
