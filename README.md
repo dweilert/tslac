@@ -121,3 +121,9 @@ Please let me know what else I need to provide. Also, do I need to modify this c
 I’m working on a local newsletter helper app for tsl.texas.gov. The repo for the current code is in: https://github.com/dweilert/tslac Please read Design.md, Design2.md and Design3.mddesign documents. 
 
 I'd like to review the code and re-factor as many of the modules have gotten very large, some almost a 1000 lines of code.  I would like to separate the templates.py into separate html for each page, possibly separate the do_GET do_POST defs into individual modules these are in server.py right now. Along with a general review of the repository and other possible suggestions to improve how the code is maintained and tested.   
+
+### Re-factor stage II
+
+I’m working on a local newsletter helper app for tsl.texas.gov. The repo for the current code is in: https://github.com/dweilert/tslac Please read Design.md, Design2.md and Design3.md design documents. I'd like to review the code and re-factor as many of the modules have gotten very large, some almost a 1000 lines of code. 
+
+I would like to continue the re-factoring. In a previous chat we focused on much of the HTML and the rending and routes.  Please review the code deeper and make suggestions.  Along with a general review of the repository and other possible suggestions to improve how the code is maintained and tested.
