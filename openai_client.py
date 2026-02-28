@@ -1,10 +1,12 @@
 # openai_client.py
 import os
+
 import httpx
 from openai import OpenAI
 
 MODEL = os.getenv("OPENAI_SUMMARY_MODEL", "gpt-4.1-mini")
 _client = None
+
 
 def _get_client() -> OpenAI:
     global _client
@@ -21,6 +23,7 @@ def _get_client() -> OpenAI:
             max_retries=0,  # important: don't sit there retrying for a long time
         )
     return _client
+
 
 def summarize_document(text: str) -> str:
     MAX_CHARS = 15000

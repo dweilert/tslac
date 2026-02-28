@@ -1,12 +1,14 @@
 from __future__ import annotations
+
+import html
 from pathlib import Path
 from typing import Any
 from urllib.parse import quote, unquote
-from doc_store import load_doc_candidates
-from state_store import load_curation, get_curated_blurb
 
-import html
 import yaml
+
+from doc_store import load_doc_candidates
+from state_store import get_curated_blurb, load_curation
 
 APP_DIR = Path(__file__).resolve().parent
 SELECTED_FILE = APP_DIR / "selected.yaml"
@@ -18,8 +20,10 @@ DEFAULT_INTRO = (
     "and Archives Commission."
 )
 
+
 def _norm_img_key(s: str) -> str:
     return (s or "").strip()
+
 
 def _load_yaml(p: Path) -> dict[str, Any]:
     if not p.exists():
@@ -27,13 +31,14 @@ def _load_yaml(p: Path) -> dict[str, Any]:
     data = yaml.safe_load(p.read_text("utf-8")) or {}
     return data if isinstance(data, dict) else {}
 
+
 def _esc(s: str) -> str:
     return html.escape(s or "", quote=True)
+
 
 def _img_proxy(u: str) -> str:
     # Use your local proxy so hotlink/CORS policies don’t matter
     return "/img?u=" + quote(u or "", safe="")
-
 
 
 def _crop_style(crop: dict[str, Any]) -> str:
@@ -63,7 +68,7 @@ def _crop_style(crop: dict[str, Any]) -> str:
 
         # shift image so crop origin aligns with container origin
         left_pct = -(ix / cw) * 100.0
-        top_pct  = -(iy / ch) * 100.0
+        top_pct = -(iy / ch) * 100.0
 
         return (
             f"width:{w_pct:.3f}%;"
@@ -77,6 +82,7 @@ def _crop_style(crop: dict[str, Any]) -> str:
 
 def _is_doc_id(u: str) -> bool:
     return (u or "").startswith(("gdrive:", "local:"))
+
 
 def _is_http_url(u: str) -> bool:
     return (u or "").startswith(("http://", "https://"))
@@ -138,7 +144,7 @@ def _is_http_url(u: str) -> bool:
 #         # --- Pick crop record for the chosen image (IMPORTANT) ---
 #         crop = None
 #         if isinstance(crops, dict) and img:
-#             crop = crops.get(img) or crops.get(_norm_img_key(img)) or crops.get(unquote(img))    
+#             crop = crops.get(img) or crops.get(_norm_img_key(img)) or crops.get(unquote(img))
 
 
 #         img_html = ""
@@ -188,7 +194,6 @@ def _is_http_url(u: str) -> bool:
 #         """)
 
 
-
 def build_preview_html() -> bytes:
     sel = _load_yaml(SELECTED_FILE)
 
@@ -204,7 +209,7 @@ def build_preview_html() -> bytes:
     # Build doc lookup (id -> doc dict)
     doc_candidates = load_doc_candidates()
     doc_by_id: dict[str, dict[str, Any]] = {}
-    for d in (doc_candidates or []):
+    for d in doc_candidates or []:
         if isinstance(d, dict):
             did = (d.get("id") or "").strip()
             if did:
@@ -215,7 +220,7 @@ def build_preview_html() -> bytes:
         if not isinstance(it, dict):
             continue
 
-        key = (it.get("url") or "").strip()   # still called "url" in selected.yaml
+        key = (it.get("url") or "").strip()  # still called "url" in selected.yaml
         if not key:
             continue
 
@@ -285,7 +290,8 @@ def build_preview_html() -> bytes:
             crops = rec.get("image_crops") if isinstance(rec.get("image_crops"), dict) else {}
 
         if not img and isinstance(crops, dict) and crops:
-            img = sorted([k for k in crops.keys() if isinstance(k, str) and k.strip()])[0]
+            # img = sorted([k for k in crops.keys() if isinstance(k, str) and k.strip()])[0]
+            img = sorted([k for k in crops if isinstance(k, str) and k.strip()])[0]
 
         if not title:
             title = url
@@ -304,7 +310,9 @@ def build_preview_html() -> bytes:
         img_html = ""
         if img:
             img_src = "/img?u=" + quote(img, safe=":/%?=&")
-            if isinstance(crop, dict) and all(k in crop for k in ("ix", "iy", "iw", "ih", "img_w", "img_h")):
+            if isinstance(crop, dict) and all(
+                k in crop for k in ("ix", "iy", "iw", "ih", "img_w", "img_h")
+            ):
                 try:
                     pad = (float(crop["ih"]) / float(crop["iw"])) * 100.0
                     if pad <= 0 or pad > 300:
@@ -316,7 +324,7 @@ def build_preview_html() -> bytes:
                 img_html = (
                     f'<div class="heroCrop" style="padding-top:{pad:.3f}%;">'
                     f'  <img class="heroCropImg" src="{_esc(img_src)}" alt="" style="{style}" />'
-                    f'</div>'
+                    f"</div>"
                 )
             else:
                 img_html = f'<img class="hero" src="{_esc(img_src)}" alt="" />'
@@ -338,14 +346,10 @@ def build_preview_html() -> bytes:
           <tr><td><hr style="border:0; border-bottom:1px solid #666; margin:10px 18px 10px 18px;"></td></tr>
         """)
 
-
-
-
     if not blocks:
         blocks_html = "<p class='muted'>No selected items found in selected.yaml.</p>"
     else:
         blocks_html = "\n".join(blocks)
-
 
     # ---- Constant Contact-ish HTML shell for Preview ----
     # NOTE:
@@ -355,8 +359,12 @@ def build_preview_html() -> bytes:
     #   override the CSS so it behaves like email HTML (tables + inline styles).
 
     PREHEADER_TEXT = "Donate to Texas Library and Archives Foundation today!"
-    HEADER_LOGO_URL = "https://files.constantcontact.com/d9aacb82801/f364e9d2-e7dd-4a1b-bee9-59bc4186acc6.png"
-    HEADER_BANNER_URL = "https://files.constantcontact.com/d9aacb82801/08d6a7b0-f1ab-4e9e-807e-6662fcad75ba.png"
+    HEADER_LOGO_URL = (
+        "https://files.constantcontact.com/d9aacb82801/f364e9d2-e7dd-4a1b-bee9-59bc4186acc6.png"
+    )
+    HEADER_BANNER_URL = (
+        "https://files.constantcontact.com/d9aacb82801/08d6a7b0-f1ab-4e9e-807e-6662fcad75ba.png"
+    )
 
     html_doc = f"""<!doctype html>
 <html>
@@ -537,4 +545,3 @@ def build_preview_html() -> bytes:
 </html>
 """
     return html_doc.encode("utf-8")
-

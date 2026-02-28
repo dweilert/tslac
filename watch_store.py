@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from typing import Any
+
 import yaml
 
 from config import WATCH_FILE
@@ -27,7 +28,6 @@ DEFAULT_WATCH: WatchConfig = WatchConfig(
         "max_links_per_site": 25,
         "fetch_timeout_seconds": 15,
         "same_domain_only": True,
-
         # NEW: exclude noisy nav/search/pagination URLs by default
         "exclude_patterns": [
             "search",
@@ -37,9 +37,8 @@ DEFAULT_WATCH: WatchConfig = WatchConfig(
             "filter",
             "sort=",
             "page=",
-            "?"
+            "?",
         ],
-
         # NEW: global caps so scans cannot run away
         "max_total_pages": 60,
         "max_seconds": 45,
@@ -93,7 +92,9 @@ def load_watch() -> WatchConfig:
     )
 
 
-def save_watch_from_lines(sites_text: str, topics_text: str, settings: dict[str, Any] | None = None) -> None:
+def save_watch_from_lines(
+    sites_text: str, topics_text: str, settings: dict[str, Any] | None = None
+) -> None:
     sites = _clean_lines((sites_text or "").splitlines())
     topics = _clean_lines((topics_text or "").splitlines())
     cfg = {

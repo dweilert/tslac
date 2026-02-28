@@ -10,7 +10,6 @@ from urllib.parse import quote
 
 import requests
 
-
 HERE = os.path.dirname(os.path.abspath(__file__))
 REPO = os.path.abspath(os.path.join(HERE, ".."))
 PY = sys.executable
@@ -35,6 +34,7 @@ def get_doc_id_sample() -> str | None:
     try:
         sys.path.insert(0, REPO)
         from doc_store import load_doc_candidates  # type: ignore
+
         docs = load_doc_candidates()
         for d in docs or []:
             if isinstance(d, dict) and d.get("id"):
@@ -78,7 +78,9 @@ def main() -> int:
         for path, want_status, must_contain in checks:
             r = requests.get(base + path, timeout=15)
             if r.status_code != want_status:
-                raise AssertionError(f"{path}: expected {want_status}, got {r.status_code}\nBody: {r.text[:300]}")
+                raise AssertionError(
+                    f"{path}: expected {want_status}, got {r.status_code}\nBody: {r.text[:300]}"
+                )
             if must_contain and must_contain not in r.text:
                 raise AssertionError(f"{path}: response missing expected text: {must_contain}")
 

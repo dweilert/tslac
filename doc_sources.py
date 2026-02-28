@@ -1,16 +1,14 @@
 from __future__ import annotations
 
-from abc import ABC, abstractmethod
-from typing import Tuple, Optional
-import os
 import mimetypes
+import os
 import pathlib
 import shutil
+from abc import ABC, abstractmethod
 
 from doc_types import DocRef
-from logutil import info, debug
-
-from gdrive_service import get_drive_service, find_folder_id, list_files_in_folder
+from gdrive_service import find_folder_id, get_drive_service, list_files_in_folder
+from logutil import debug, info
 
 GOOGLE_DOC_MIME = "application/vnd.google-apps.document"
 GOOGLE_SHEET_MIME = "application/vnd.google-apps.spreadsheet"
@@ -48,7 +46,7 @@ class DocumentSource(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def fetch_bytes(self, doc: DocRef) -> Tuple[bytes, str]:
+    def fetch_bytes(self, doc: DocRef) -> tuple[bytes, str]:
         raise NotImplementedError
 
     @abstractmethod
@@ -68,7 +66,7 @@ class DocumentSource(ABC):
                 return d
         raise DocumentNotFoundError(f"Document not found in {self.source_name}: {doc_id}")
 
-    def fetch_bytes_by_id(self, doc_id: str) -> Tuple[bytes, str, DocRef]:
+    def fetch_bytes_by_id(self, doc_id: str) -> tuple[bytes, str, DocRef]:
         doc = self.get_doc_by_id(doc_id)
         data, filename = self.fetch_bytes(doc)
         return data, filename, doc
@@ -118,7 +116,7 @@ class LocalDirSource(DocumentSource):
         debug(f"Local: found {len(docs)} supported file(s)")
         return docs
 
-    def fetch_bytes(self, doc: DocRef) -> Tuple[bytes, str]:
+    def fetch_bytes(self, doc: DocRef) -> tuple[bytes, str]:
         path = doc.extra["path"]
         debug(f"Local: reading bytes for {path}")
         with open(path, "rb") as f:
@@ -179,7 +177,7 @@ class GDriveSource(DocumentSource):
             )
         return docs
 
-    def fetch_bytes(self, doc: DocRef) -> Tuple[bytes, str]:
+    def fetch_bytes(self, doc: DocRef) -> tuple[bytes, str]:
         debug(f"GDrive: fetching '{doc.display_name}' mime={doc.mime_type}")
         file_id = doc.extra["file_id"]
         mime_type = doc.mime_type or ""

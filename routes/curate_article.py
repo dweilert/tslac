@@ -1,28 +1,30 @@
 from __future__ import annotations
 
+import json
 from urllib.parse import parse_qs
+
+import cleaner
+from state_store import (
+    add_curated_excerpt,
+    clear_curated_excerpts,
+    clear_curated_selected_image,
+    get_curated_blurb,
+    get_curated_excerpts,
+    get_curated_image_crops,
+    get_curated_selected_image,
+    load_curation,
+    pop_curated_excerpt,
+    upsert_curated_blurb,
+    upsert_curated_image_crop,
+    upsert_curated_selected_image,
+)
+
+# from collect.collector import load_candidates_file
+from storage.collector_store import load_candidates_file
+from templates import curate_page_html
 from web.request import Request
 from web.response import Response
 from web.router import Router
-from collector import load_candidates_file
-from state_store import (
-    load_curation,
-    get_curated_blurb,
-    get_curated_excerpts,
-    upsert_curated_blurb,
-    add_curated_excerpt,
-    pop_curated_excerpt,
-    clear_curated_excerpts,
-    upsert_curated_image_crop,
-    get_curated_selected_image,
-    upsert_curated_selected_image,
-    clear_curated_selected_image,
-    get_curated_image_crops,
-)
-from templates import curate_page_html
-
-import json
-import cleaner
 
 
 def register(router: Router) -> None:
@@ -61,7 +63,7 @@ def _redirect_curate(idx: int, status: str) -> Response:
 def get_curate_by_index(req: Request) -> Response:
     try:
         path_only = req.path.split("?", 1)[0]
-        idx_str = path_only[len("/curate/"):].strip("/")
+        idx_str = path_only[len("/curate/") :].strip("/")
         idx = int(idx_str)
 
         candidates = load_candidates_file()
@@ -111,6 +113,7 @@ def get_curate_by_index(req: Request) -> Response:
 
     except Exception:
         import traceback
+
         tb = traceback.format_exc()
         return Response.html(f"<pre>\nCurate error:\n{tb}\n</pre>", status=400)
 

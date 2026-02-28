@@ -4,16 +4,17 @@ import json
 import re
 import threading
 import time
+from collections.abc import Callable, Iterable
+from contextlib import suppress
 from datetime import datetime
 from html.parser import HTMLParser
 from threading import Event, Lock
-from typing import Any, Callable, Iterable
+from typing import Any
 from urllib.parse import urljoin, urlparse
 from urllib.request import Request, urlopen
 
-from config import OUT_DIR, WATCH_RESULTS_FILE, HEADERS
+from config import HEADERS, OUT_DIR, WATCH_RESULTS_FILE
 from watch_store import load_watch
-
 
 # ============================================================
 # Runtime status + async scan control
@@ -107,6 +108,7 @@ def _scan_thread_main() -> None:
 # ============================================================
 # HTML parsing + fetch helpers
 # ============================================================
+
 
 class _LinkTextParser(HTMLParser):
     def __init__(self) -> None:
@@ -206,7 +208,11 @@ def _pick_links(base_url: str, hrefs: Iterable[str], same_domain_only: bool) -> 
         h = (h or "").strip()
         if not h:
             continue
-        if h.startswith("#") or h.lower().startswith("javascript:") or h.lower().startswith("mailto:"):
+        if (
+            h.startswith("#")
+            or h.lower().startswith("javascript:")
+            or h.lower().startswith("mailto:")
+        ):
             continue
 
         absu = urljoin(base_url, h)
@@ -228,6 +234,7 @@ def _pick_links(base_url: str, hrefs: Iterable[str], same_domain_only: bool) -> 
 # ============================================================
 # Site line parsing: "home <url>" or "crawl <url> max_links=10"
 # ============================================================
+
 
 def _parse_site_line(line: str) -> tuple[str, str, int | None]:
     """
@@ -251,12 +258,17 @@ def _parse_site_line(line: str) -> tuple[str, str, int | None]:
     url = parts[idx] if idx < len(parts) else ""
     max_links_override = None
 
+    # for tok in parts[idx + 1 :]:
+    #     if tok.startswith("max_links="):
+    #         try:
+    #             max_links_override = int(tok.split("=", 1)[1])
+    #         except Exception:
+    #             pass
+
     for tok in parts[idx + 1 :]:
         if tok.startswith("max_links="):
-            try:
+            with suppress(Exception):
                 max_links_override = int(tok.split("=", 1)[1])
-            except Exception:
-                pass
 
     return mode, url, max_links_override
 
@@ -264,6 +276,7 @@ def _parse_site_line(line: str) -> tuple[str, str, int | None]:
 # ============================================================
 # Topic scoring + exclude filtering
 # ============================================================
+
 
 def _score(topic: str, title: str, meta: str, body: str, weight: int) -> tuple[int, int]:
     """
@@ -288,7 +301,9 @@ def _score(topic: str, title: str, meta: str, body: str, weight: int) -> tuple[i
     return score, hits
 
 
-def _score_page_against_topics(url: str, title: str, meta: str, body: str, topics: list[str]) -> dict[str, Any] | None:
+def _score_page_against_topics(
+    url: str, title: str, meta: str, body: str, topics: list[str]
+) -> dict[str, Any] | None:
     snippet = (body or "")[:240].strip()
 
     best_topic_index: int | None = None
@@ -337,6 +352,7 @@ def _should_exclude(url: str, patterns: list[str]) -> bool:
 # ============================================================
 # Public API: scan + load latest results
 # ============================================================
+
 
 def run_watch_scan(
     cancel_event: Event | None = None,
@@ -388,7 +404,13 @@ def run_watch_scan(
             break
 
         if time.monotonic() - t0 > max_seconds:
-            errors.append({"site": str(site_line), "url": "", "error": f"Stopped: exceeded max_seconds={max_seconds}"})
+            errors.append(
+                {
+                    "site": str(site_line),
+                    "url": "",
+                    "error": f"Stopped: exceeded max_seconds={max_seconds}",
+                }
+            )
             break
 
         mode, site, max_links_override = _parse_site_line(site_line)
@@ -396,10 +418,14 @@ def run_watch_scan(
         if not site:
             continue
 
-        per_site_max_links = max_links_override if max_links_override is not None else max_links_default
+        per_site_max_links = (
+            max_links_override if max_links_override is not None else max_links_default
+        )
 
         if progress_cb:
-            progress_cb(message=f"Fetching ({mode}) ...", current_site=site, current_url=site, sites_done=si)
+            progress_cb(
+                message=f"Fetching ({mode}) ...", current_site=site, current_url=site, sites_done=si
+            )
 
         try:
             # Fetch homepage once for both modes
@@ -436,11 +462,23 @@ def run_watch_scan(
                     break
 
                 if pages_done >= max_total_pages:
-                    errors.append({"site": site, "url": url, "error": f"Stopped: exceeded max_total_pages={max_total_pages}"})
+                    errors.append(
+                        {
+                            "site": site,
+                            "url": url,
+                            "error": f"Stopped: exceeded max_total_pages={max_total_pages}",
+                        }
+                    )
                     break
 
                 if time.monotonic() - t0 > max_seconds:
-                    errors.append({"site": site, "url": url, "error": f"Stopped: exceeded max_seconds={max_seconds}"})
+                    errors.append(
+                        {
+                            "site": site,
+                            "url": url,
+                            "error": f"Stopped: exceeded max_seconds={max_seconds}",
+                        }
+                    )
                     break
 
                 pages_done += 1
@@ -504,7 +542,8 @@ def run_watch_scan(
 #         return json.loads(WATCH_RESULTS_FILE.read_text("utf-8"))
 #     except Exception:
 #         return {}
-    
+
+
 def load_latest_results() -> dict[str, Any]:
     if not WATCH_RESULTS_FILE.exists():
         return {"_error": "No results file yet", "results": [], "errors": []}

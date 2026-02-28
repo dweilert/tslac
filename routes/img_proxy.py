@@ -1,13 +1,10 @@
 from __future__ import annotations
 
-from urllib.parse import unquote
-
 import requests
 
 from web.request import Request
 from web.response import Response
 from web.router import Router
-
 
 # Match your cleaner UA style (keep it simple + browser-like)
 UA = {
@@ -48,7 +45,11 @@ def get_img(req: Request) -> Response:
         content_type = r.headers.get("Content-Type") or "application/octet-stream"
         data = r.content
 
-        return Response(status=200, headers={"Content-Type": content_type, "Content-Length": str(len(data))}, body=data)
+        return Response(
+            status=200,
+            headers={"Content-Type": content_type, "Content-Length": str(len(data))},
+            body=data,
+        )
 
     except Exception as e:
         # Keep it simple; the UI already shows a friendly error.

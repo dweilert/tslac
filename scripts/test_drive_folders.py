@@ -1,4 +1,4 @@
-from gdrive_service import get_drive_service, find_folder_id, list_files_in_folder
+from gdrive_service import find_folder_id, get_drive_service, list_files_in_folder
 
 svc = get_drive_service()
 in_id = find_folder_id(svc, "tslac_input")

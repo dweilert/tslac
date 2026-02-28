@@ -1,10 +1,9 @@
 from __future__ import annotations
 
+import cleaner
 from web.request import Request
 from web.response import Response
 from web.router import Router
-
-import cleaner
 
 
 def register(router: Router) -> None:

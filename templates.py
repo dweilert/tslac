@@ -1,23 +1,20 @@
 from __future__ import annotations
-from string import Template
+
+import html
+
 from typing import Any
-from urllib.parse import quote
-from config import CANDIDATES_FILE, SELECTED_FILE, CURATION_FILE
+from urllib.parse import quote, urlparse
+
 from models import Candidate
-from logutil import debug, warn, info
 from render import render
-from collector import Candidate
 
-import json
 
-def _esc(s: str) -> str:
-    s = s or ""
-    return (
-        s.replace("&", "&amp;")
-         .replace("<", "&lt;")
-         .replace(">", "&gt;")
-         .replace('"', "&quot;")
-    )
+# def _esc(s: object) -> str:
+#     """HTML-escape for safe text insertion into HTML."""
+#     if s is None:
+#         return ""
+#     return html.escape(str(s), quote=True)
+
 
 def html_page(
     candidates,
@@ -42,7 +39,6 @@ def html_page(
         status=status,
         has_blurb_by_url=has_blurb_by_url,
         has_blurb_by_docid=has_blurb_by_docid,
-
         # NEW (use real values if you have them; otherwise placeholders are fine)
         candidates_path="output/candidates_latest.json",
         selected_path="selected.yaml",
@@ -82,31 +78,24 @@ def curate_page_html(
         "curate_article.html",
         title="Curate Article",
         page_css="/static/css/curate_article.css",
-
         prev_url=prev_url,
         next_url=next_url,
         original_url=original_url,
         json_url=json_url,
-
         index=index,
         item_num=index + 1,
         total=total,
-
         url=c.url,
         source=c.source,
-
         title_text=title,
-        #title=title,
+        # title=title,
         pub=pub,
         conf=conf,
-
         final_blurb=final_blurb or "",
         excerpts=excerpts or [],
-
         images=images,
         crops=crops or {},
         selected_image=(selected_image or "").strip(),
-
         clean_html=clean_html,
         status=status or "",
     )
@@ -126,7 +115,7 @@ def watch_page_html(
     html = render(
         "watch.html",
         title="Watch Sites",
-        page_css="/static/css/watch.css",   # ✅ page-specific CSS
+        page_css="/static/css/watch.css",  # ✅ page-specific CSS
         status=status,
         sites_text=sites_text,
         topics_text=topics_text,
@@ -139,7 +128,7 @@ def watch_page_html(
 
 def curate_doc_page_html(doc: dict, status: str = "") -> bytes:
     doc_id = doc.get("id", "")
-    title = doc.get("title", "Document")
+    # title = doc.get("title", "Document")
     summary = doc.get("summary", "")
     source = doc.get("source", "doc")
 
@@ -149,9 +138,7 @@ def curate_doc_page_html(doc: dict, status: str = "") -> bytes:
         page_css="/static/css/curate_doc.css",
         status=status,
         doc_id=doc_id,
-        #title=title,
         summary=summary,
         source=source,
     )
     return html.encode("utf-8")
-

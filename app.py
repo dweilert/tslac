@@ -1,13 +1,23 @@
 from __future__ import annotations
-from http.server import ThreadingHTTPServer
-from web.router import Router
-from web.handler import RoutedHandler
-from routes import preview, watch, api, curate_doc, curate_article, img_proxy
-from routes import candidates, health, quit as quit_route, static_files
-from web.handler import RoutedHandler
-
 
 import os
+from http.server import ThreadingHTTPServer
+
+from routes import (
+    api,
+    candidates,
+    curate_article,
+    curate_doc,
+    health,
+    img_proxy,
+    preview,
+    quit as quit_route,
+    static_files,
+    watch,
+)
+from web.handler import RoutedHandler
+from web.router import Router
+
 
 def build_router(server) -> Router:
     r = Router()
@@ -22,6 +32,7 @@ def build_router(server) -> Router:
     quit_route.register(r, server)
     static_files.register(r)
     return r
+
 
 def main() -> None:
     host = os.environ.get("HOST", "127.0.0.1")

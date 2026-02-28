@@ -1,14 +1,12 @@
 from __future__ import annotations
+
 from pathlib import Path
 
-import os
-import json
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
-from google.auth.transport.requests import Request
-
 from googleapiclient.discovery import build
-from logutil import info, debug
+
+from logutil import debug, info
 
 SCOPES = ["https://www.googleapis.com/auth/drive"]
 
@@ -21,22 +19,24 @@ ROOT = Path(__file__).resolve().parent
 CREDENTIALS_PATH = ROOT / "credentials.json"
 TOKEN_PATH = ROOT / "token.json"
 
-def get_drive_service():
-    creds = None
-    info("GDrive: initializing service")
-    ...
-    if os.path.exists(TOKEN_FILE):
-        debug("GDrive: found token.json, loading credentials")
-    ...
-    if not creds or not creds.valid:
-        info("GDrive: credentials missing/invalid; starting refresh/login flow")
-        ...
-        info("GDrive: credentials obtained; token.json updated")
-    else:
-        debug("GDrive: credentials valid")
 
-    info("GDrive: service ready")
-    return build("drive", "v3", credentials=creds)
+# def get_drive_service():
+#     creds = None
+#     info("GDrive: initializing service")
+#     ...
+#     if os.path.exists(TOKEN_FILE):
+#         debug("GDrive: found token.json, loading credentials")
+#     ...
+#     if not creds or not creds.valid:
+#         info("GDrive: credentials missing/invalid; starting refresh/login flow")
+#         ...
+#         info("GDrive: credentials obtained; token.json updated")
+#     else:
+#         debug("GDrive: credentials valid")
+
+#     info("GDrive: service ready")
+#     return build("drive", "v3", credentials=creds)
+
 
 def get_drive_service():
     """
@@ -62,6 +62,7 @@ def get_drive_service():
     info("GDrive: building Drive v3 service")
     return build("drive", "v3", credentials=creds)
 
+
 def find_folder_id(service, folder_name: str) -> str:
     debug(f"GDrive: resolving folder name '{folder_name}'")
     q = (
@@ -75,16 +76,20 @@ def find_folder_id(service, folder_name: str) -> str:
         raise RuntimeError(f"Drive folder not found: {folder_name}")
     if len(files) > 1:
         raise RuntimeError(f"Multiple Drive folders named '{folder_name}'. Rename to unique.")
-    
+
     debug(f"GDrive: folder '{folder_name}' -> id={files[0]['id']}")
     return files[0]["id"]
 
 
 def list_files_in_folder(service, folder_id: str):
     q = f"'{folder_id}' in parents and trashed=false"
-    res = service.files().list(
-        q=q,
-        fields="files(id,name,mimeType,modifiedTime,size)",
-        pageSize=50,
-    ).execute()
+    res = (
+        service.files()
+        .list(
+            q=q,
+            fields="files(id,name,mimeType,modifiedTime,size)",
+            pageSize=50,
+        )
+        .execute()
+    )
     return res.get("files", [])

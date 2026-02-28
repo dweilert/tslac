@@ -1,20 +1,28 @@
 from __future__ import annotations
 
+from datetime import date
 from urllib.parse import parse_qs
 
+from collect.collector import collect_candidates
+from collect.rules import CollectRules
+from constants import DEFAULT_INTRO, DEFAULT_SUBJECT
+from doc_store import load_doc_candidates
+from state_store import get_curated_blurb, load_curation, load_selected, save_selected
+from storage.collector_store import (
+    CANDIDATES_FILE,
+    SEEN_URLS_FILE,
+    load_candidates_file,
+    load_seen,
+    save_candidates_json,
+    save_seen,
+)
+from templates import html_page
 from web.request import Request
 from web.response import Response
 from web.router import Router
 
-# These imports are based on the code you pasted.
-# If any import name differs in your repo, tell me the ImportError and I’ll adjust in one pass.
-from collector import collect_candidates
-from collector import load_candidates_file  # or wherever load_candidates_file lives
-from doc_store import load_doc_candidates
-from state_store import load_selected, load_curation, get_curated_blurb, save_selected
+HOMEPAGE_URL = "https://www.tsl.texas.gov/"
 
-from templates import html_page
-from constants import DEFAULT_SUBJECT, DEFAULT_INTRO
 
 def register(router: Router) -> None:
     router.get("/", get_main)
@@ -29,9 +37,36 @@ def _parse_post_form(req: Request) -> dict[str, list[str]]:
 
 def get_refresh(_: Request) -> Response:
     try:
-        collect_candidates()
+        # Load "seen" so refresh doesn't re-add already processed items (if you use this behavior)
+        seen = load_seen(SEEN_URLS_FILE)
+
+        rules = CollectRules(
+            months_back=3,
+            # Keep these empty unless you already have exclude lists you want to enforce here.
+            # You can wire your existing exclude lists in later.
+            exclude_url_substrings=(),
+            exclude_title_substrings=(),
+        )
+
+        candidates, errors = collect_candidates(
+            HOMEPAGE_URL,
+            rules=rules,
+            today=date.today(),
+            seen_urls=seen,
+        )
+
+        # Persist candidates for UI
+        save_candidates_json(CANDIDATES_FILE, candidates)
+
+        # Update seen with whatever we just collected
+        seen.update(c.url for c in candidates)
+        save_seen(SEEN_URLS_FILE, seen)
+
         doc_cnt = len(load_doc_candidates())
-        return Response.redirect(f"/?status=Refreshed+candidate+list+(docs:{doc_cnt})")
+
+        # Include error count if any
+        err_note = f"+(errors:{len(errors)})" if errors else ""
+        return Response.redirect(f"/?status=Refreshed+candidate+list+(docs:{doc_cnt}){err_note}")
     except Exception as e:
         msg = str(e).replace(" ", "+")
         return Response.redirect(f"/?status=Refresh+failed:+{msg}")
@@ -42,8 +77,8 @@ def post_save(req: Request) -> Response:
         form = _parse_post_form(req)
 
         picked = form.get("picked", [])
-        subject = (form.get("subject", [DEFAULT_SUBJECT])[0] or DEFAULT_SUBJECT)
-        intro = (form.get("intro", [DEFAULT_INTRO])[0] or DEFAULT_INTRO)
+        subject = form.get("subject", [DEFAULT_SUBJECT])[0] or DEFAULT_SUBJECT
+        intro = form.get("intro", [DEFAULT_INTRO])[0] or DEFAULT_INTRO
 
         save_selected(subject, intro, picked)
 
@@ -54,10 +89,11 @@ def post_save(req: Request) -> Response:
 
 
 def get_main(req: Request) -> Response:
-    # status comes from querystring (Request already parsed it)
-    status = (req.query_first.get("status") or "")
+    status = req.query_first.get("status") or ""
 
-    candidates = load_candidates_file()
+    # UI reads from persisted candidates
+    candidates = load_candidates_file(CANDIDATES_FILE)
+    print("DEBUG sources:", {getattr(c, "source", None) for c in candidates})
     sel = load_selected()
 
     prechecked: set[str] = set()
@@ -66,7 +102,9 @@ def get_main(req: Request) -> Response:
             if isinstance(it, dict) and it.get("url"):
                 prechecked.add(it["url"])
 
-    subject = sel.get("subject") if isinstance(sel, dict) and sel.get("subject") else DEFAULT_SUBJECT
+    subject = (
+        sel.get("subject") if isinstance(sel, dict) and sel.get("subject") else DEFAULT_SUBJECT
+    )
     intro = sel.get("intro") if isinstance(sel, dict) and sel.get("intro") else DEFAULT_INTRO
 
     cur = load_curation()

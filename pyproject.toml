@@ -1,0 +1,54 @@
+[project]
+name = "tslac-newsletter"
+version = "0.0.0"
+requires-python = ">=3.11"
+
+[tool.black]
+line-length = 100
+target-version = ["py311"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+fix = true
+
+# Keep repo clean: adjust as needed
+exclude = [
+  ".git",
+  ".venv",
+  "venv",
+  "__pycache__",
+  "build",
+  "dist",
+  ".mypy_cache",
+  ".ruff_cache",
+]
+
+[tool.ruff.lint]
+# This is the "safe 85%" set:
+# F: pyflakes (unused imports/vars, undefined names) - very high value
+# I: import sorting (isort)
+# UP: pyupgrade (modern syntax, typing improvements)
+# B: bugbear (common pitfalls; mostly safe to enforce)
+# SIM: simplify (some are safe, some are debatable)
+# E/W: pycodestyle (basic hygiene)
+select = ["F", "I", "UP", "B", "SIM", "E", "W"]
+
+# Keep noise low initially:
+ignore = [
+  "E501",    # line length: let Black handle formatting
+  "SIM102",  # optional: sometimes suggests combining nested if/with; can reduce clarity
+  # Keep SIM105 enabled (contextlib.suppress), but we’ll handle it carefully (see below).
+]
+
+# IMPORTANT: Only apply fixes Ruff considers safe.
+# Ruff’s default is "safe" fixes unless you request unsafe.
+# We'll keep it that way by never using --unsafe-fixes during refactor cleanup.
+
+[tool.ruff.lint.isort]
+combine-as-imports = true
+
+[tool.ruff.lint.per-file-ignores]
+# Tests often intentionally do "unused" imports/fixtures
+"tests/**/*.py" = ["F401"]
+

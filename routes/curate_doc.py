@@ -2,13 +2,12 @@ from __future__ import annotations
 
 from urllib.parse import parse_qs, quote
 
+import templates
+from doc_store import load_doc_candidates
+from state_store import get_curated_blurb, load_curation, upsert_curated_blurb
 from web.request import Request
 from web.response import Response
 from web.router import Router
-
-from doc_store import load_doc_candidates
-from state_store import load_curation, get_curated_blurb, upsert_curated_blurb
-import templates
 
 
 def register(router: Router) -> None:
@@ -32,7 +31,11 @@ def get_curate_doc(req: Request) -> Response:
 
         doc_candidates = load_doc_candidates()
         d = next(
-            (x for x in doc_candidates if isinstance(x, dict) and (x.get("id") or "").strip() == doc_id),
+            (
+                x
+                for x in doc_candidates
+                if isinstance(x, dict) and (x.get("id") or "").strip() == doc_id
+            ),
             None,
         )
         if not d:

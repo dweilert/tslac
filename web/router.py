@@ -1,12 +1,12 @@
 from __future__ import annotations
 
 import re
+from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Callable, Pattern
+from re import Pattern
 
 from .request import Request
 from .response import Response
-
 
 HandlerFn = Callable[[Request], Response]
 

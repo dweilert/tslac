@@ -5,11 +5,10 @@ import signal
 import subprocess
 import sys
 import time
-from typing import Generator
+from collections.abc import Generator
 
 import pytest
 import requests
-
 
 REPO = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 PY = sys.executable

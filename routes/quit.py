@@ -18,7 +18,7 @@ def quit_server(_: Request, server) -> Response:
     """
 
     def shutdown():
-        time.sleep(0.5)   # allow browser to receive response
+        time.sleep(0.5)  # allow browser to receive response
         server.shutdown()
 
     threading.Thread(target=shutdown, daemon=True).start()

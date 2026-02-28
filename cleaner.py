@@ -2,9 +2,10 @@
 from __future__ import annotations
 
 import re
+from contextlib import suppress
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any
 from urllib.parse import urljoin, urlparse
 
 import requests
@@ -13,6 +14,7 @@ from bs4 import BeautifulSoup
 # macOS TLS fix: validate like curl (Keychain trust store)
 try:
     import truststore
+
     truststore.inject_into_ssl()
 except Exception:
     pass
@@ -70,11 +72,11 @@ IMG_BAD_KEYWORDS = ["icon", "sprite", "favicon", "seal", "badge", "pixel", "trac
 class CleanResult:
     url: str
     title: str
-    published_date: Optional[str]
+    published_date: str | None
     date_confidence: str
     clean_html: str
     text_plain: str
-    images: List[Dict[str, Any]]
+    images: list[dict[str, Any]]
     extraction_quality: str
 
 
@@ -85,6 +87,7 @@ def fetch_html(url: str, timeout: int = 30) -> str:
     r = requests.get(url, headers=UA, timeout=timeout)
     r.raise_for_status()
     return r.text
+
 
 # ----------------------------
 # Helpers
@@ -142,17 +145,12 @@ def _link_density(el) -> float:
 def _strip_noise(container):
     # Always remove the footer block if it appears inside extracted content
     for t in list(container.select("#tslac-footer")):
-        try:
+        with suppress(Exception):
             t.decompose()
-        except Exception:
-            pass
-
     # Remove by tags
     for t in list(container.find_all(list(NOISE_TAGS))):
-        try:
+        with suppress(Exception):
             t.decompose()
-        except Exception:
-            pass
 
     # Remove by class/id keywords (be defensive: some tags become "detached")
     for t in list(container.find_all(True)):
@@ -170,11 +168,16 @@ def _strip_noise(container):
             _id = str(attrs.get("id") or "").lower()
             hay = f"{cls} {_id}".strip()
 
+            # if any(k in hay for k in NOISE_KEYWORDS):
+            #     try:
+            #         t.decompose()
+            #     except Exception:
+            #         pass
+
             if any(k in hay for k in NOISE_KEYWORDS):
-                try:
+                with suppress(Exception):
                     t.decompose()
-                except Exception:
-                    pass
+
         except Exception:
             # Last-resort: never let cleaning crash the whole page
             continue
@@ -197,7 +200,7 @@ def _absolutize_images(container: BeautifulSoup, base_url: str) -> None:
         img["src"] = _abs(base_url, src)
 
 
-def _pick_main_container(soup: BeautifulSoup) -> Optional[BeautifulSoup]:
+def _pick_main_container(soup: BeautifulSoup) -> BeautifulSoup | None:
     best = None
     best_score = -1
 
@@ -215,6 +218,7 @@ def _pick_main_container(soup: BeautifulSoup) -> Optional[BeautifulSoup]:
                 best = cand
 
     return best
+
 
 def _extract_title(soup) -> str:
     og = _meta_content(soup, prop="og:title")
@@ -235,7 +239,6 @@ def _extract_title(soup) -> str:
     return "Untitled"
 
 
-
 _DATE_RE_1 = re.compile(
     r"\b(?:Mon|Tue|Tues|Wed|Thu|Thur|Fri|Sat|Sun)[a-z]*,\s+"
     r"(January|February|March|April|May|June|July|August|September|October|November|December)\s+"
@@ -249,7 +252,7 @@ _DATE_RE_2 = re.compile(
 )
 
 
-def _extract_date(soup: BeautifulSoup, container: Optional[BeautifulSoup]) -> tuple[Optional[str], str]:
+def _extract_date(soup: BeautifulSoup, container: BeautifulSoup | None) -> tuple[str | None, str]:
     # 1) <time datetime="...">
     t = soup.find("time")
     if t and t.get("datetime"):
@@ -297,8 +300,8 @@ def _extract_date(soup: BeautifulSoup, container: Optional[BeautifulSoup]) -> tu
     return None, "none"
 
 
-def _collect_images(container: BeautifulSoup, base_url: str) -> List[Dict[str, Any]]:
-    imgs: List[Dict[str, Any]] = []
+def _collect_images(container: BeautifulSoup, base_url: str) -> list[dict[str, Any]]:
+    imgs: list[dict[str, Any]] = []
 
     # Prefer container images first
     for img in container.find_all("img"):
@@ -320,7 +323,6 @@ def _collect_images(container: BeautifulSoup, base_url: str) -> List[Dict[str, A
             penalty += 0.35
         if alt and "logo" in alt.lower():
             penalty += 0.35
-
 
         if any(k in low for k in IMG_BAD_KEYWORDS):
             continue
@@ -351,14 +353,25 @@ def _collect_images(container: BeautifulSoup, base_url: str) -> List[Dict[str, A
 
         score = max(0.0, score - penalty)
 
-
         imgs.append({"src": abs_src, "alt": alt, "width": w, "height": h, "score": round(score, 3)})
 
     # If none found, consider og:image as fallback
     if not imgs:
-        og = container.find_parent().find("meta", attrs={"property": "og:image"}) if container.find_parent() else None
+        og = (
+            container.find_parent().find("meta", attrs={"property": "og:image"})
+            if container.find_parent()
+            else None
+        )
         if og and og.get("content"):
-            imgs.append({"src": _abs(base_url, og["content"].strip()), "alt": "", "width": None, "height": None, "score": 0.5})
+            imgs.append(
+                {
+                    "src": _abs(base_url, og["content"].strip()),
+                    "alt": "",
+                    "width": None,
+                    "height": None,
+                    "score": 0.5,
+                }
+            )
 
     # Sort best-first
     imgs.sort(key=lambda x: x.get("score", 0), reverse=True)
@@ -374,7 +387,7 @@ def _collect_images(container: BeautifulSoup, base_url: str) -> List[Dict[str, A
     return out
 
 
-def _safe_int(x) -> Optional[int]:
+def _safe_int(x) -> int | None:
     try:
         if x is None:
             return None

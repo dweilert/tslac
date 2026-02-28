@@ -1,12 +1,11 @@
 from __future__ import annotations
 
 from http.server import BaseHTTPRequestHandler
-from typing import Callable
 
 from web.request import build_request
-from web.router import Router
 from web.response import Response
-from web.request import Request
+from web.router import Router
+
 
 class RoutedHandler(BaseHTTPRequestHandler):
     router: Router  # set by factory
@@ -30,7 +29,6 @@ class RoutedHandler(BaseHTTPRequestHandler):
     #     assert self.router is not None
     #     req = Request.from_handler(self)
     #     self.router.dispatch(req, self)
-
 
     def _handle(self, method: str) -> None:
         try:

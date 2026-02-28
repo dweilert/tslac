@@ -2,12 +2,10 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import export_preview
 from web.request import Request
 from web.response import Response
 from web.router import Router
-
-import export_preview
-
 
 APP_DIR = Path(__file__).resolve().parent.parent
 
@@ -25,15 +23,17 @@ def get_preview(_: Request) -> Response:
 
 
 def get_preview_file(_: Request) -> Response:
-    p = (APP_DIR / "output" / "preview" / "index.html")
+    p = APP_DIR / "output" / "preview" / "index.html"
     if not p.exists():
-        return Response.not_found("Preview file not found. Run the export that generates output/preview/index.html.")
+        return Response.not_found(
+            "Preview file not found. Run the export that generates output/preview/index.html."
+        )
     return Response.html(p.read_bytes())
 
 
 def get_preview_image(req: Request) -> Response:
     # req.path is like: /preview/images/xxx.jpg
-    rel = req.path[len("/preview/"):]  # images/xxx.jpg
+    rel = req.path[len("/preview/") :]  # images/xxx.jpg
     base = (APP_DIR / "output" / "preview").resolve()
     img_path = (APP_DIR / "output" / "preview" / rel).resolve()
 
@@ -54,4 +54,6 @@ def get_preview_image(req: Request) -> Response:
     elif suf == ".gif":
         ct = "image/gif"
 
-    return Response(status=200, headers={"Content-Type": ct, "Content-Length": str(len(data))}, body=data)
+    return Response(
+        status=200, headers={"Content-Type": ct, "Content-Length": str(len(data))}, body=data
+    )

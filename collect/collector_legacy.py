@@ -1,34 +1,38 @@
+"""
+LEGACY: kept temporarily while other modules migrate to collect.collector.collect_candidates().
+Do not add new logic here.
+"""
+
 from __future__ import annotations
 
-import os
-import requests
 import json
+import os
 import re
-
-from doc_pipeline import build_doc_candidates
-from doc_sources import GDriveSource, LocalDirSource
 from dataclasses import asdict
 from datetime import datetime, timedelta
-from typing import Any
 from urllib.parse import urljoin, urlparse
+
+import requests
 from bs4 import BeautifulSoup
+
 from config import (
     BASE,
+    CANDIDATES_FILE,
+    EXACT_EXCLUDE_PATHS,
+    EXCLUDE_TEXTS,
+    HEADERS,
     HOME,
+    LAST_3_MONTHS_DAYS,
     NEWS,
     OUT_DIR,
     STATE_DIR,
-    CANDIDATES_FILE,
-    HEADERS,
-    EXACT_EXCLUDE_PATHS,
-    EXCLUDE_TEXTS,
-    LAST_3_MONTHS_DAYS,
 )
+from doc_pipeline import build_doc_candidates
+from doc_sources import GDriveSource, LocalDirSource
 from doc_store import save_doc_candidates
+from logutil import info
 from models import Candidate
-from state_store import load_seen, save_seen, norm_url
-from pathlib import Path
-from logutil import info, debug
+from state_store import load_seen, norm_url, save_seen
 
 
 def is_tsl_url(u: str) -> bool:
@@ -64,7 +68,9 @@ def fetch_html(url: str) -> str:
     return r.text
 
 
-def extract_links_from_section_by_heading(soup: BeautifulSoup, heading_text: str) -> list[tuple[str, str]]:
+def extract_links_from_section_by_heading(
+    soup: BeautifulSoup, heading_text: str
+) -> list[tuple[str, str]]:
     heading_re = re.compile(rf"^\s*{re.escape(heading_text)}\s*$", re.I)
     heading = None
     for tag in soup.find_all(["h1", "h2", "h3", "h4"]):
@@ -143,7 +149,8 @@ def is_featured_news_allowed(title: str, url: str) -> bool:
         return False
     if not is_node_article(url):
         return False
-    return True
+
+    return is_node_article(url)
 
 
 # ----------------------------
@@ -155,19 +162,32 @@ _RX_DOW_MONTH_D_Y = re.compile(
 _RX_MONTH_D_Y = re.compile(r"\b([A-Za-z]+)\.?\s+(\d{1,2}),\s+(\d{4})\b")
 
 _MONTHS = {
-    "january": 1, "jan": 1,
-    "february": 2, "feb": 2,
-    "march": 3, "mar": 3,
-    "april": 4, "apr": 4,
+    "january": 1,
+    "jan": 1,
+    "february": 2,
+    "feb": 2,
+    "march": 3,
+    "mar": 3,
+    "april": 4,
+    "apr": 4,
     "may": 5,
-    "june": 6, "jun": 6,
-    "july": 7, "jul": 7,
-    "august": 8, "aug": 8,
-    "september": 9, "sep": 9, "sept": 9,
-    "october": 10, "oct": 10,
-    "november": 11, "nov": 11,
-    "december": 12, "dec": 12,
+    "june": 6,
+    "jun": 6,
+    "july": 7,
+    "jul": 7,
+    "august": 8,
+    "aug": 8,
+    "september": 9,
+    "sep": 9,
+    "sept": 9,
+    "october": 10,
+    "oct": 10,
+    "november": 11,
+    "nov": 11,
+    "december": 12,
+    "dec": 12,
 }
+
 
 def _parse_month_name(m: str) -> int | None:
     return _MONTHS.get((m or "").strip().lower().rstrip("."))
@@ -235,7 +255,9 @@ def extract_info_node_items_last_3_months(soup: BeautifulSoup) -> list[Candidate
         container = a
         dt = None
         for _ in range(5):
-            container = container.find_parent(["article", "li", "div", "section"]) or container.parent
+            container = (
+                container.find_parent(["article", "li", "div", "section"]) or container.parent
+            )
             if not container:
                 break
             dt = extract_datetime_from_time_tag(container)
@@ -274,7 +296,9 @@ def collect_candidates() -> list[Candidate]:
 
     # Carousel candidates
     carousel = extract_carousel_links(home_soup)
-    carousel_candidates = [Candidate(title=t, url=u, source="homepage:carousel") for t, u in carousel]
+    carousel_candidates = [
+        Candidate(title=t, url=u, source="homepage:carousel") for t, u in carousel
+    ]
 
     # Featured News candidates
     featured = extract_links_from_section_by_heading(home_soup, "Featured News")
@@ -327,26 +351,27 @@ def load_candidates_file() -> list[Candidate]:
     return out
 
 
-def build_document_candidates() -> list[dict]:
-    mode = os.getenv("DOC_INPUT_MODE", "gdrive").lower()
-    debug(f"Docs: collector: building doc candidates (mode={mode})")
+# def build_document_candidates() -> list[dict]:
+#     mode = os.getenv("DOC_INPUT_MODE", "gdrive").lower()
+#     debug(f"Docs: collector: building doc candidates (mode={mode})")
 
-    if mode == "gdrive":
-        src = GDriveSource(
-            os.getenv("GDRIVE_INPUT_FOLDER_NAME", "tslac_input"),
-            os.getenv("GDRIVE_ARCHIVE_FOLDER_NAME", "tslac_saved"),
-        )
-    elif mode == "local":
-        src = LocalDirSource(
-            os.environ["LOCAL_INPUT_DIR"],
-            os.environ["LOCAL_ARCHIVE_DIR"],
-        )
-    else:
-        raise RuntimeError(f"Unknown DOC_INPUT_MODE: {mode}")
+#     if mode == "gdrive":
+#         src = GDriveSource(
+#             os.getenv("GDRIVE_INPUT_FOLDER_NAME", "tslac_input"),
+#             os.getenv("GDRIVE_ARCHIVE_FOLDER_NAME", "tslac_saved"),
+#         )
+#     elif mode == "local":
+#         src = LocalDirSource(
+#             os.environ["LOCAL_INPUT_DIR"],
+#             os.environ["LOCAL_ARCHIVE_DIR"],
+#         )
+#     else:
+#         raise RuntimeError(f"Unknown DOC_INPUT_MODE: {mode}")
 
-    docs = build_doc_candidates(src)
-    info(f"Docs: collector: built {len(docs)} doc candidate(s)")
-    return docs    
+#     docs = build_doc_candidates(src)
+#     info(f"Docs: collector: built {len(docs)} doc candidate(s)")
+#     return docs
+
 
 def build_document_candidates():
     mode = os.getenv("DOC_INPUT_MODE", "gdrive").lower()

@@ -2,13 +2,12 @@ from __future__ import annotations
 
 import json
 from datetime import datetime
-from pathlib import Path
 from typing import Any
 from urllib.parse import urlparse
 
 import yaml
 
-from config import SEEN_FILE, SELECTED_FILE, CURATION_FILE, DEFAULT_SUBJECT, DEFAULT_INTRO
+from config import CURATION_FILE, DEFAULT_INTRO, DEFAULT_SUBJECT, SEEN_FILE, SELECTED_FILE
 
 
 # ----------------------------
@@ -145,6 +144,7 @@ def clear_curated_excerpts(url: str) -> None:
     rec["updated_at"] = datetime.now().isoformat(timespec="seconds")
     save_curation(cur)
 
+
 # ----------------------------
 # Image crops (curation.yaml)
 # ----------------------------
@@ -158,9 +158,9 @@ def get_curated_image_crops(cur: dict[str, Any], url: str) -> dict[str, Any]:
     return {}
 
 
-
-#SAVE CROP (image px) {ix: 88, iy: 69, iw: 436, ih: 458, img_w: 1201, img_h: 1201} 
+# SAVE CROP (image px) {ix: 88, iy: 69, iw: 436, ih: 458, img_w: 1201, img_h: 1201}
 # canvas {cw: 860, ch: 860} rect {x: 62.897327707454295, y: 49.59212376933896, w: 312.0675105485232, h: 327.7918424753868}
+
 
 def upsert_curated_image_crop(url: str, img_src: str, crop: dict[str, Any]) -> None:
     """
@@ -193,7 +193,8 @@ def upsert_curated_image_crop(url: str, img_src: str, crop: dict[str, Any]) -> N
 
     crops[img_src] = crop
     rec["updated_at"] = datetime.now().isoformat(timespec="seconds")
-    save_curation(cur)    
+    save_curation(cur)
+
 
 # ----------------------------
 # Selected image (curation.yaml)
@@ -231,5 +232,4 @@ def clear_curated_selected_image(url: str) -> None:
     if "selected_image" in rec:
         rec.pop("selected_image", None)
         rec["updated_at"] = datetime.now().isoformat(timespec="seconds")
-        save_curation(cur)    
-
+        save_curation(cur)

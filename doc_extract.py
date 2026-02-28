@@ -1,18 +1,19 @@
 from __future__ import annotations
+
 import io
 import os
-from typing import Optional
+
 from bs4 import BeautifulSoup
-from striprtf.striprtf import rtf_to_text
 from docx import Document
 from pypdf import PdfReader
+from striprtf.striprtf import rtf_to_text
 
 
 def _ext(filename: str) -> str:
     return os.path.splitext(filename.lower())[1]
 
 
-def extract_text(filename: str, mime_type: Optional[str], data: bytes) -> str:
+def extract_text(filename: str, mime_type: str | None, data: bytes) -> str:
     ext = _ext(filename)
 
     # Plain text
@@ -31,7 +32,11 @@ def extract_text(filename: str, mime_type: Optional[str], data: bytes) -> str:
         return rtf_to_text(text)
 
     # DOCX
-    if ext in [".docx"] or (mime_type or "") == "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
+    if (
+        ext in [".docx"]
+        or (mime_type or "")
+        == "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+    ):
         doc = Document(io.BytesIO(data))
         parts = [p.text for p in doc.paragraphs if p.text.strip()]
         return "\n".join(parts)

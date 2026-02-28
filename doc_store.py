@@ -1,4 +1,5 @@
 from __future__ import annotations
+
 import json
 from pathlib import Path
 from typing import Any
@@ -8,10 +9,14 @@ from logutil import info, warn
 
 DOC_CANDIDATES_FILE = Path(STATE_DIR) / "doc_candidates.json"
 
+
 def save_doc_candidates(doc_candidates: list[dict[str, Any]]) -> None:
     DOC_CANDIDATES_FILE.parent.mkdir(parents=True, exist_ok=True)
-    DOC_CANDIDATES_FILE.write_text(json.dumps(doc_candidates, ensure_ascii=False, indent=2), encoding="utf-8")
+    DOC_CANDIDATES_FILE.write_text(
+        json.dumps(doc_candidates, ensure_ascii=False, indent=2), encoding="utf-8"
+    )
     info(f"Docs: wrote {len(doc_candidates)} doc candidate(s) to {DOC_CANDIDATES_FILE}")
+
 
 def load_doc_candidates() -> list[dict[str, Any]]:
     if not DOC_CANDIDATES_FILE.exists():
@@ -22,6 +27,7 @@ def load_doc_candidates() -> list[dict[str, Any]]:
     except Exception as e:
         warn(f"Docs: failed to read {DOC_CANDIDATES_FILE}: {e}")
         return []
+
 
 def clear_doc_candidates() -> None:
     try:

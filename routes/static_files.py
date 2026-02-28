@@ -6,7 +6,6 @@ from web.request import Request
 from web.response import Response
 from web.router import Router
 
-
 STATIC_DIR = Path(__file__).resolve().parents[1] / "static"
 
 
@@ -17,7 +16,7 @@ def register(router: Router) -> None:
 
 def get_static(req: Request) -> Response:
     # req.path is like "/static/css/app.css"
-    rel = req.path[len("/static/"):]  # "css/app.css"
+    rel = req.path[len("/static/") :]  # "css/app.css"
     # basic traversal protection
     if ".." in rel or rel.startswith("/"):
         return Response.not_found("Not found")

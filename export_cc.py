@@ -4,27 +4,48 @@ from __future__ import annotations
 import html
 import io
 import json
+import urllib.request
 import zipfile
-from dataclasses import dataclass
+
+from urllib.parse import urlparse
+from contextlib import suppress
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Optional
-from urllib.parse import urlparse, urljoin, unquote, quote
+from typing import Any
+from urllib.parse import quote, unquote, urljoin, urlparse
 
 import yaml
 
 # Pillow is required for server-side crop rendering
 from PIL import Image
-import urllib.request
-
 
 APP_DIR = Path(__file__).resolve().parent
 SELECTED_FILE = APP_DIR / "selected.yaml"
 CURATION_FILE = APP_DIR / "curation.yaml"
 
 
-def _esc(s: str) -> str:
-    return html.escape(s or "", quote=True)
+def _esc(s: object) -> str:
+    if s is None:
+        return ""
+    return html.escape(str(s), quote=True)
+
+
+def _safe_url(url: object) -> str:
+    """Allow only http(s) (and optionally site-relative). Return '#' if unsafe."""
+    if not url:
+        return "#"
+    u = str(url).strip()
+    p = urlparse(u)
+
+    # allow absolute http/https
+    if p.scheme in ("http", "https"):
+        return html.escape(u, quote=True)
+
+    # allow relative URLs like "/node/123" (optional)
+    if p.scheme == "" and u.startswith("/"):
+        return html.escape(u, quote=True)
+
+    return "#"
 
 
 def _load_yaml(p: Path) -> dict[str, Any]:
@@ -50,12 +71,17 @@ def _normalize_url_for_fetch(u: str, base: str = "") -> str:
     u = (u or "").strip()
     base = (base or "").strip()
 
+    # # resolve relative if needed
+    # if base:
+    #     try:
+    #         u = urljoin(base, u)
+    #     except Exception:
+    #         pass
+
     # resolve relative if needed
     if base:
-        try:
+        with suppress(Exception):
             u = urljoin(base, u)
-        except Exception:
-            pass
 
     u = unquote(u)  # normalize any % encodings for consistent quoting
     p = urlparse(u)
@@ -141,7 +167,7 @@ def _crop_image_to_png(image_bytes: bytes, crop: dict[str, Any]) -> bytes:
         return out.getvalue()
 
 
-def _pick_item_title(url: str, rec: Optional[dict[str, Any]]) -> str:
+def _pick_item_title(url: str, rec: dict[str, Any] | None) -> str:
     # If you later store curated title, use it; otherwise fallback to URL
     if isinstance(rec, dict):
         t = (rec.get("title") or "").strip()
@@ -150,7 +176,7 @@ def _pick_item_title(url: str, rec: Optional[dict[str, Any]]) -> str:
     return url
 
 
-def _pick_item_blurb(url: str, rec: Optional[dict[str, Any]]) -> tuple[str, str]:
+def _pick_item_blurb(url: str, rec: dict[str, Any] | None) -> tuple[str, str]:
     """
     Returns (blurb, source) where source is:
       final_blurb | excerpts | none
@@ -169,7 +195,7 @@ def _pick_item_blurb(url: str, rec: Optional[dict[str, Any]]) -> tuple[str, str]
     return "", "none"
 
 
-def _pick_item_image(url: str, rec: Optional[dict[str, Any]]) -> tuple[str, dict[str, Any]]:
+def _pick_item_image(url: str, rec: dict[str, Any] | None) -> tuple[str, dict[str, Any]]:
     """
     Returns (img_url, crops_dict).
     Image selection rules:
@@ -187,7 +213,8 @@ def _pick_item_image(url: str, rec: Optional[dict[str, Any]]) -> tuple[str, dict
             crops = v
 
     if not img and crops:
-        keys = sorted([k for k in crops.keys() if isinstance(k, str) and k.strip()])
+        # keys = sorted([k for k in crops.keys() if isinstance(k, str) and k.strip()])
+        keys = sorted([k for k in crops if isinstance(k, str) and k.strip()])
         if keys:
             img = keys[0]
 
@@ -198,7 +225,9 @@ def build_constant_contact_zip() -> tuple[bytes, str]:
     sel = _load_yaml(SELECTED_FILE)
     cur = _load_yaml(CURATION_FILE)
 
-    subject = (sel.get("subject") or "").strip() or "Monthly Update — New from the Texas State Library"
+    subject = (
+        sel.get("subject") or ""
+    ).strip() or "Monthly Update — New from the Texas State Library"
     intro = (sel.get("intro") or "").strip() or (
         "Hello everyone—here are highlights and resources recently published by the Texas State Library "
         "and Archives Commission."
@@ -312,7 +341,11 @@ def build_constant_contact_zip() -> tuple[bytes, str]:
                 f'style="width:100%;height:auto;border-radius:12px;border:1px solid #eee;margin:0 0 10px 0;" />'
             )
 
-        safe_blurb = _esc(blurb) if blurb else '<em style="color:#6b7280;">No blurb saved yet. Use Curate to write one.</em>'
+        safe_blurb = (
+            _esc(blurb)
+            if blurb
+            else '<em style="color:#6b7280;">No blurb saved yet. Use Curate to write one.</em>'
+        )
 
         html_blocks.append(f"""
           <div style="border-top:1px solid #eee;padding-top:14px;margin-top:14px;">
@@ -321,17 +354,13 @@ def build_constant_contact_zip() -> tuple[bytes, str]:
             <div style="font-size:18px;font-weight:650;margin-bottom:6px;color:#111827;">{_esc(title)}</div>
             <div style="color:#374151;line-height:1.45;">{safe_blurb}</div>
             <div style="margin-top:10px;">
-              <a href="{_esc(url)}" style="color:#0b57d0;text-decoration:none;">Read more</a>
+              <a href="{_safe_url(url)}" style="color:#0b57d0;text-decoration:none;">Read more</a>
             </div>
           </div>
         """)
 
         # Plain text
-        txt_blocks.append(
-            f"{item_num}) {title}\n"
-            f"{blurb}\n"
-            f"{url}\n"
-        )
+        txt_blocks.append(f"{item_num}) {title}\n" f"{blurb}\n" f"{url}\n")
 
         manifest["items"].append(
             {
@@ -366,14 +395,18 @@ def build_constant_contact_zip() -> tuple[bytes, str]:
 """
 
     # plain.txt
-    plain = f"SUBJECT: {subject}\n\n{intro}\n\n" + ("\n".join(txt_blocks) if txt_blocks else "(No items)\n")
+    plain = f"SUBJECT: {subject}\n\n{intro}\n\n" + (
+        "\n".join(txt_blocks) if txt_blocks else "(No items)\n"
+    )
 
     # Build ZIP in memory
     buf = io.BytesIO()
     with zipfile.ZipFile(buf, mode="w", compression=zipfile.ZIP_DEFLATED) as z:
         z.writestr("index.html", html_doc.encode("utf-8"))
         z.writestr("plain.txt", plain.encode("utf-8"))
-        z.writestr("manifest.json", json.dumps(manifest, indent=2, ensure_ascii=False).encode("utf-8"))
+        z.writestr(
+            "manifest.json", json.dumps(manifest, indent=2, ensure_ascii=False).encode("utf-8")
+        )
 
         # images
         for rel, data in image_files:

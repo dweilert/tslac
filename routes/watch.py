@@ -1,14 +1,13 @@
 from __future__ import annotations
 
-from web.request import Request
-from web.response import Response
-from web.router import Router
-from typing import Dict, List
 from urllib.parse import parse_qs
 
 import templates
-import watcher
 import watch_store
+import watcher
+from web.request import Request
+from web.response import Response
+from web.router import Router
 
 
 def register(router: Router) -> None:
@@ -27,7 +26,9 @@ def get_watch_status(_: Request) -> Response:
 def get_watch_scan(_: Request) -> Response:
     try:
         started = watcher.start_watch_scan_async()
-        return Response.redirect("/watch?status=" + ("Scan+started" if started else "Scan+already+running"))
+        return Response.redirect(
+            "/watch?status=" + ("Scan+started" if started else "Scan+already+running")
+        )
     except Exception as e:
         msg = str(e).replace(" ", "+")
         return Response.redirect(f"/watch?status=Scan+failed:+{msg}")
@@ -40,7 +41,7 @@ def get_watch_cancel(_: Request) -> Response:
 
 def get_watch_page(req: Request) -> Response:
     try:
-        status = (req.query_first.get("status") or "")
+        status = req.query_first.get("status") or ""
         cfg = watch_store.load_watch()
         latest = watcher.load_latest_results()
 
@@ -56,6 +57,7 @@ def get_watch_page(req: Request) -> Response:
         return Response.html(body)
     except Exception:
         import traceback
+
         tb = traceback.format_exc()
         return Response.html(f"<pre>\nWatch error:\n{tb}\n</pre>", status=400)
 
@@ -93,7 +95,7 @@ def _parse_post_form(req: Request) -> dict[str, str]:
         out: dict[str, str] = {}
 
         for chunk in data.split(sep):
-            if b'Content-Disposition:' not in chunk:
+            if b"Content-Disposition:" not in chunk:
                 continue
             try:
                 header_blob, value_blob = chunk.split(b"\r\n\r\n", 1)
@@ -120,7 +122,8 @@ def _parse_post_form(req: Request) -> dict[str, str]:
 
 
 def _split_lines(text: str) -> list[str]:
-    return [ln.strip() for ln in (text or "").splitlines() if ln.strip()]    
+    return [ln.strip() for ln in (text or "").splitlines() if ln.strip()]
+
 
 # def post_watch_save(req: Request) -> Response:
 #     form = _parse_post_form(req)
