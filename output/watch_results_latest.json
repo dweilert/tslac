@@ -1,5 +1,5 @@
 {
-  "ran_at": "2026-02-26T20:29:09",
+  "ran_at": "2026-02-28T18:17:09",
   "topics": [
     "dallas",
     "austn",
@@ -8,7 +8,7 @@
   ],
   "sites": [
     "home https://statearchivists.org/",
-    "home https://texashistory.unt.edu/"
+    "crawl https://texashistory.unt.edu/"
   ],
   "settings": {
     "max_links_per_site": 25,
@@ -29,6 +29,125 @@
   },
   "results": [
     {
+      "site": "https://texashistory.unt.edu/",
+      "url": "https://texashistory.unt.edu/explore/partners/feed/",
+      "title": "Latest partners added for The Portal to Texas History Kaufman County Library Private Collection of Dr. Teresa Marrero Private Collection of the Luis and Iris A. Dovalina Family Weston Heritage Guild Private Collection of the Whitehead Family Private Collection of Sharon Smith Scottish Rite Hospital for Children Center for Big Bend Studies County Line Magazine Farmersville Historical Society Private Collection of Brenda Lincke Fisseler The Sam Houston Regional Library and Research Center Grayson College Foundation Sam Bell Maxey House State Historic Site Heritage Society at Sam Houston Park African American Museum of Dallas Private Collection of the Hardin Family Nanticoke Historic Preservation Alliance Plano Public Library Alpha Delta Pi of Gamma Upsilon Rainbow Garden Club of North Texas Tomball Museum Center Clear Lake Shores Civic Club History Committee Library of Congress Manuscript Division Madison County Library Private Collection of the Donnell Family Panhandle Archaeological Society of Texas Private Collection of Dr. George E. Keaton, Jr. National Juneteenth Museum Private Collection of David Lindsey Riesel Historical Society Texarkana Museum System Apple Corps of Dallas Private Collection of C.K. and Marjorie Burns Private Collection of Jamie Powell Sheppard Midland Historical Society Private Collection of the Wensowitch Family Private Collection of Priscilla Goin Private Collection of M M Davis Remembering Black Dallas Lunar and Planetary Institute Library Journal of Texas Archeology and History Badge of Pride, LLC Garland Heritage Crossing Landmark Museum Sam Houston High School Reber Memorial Library Cozby Library and Community Commons Albert and Shirley Small Special Collections Library McWhiney History Education Group First Baptist Church of Rockwall",
+      "snippet": "https://texashistory.unt.edu/explore/partners/ 2026-02-24T10:11:33-06:00 UNT Libraries This is a custom feed for browsing The Portal to Texas History partners 2026-02-24T10:11:33-06:00 https://texashistory.unt.edu/explore/partners/KCL/ <p>T",
+      "matched_topics": [
+        "dallas",
+        "archives",
+        "bob"
+      ],
+      "best_topic_index": 0,
+      "score": 370
+    },
+    {
+      "site": "https://texashistory.unt.edu/",
+      "url": "https://texashistory.unt.edu/explore/collections/",
+      "title": "Collections - The Portal to Texas History",
+      "snippet": "Skip to main content Menu The Portal to Texas History Home Tour About Overview History Collaboration Endowment Technology Policies Harmful Content Statement Help Accessibility Contact Us News Statistics API Explore Overview Collections Part",
+      "matched_topics": [
+        "dallas",
+        "archives",
+        "bob"
+      ],
+      "best_topic_index": 0,
+      "score": 350
+    },
+    {
+      "site": "https://texashistory.unt.edu/",
+      "url": "https://texashistory.unt.edu/explore/collections/feed/",
+      "title": "Latest collections added for The Portal to Texas History Kaufman County Newspaper Collection Hays Free Press Rescuing Texas History, 2025 Center for Big Bend Studies Publications Steinbach Family Collection Austin Avenue Methodist Church Mayor Annette Strauss Papers County Line Magazine Texas Medical Association Library Collection University of North Texas Lawn Sign Collection University of North Texas Mortarboard Collection Nimitz Family Collection Rescuing Texas History, 2024 The Texas City Sun Madison County Area Newspapers J. R. Compton Collection The Dallas Way Collections Winn Morton Collection The Fibers Program Collection Agustin Lucas Bullfighting Collection Ted Dracos Papers Judge Jerry Birdwell Collection (The Dallas Way) National Juneteenth Museum – History Harvest White Settlement Bomber News Plano Star Courier Citizens' Advocate Littleton Dennis Teackle Papers Charles Nicoll Bancker Correspondence Fleet Radio Unit Pacific Map Collection The Texas Prison Echo The Roland and Junell (Wulf) Lincke Family Memorial Collection Texas Ghost Town Newspapers The Austin Villager Newspaper Collection Nineteenth Century Letterheads T-Patcher Travis County District Clerk Collection George Bragg Boy Choir Collection Big Thicket Association Publications Dale T. Smith Neiman Marcus Collection Special Collections Department Oral Histories Special Collections Events and Activities Sherwin J. Carlquist Collection Houston Informer Voices of the Eastern Shore Jo Streit Film Footage Collection Thomas Wyatt Collection Texas Lutheran University Yearbooks TCU Audiovisual Collection I-35 North Documentation Project Elm Fork Echoes",
+      "snippet": "https://texashistory.unt.edu/explore/collections/ 2026-02-24T10:04:44-06:00 UNT Libraries This is a custom feed for browsing The Portal to Texas History collections 2026-02-24T10:04:44-06:00 https://texashistory.unt.edu/explore/collections/",
+      "matched_topics": [
+        "dallas",
+        "archives"
+      ],
+      "best_topic_index": 0,
+      "score": 340
+    },
+    {
+      "site": "https://texashistory.unt.edu/",
+      "url": "https://texashistory.unt.edu/explore/partners/",
+      "title": "Partners - The Portal to Texas History",
+      "snippet": "Skip to main content Menu The Portal to Texas History Home Tour About Overview History Collaboration Endowment Technology Policies Harmful Content Statement Help Accessibility Contact Us News Statistics API Explore Overview Collections Part",
+      "matched_topics": [
+        "dallas",
+        "archives",
+        "bob"
+      ],
+      "best_topic_index": 0,
+      "score": 310
+    },
+    {
+      "site": "https://texashistory.unt.edu/",
+      "url": "https://texashistory.unt.edu/explore/collections/TDNP/",
+      "title": "Texas Digital Newspaper Program - The Portal to Texas History",
+      "snippet": "Skip to main content Menu The Portal to Texas History Home Tour About Overview History Collaboration Endowment Technology Policies Harmful Content Statement Help Accessibility Contact Us News Statistics API Explore Overview Collections Part",
+      "matched_topics": [
+        "dallas",
+        "archives"
+      ],
+      "best_topic_index": 0,
+      "score": 300
+    },
+    {
+      "site": "https://texashistory.unt.edu/",
+      "url": "https://texashistory.unt.edu/explore/subjects/",
+      "title": "Subjects - The Portal to Texas History",
+      "snippet": "Skip to main content Menu The Portal to Texas History Home Tour About Overview History Collaboration Endowment Technology Policies Harmful Content Statement Help Accessibility Contact Us News Statistics API Explore Overview Collections Part",
+      "matched_topics": [
+        "dallas"
+      ],
+      "best_topic_index": 0,
+      "score": 200
+    },
+    {
+      "site": "https://texashistory.unt.edu/",
+      "url": "https://texashistory.unt.edu/explore/collections/WASP/",
+      "title": "National WASP WWII Museum - The Portal to Texas History",
+      "snippet": "Skip to main content Menu The Portal to Texas History Home Tour About Overview History Collaboration Endowment Technology Policies Harmful Content Statement Help Accessibility Contact Us News Statistics API Explore Overview Collections Part",
+      "matched_topics": [
+        "dallas",
+        "archives"
+      ],
+      "best_topic_index": 0,
+      "score": 160
+    },
+    {
+      "site": "https://texashistory.unt.edu/",
+      "url": "https://texashistory.unt.edu/explore/locations/",
+      "title": "Locations - The Portal to Texas History",
+      "snippet": "Skip to main content Menu The Portal to Texas History Home Tour About Overview History Collaboration Endowment Technology Policies Harmful Content Statement Help Accessibility Contact Us News Statistics API Explore Overview Collections Part",
+      "matched_topics": [
+        "dallas"
+      ],
+      "best_topic_index": 0,
+      "score": 80
+    },
+    {
+      "site": "https://texashistory.unt.edu/",
+      "url": "https://texashistory.unt.edu/explore/collections/TBWP/",
+      "title": "T. B. Willis Collection - The Portal to Texas History",
+      "snippet": "Skip to main content Menu The Portal to Texas History Home Tour About Overview History Collaboration Endowment Technology Policies Harmful Content Statement Help Accessibility Contact Us News Statistics API Explore Overview Collections Part",
+      "matched_topics": [
+        "dallas"
+      ],
+      "best_topic_index": 0,
+      "score": 80
+    },
+    {
+      "site": "https://texashistory.unt.edu/",
+      "url": "https://texashistory.unt.edu/explore/collections/BANKS/",
+      "title": "The Ray and Joyce Bankston Dalco Photography Collection - The Portal to Texas History",
+      "snippet": "Skip to main content Menu The Portal to Texas History Home Tour About Overview History Collaboration Endowment Technology Policies Harmful Content Statement Help Accessibility Contact Us News Statistics API Explore Overview Collections Part",
+      "matched_topics": [
+        "dallas"
+      ],
+      "best_topic_index": 0,
+      "score": 40
+    },
+    {
       "site": "https://statearchivists.org/",
       "url": "https://statearchivists.org/",
       "title": "Home - Council Of State Archivists",
@@ -38,6 +157,39 @@
       ],
       "best_topic_index": 2,
       "score": 120
+    },
+    {
+      "site": "https://texashistory.unt.edu/",
+      "url": "https://texashistory.unt.edu/about/portal/collaboration/",
+      "title": "About - Collaboration - The Portal to Texas History",
+      "snippet": "Skip to main content Menu The Portal to Texas History Home Tour About Overview History Collaboration Endowment Technology Policies Harmful Content Statement Help Accessibility Contact Us News Statistics API Explore Overview Collections Part",
+      "matched_topics": [
+        "archives"
+      ],
+      "best_topic_index": 2,
+      "score": 60
+    },
+    {
+      "site": "https://texashistory.unt.edu/",
+      "url": "https://texashistory.unt.edu/explore/collections/BELTJ/",
+      "title": "Belton Journal - The Portal to Texas History",
+      "snippet": "Skip to main content Menu The Portal to Texas History Home Tour About Overview History Collaboration Endowment Technology Policies Harmful Content Statement Help Accessibility Contact Us News Statistics API Explore Overview Collections Part",
+      "matched_topics": [
+        "archives"
+      ],
+      "best_topic_index": 2,
+      "score": 20
+    },
+    {
+      "site": "https://texashistory.unt.edu/",
+      "url": "https://texashistory.unt.edu/ark:/67531/metadc790858/",
+      "title": "[Woman barrel racing] - The Portal to Texas History",
+      "snippet": "Skip to main content Skip to content navigation Menu The Portal to Texas History Home Tour About Overview History Collaboration Endowment Technology Policies Harmful Content Statement Help Accessibility Contact Us News Statistics API Explor",
+      "matched_topics": [
+        "archives"
+      ],
+      "best_topic_index": 2,
+      "score": 20
     }
   ],
   "errors": []

@@ -1,6 +1,6 @@
 sites:
 - home https://statearchivists.org/
-- home https://texashistory.unt.edu/
+- crawl https://texashistory.unt.edu/
 topics:
 - dallas
 - austn
