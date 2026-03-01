@@ -6,8 +6,6 @@ import io
 import json
 import urllib.request
 import zipfile
-
-from urllib.parse import urlparse
 from contextlib import suppress
 from datetime import datetime
 from pathlib import Path

@@ -127,3 +127,8 @@ I'd like to review the code and re-factor as many of the modules have gotten ver
 I’m working on a local newsletter helper app for tsl.texas.gov. The repo for the current code is in: https://github.com/dweilert/tslac Please read Design.md, Design2.md and Design3.md design documents. I'd like to review the code and re-factor as many of the modules have gotten very large, some almost a 1000 lines of code. 
 
 I would like to continue the re-factoring. In a previous chat we focused on much of the HTML and the rending and routes.  Please review the code deeper and make suggestions.  Along with a general review of the repository and other possible suggestions to improve how the code is maintained and tested.
+
+
+I’m working on a local newsletter helper app for tsl.texas.gov. The repo for the current code is in: https://github.com/dweilert/tslac Please read Design.md, Design2.md and Design3.md design documents. I'd like to review the code and re-factor as many of the modules have gotten very large, some almost a 1000 lines of code. 
+
+I would like to continue the re-factoring. In a previous chats we have re-factor multiple facets of the code.  Please review the code deeper and make suggestions.  Along with a general review of the repository and other possible suggestions to improve how the code is maintained and tested.

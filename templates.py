@@ -1,13 +1,10 @@
 from __future__ import annotations
 
-import html
-
 from typing import Any
-from urllib.parse import quote, urlparse
+from urllib.parse import quote
 
 from models import Candidate
 from render import render
-
 
 # def _esc(s: object) -> str:
 #     """HTML-escape for safe text insertion into HTML."""
