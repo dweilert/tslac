@@ -1,0 +1,267 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>{{ title }}</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    body {
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+      margin: 16px;
+      background: #eee;
+      color: #111;
+    }
+    .row { display: flex; gap: 16px; flex-wrap: wrap; align-items: flex-start; }
+    .card {
+      background: #fff;
+      border-radius: 10px;
+      padding: 12px;
+      box-shadow: 0 1px 6px rgba(0,0,0,0.10);
+    }
+    canvas {
+      border: 1px solid #ccc;
+      max-width: 100%;
+      height: auto;
+      cursor: crosshair;
+      touch-action: none; /* important for pointer events */
+    }
+    .btn {
+      display: inline-block;
+      padding: 8px 12px;
+      border: 1px solid #bbb;
+      background: #f7f7f7;
+      border-radius: 8px;
+      cursor: pointer;
+      margin-right: 8px;
+    }
+    .btn.primary {
+      border-color: #4b7;
+      background: #eafff1;
+    }
+    .small { font-size: 0.9rem; color: #444; }
+    code { background: #f3f3f3; padding: 2px 6px; border-radius: 6px; }
+  </style>
+</head>
+<body>
+  <h2>Crop image</h2>
+  <div class="small">Drag a rectangle on the image. Then click <b>Save crop</b>.</div>
+
+  <div class="row" style="margin-top: 12px;">
+    <div class="card">
+      <div style="margin-bottom: 8px;">
+        <button class="btn" onclick="resetSelection()">Reset</button>
+        <button class="btn primary" onclick="saveCrop()">Save crop</button>
+        <button class="btn" onclick="window.close()">Cancel</button>
+      </div>
+
+      <canvas id="cv"></canvas>
+
+      <div class="small" style="margin-top: 8px;">
+        Image: <code id="imgUrl"></code>
+      </div>
+      <div class="small">
+        Selection: <code id="sel"></code>
+      </div>
+    </div>
+  </div>
+
+<script>
+  // Injected values
+  const IMG_ORIG = {{ img_url|tojson }};
+  const IMG_PROXY = {{ img_proxy|tojson }};
+  const PAGE_URL = {{ page_url|tojson }};
+  const INDEX = {{ index|tojson }};
+  const SAVED_CROP = {{ saved_crop|tojson }};
+
+  // Display original URL (not proxy) so user sees the true image source
+  document.getElementById("imgUrl").textContent = IMG_ORIG || "(empty)";
+
+  const cv = document.getElementById("cv");
+  const ctx = cv.getContext("2d");
+
+  const img = new Image();
+
+  // Drag state (in canvas coordinate space)
+  let isDown = false;
+  let start = null; // {x,y}
+  let rect = null;  // {x,y,w,h}
+
+  function updateSelLabel() {
+    const el = document.getElementById("sel");
+    if (!rect || rect.w < 1 || rect.h < 1) {
+      el.textContent = "(none)";
+      return;
+    }
+    el.textContent = `x=${Math.round(rect.x)} y=${Math.round(rect.y)} w=${Math.round(rect.w)} h=${Math.round(rect.h)}`;
+  }
+
+  function fitCanvasToImage() {
+    // scale down big images for usability
+    const maxW = 900;
+    const scale = Math.min(1, maxW / img.naturalWidth);
+    cv.width = Math.round(img.naturalWidth * scale);
+    cv.height = Math.round(img.naturalHeight * scale);
+  }
+
+  function draw() {
+    if (!img.complete || !img.naturalWidth) return;
+
+    ctx.clearRect(0, 0, cv.width, cv.height);
+    ctx.drawImage(img, 0, 0, cv.width, cv.height);
+
+    if (rect && rect.w > 1 && rect.h > 1) {
+      ctx.save();
+      ctx.strokeStyle = "#00a";
+      ctx.lineWidth = 2;
+      ctx.setLineDash([6, 4]);
+      ctx.strokeRect(rect.x, rect.y, rect.w, rect.h);
+      ctx.restore();
+    }
+
+    updateSelLabel();
+  }
+
+  function canvasPointFromEvent(e) {
+    // Convert client coords -> canvas coords, accounting for CSS scaling
+    const r = cv.getBoundingClientRect();
+    const scaleX = cv.width / r.width;
+    const scaleY = cv.height / r.height;
+    return {
+      x: (e.clientX - r.left) * scaleX,
+      y: (e.clientY - r.top) * scaleY
+    };
+  }
+
+  function normRect(a, b) {
+    const x = Math.min(a.x, b.x);
+    const y = Math.min(a.y, b.y);
+    const w = Math.abs(b.x - a.x);
+    const h = Math.abs(b.y - a.y);
+    return { x, y, w, h };
+  }
+
+  function resetSelection() {
+    rect = null;
+    draw();
+  }
+
+
+    async function saveCrop() {
+    if (!rect || rect.w < 2 || rect.h < 2) {
+        alert("No selection. Drag a rectangle first.");
+        return;
+    }
+
+    // Convert canvas coords -> original image pixel coords
+    const scaleX = img.naturalWidth / cv.width;
+    const scaleY = img.naturalHeight / cv.height;
+
+    const crop = {
+        ix: Math.round(rect.x * scaleX),
+        iy: Math.round(rect.y * scaleY),
+        iw: Math.round(rect.w * scaleX),
+        ih: Math.round(rect.h * scaleY),
+        img_w: img.naturalWidth,
+        img_h: img.naturalHeight
+    };
+
+    const form = new URLSearchParams();
+    form.set("index", String(INDEX ?? 0));
+    form.set("url", PAGE_URL);
+    form.set("img_src", IMG_ORIG);      // save original URL
+    form.set("crop", JSON.stringify(crop)); // IMPORTANT: backend expects "crop"
+
+    const resp = await fetch("/curate/save_crop", {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: form.toString()
+    });
+
+    // If backend failed, show the response instead of silently closing
+    if (!resp.ok) {
+        const msg = await resp.text();
+        alert("Save crop failed:\n" + msg);
+        return;
+    }
+
+    // Success → refresh opener
+    try {
+        if (window.opener) window.opener.location.reload();
+    } catch (e) {}
+
+    window.close();
+    }
+
+
+  // Expose for HTML onclick
+  window.resetSelection = resetSelection;
+  window.saveCrop = saveCrop;
+
+  // Pointer events work for mouse + trackpad + touch
+  cv.addEventListener("pointerdown", (e) => {
+    if (!IMG_PROXY) return;
+    e.preventDefault();
+    try { cv.setPointerCapture(e.pointerId); } catch (_) {}
+
+    isDown = true;
+    start = canvasPointFromEvent(e);
+    rect = { x: start.x, y: start.y, w: 1, h: 1 };
+    draw();
+  });
+
+  cv.addEventListener("pointermove", (e) => {
+    if (!isDown) return;
+    e.preventDefault();
+    const p = canvasPointFromEvent(e);
+    rect = normRect(start, p);
+    draw();
+  });
+
+  cv.addEventListener("pointerup", (e) => {
+    if (!isDown) return;
+    e.preventDefault();
+    isDown = false;
+    try { cv.releasePointerCapture(e.pointerId); } catch (_) {}
+    draw();
+  });
+
+  cv.addEventListener("pointercancel", () => {
+    isDown = false;
+  });
+
+  // Load the image via proxy
+  img.onload = () => {
+    fitCanvasToImage();
+
+    // Restore saved crop (if present) into canvas coordinate space
+    if (
+      SAVED_CROP && typeof SAVED_CROP === "object" &&
+      ("ix" in SAVED_CROP) && ("iy" in SAVED_CROP) && ("iw" in SAVED_CROP) && ("ih" in SAVED_CROP) &&
+      img.naturalWidth && img.naturalHeight
+    ) {
+      const sx = img.naturalWidth / cv.width;
+      const sy = img.naturalHeight / cv.height;
+
+      rect = {
+        x: (SAVED_CROP.ix || 0) / sx,
+        y: (SAVED_CROP.iy || 0) / sy,
+        w: (SAVED_CROP.iw || 0) / sx,
+        h: (SAVED_CROP.ih || 0) / sy
+      };
+    }
+
+    draw();
+  };
+
+  img.onerror = () => {
+    alert("Failed to load image for cropping (proxy).");
+  };
+
+  if (IMG_PROXY) {
+    img.src = IMG_PROXY;
+  } else {
+    alert("No image URL provided.");
+  }
+</script>
+</body>
+</html>

@@ -21,7 +21,7 @@ https://www.tsl.texas.gov/workshops:
     alt: ''
     crop_path: output/crops/crop_54e28c394708f071.png
     updated_at: '2026-02-22T20:21:44'
-  updated_at: '2026-02-22T20:22:14'
+  updated_at: '2026-03-01T12:53:59'
   excerpts:
   - 'Free Professional Development Opportunities
 
@@ -37,6 +37,14 @@ https://www.tsl.texas.gov/workshops:
 
     Funding provided by the National Historical Publications and Records Commission
     (NHPRC).'
+  image_crops:
+    https://www.tsl.texas.gov/sites/default/files/public/tslac/exec/2026 SAA workshop Project Management - HPSLIDER_0.png:
+      ix: 26
+      iy: 79
+      iw: 401
+      ih: 213
+      img_w: 800
+      img_h: 488
 gdrive:1mz2GnMqbsdhFMOKLFzXEKrf0Lgt_NzEM:
   final_blurb: The document recommends that the Texas State Library and Archives Commission
     collaborate with the Lyndon B. Johnson Presidential Library to enhance archival
@@ -89,4 +97,17 @@ https://www.tsl.texas.gov/texasamerica250exhibit:
   - The Lorenzo de Zavala State Archives and Library Building lobby and exhibit gallery
     is open Monday through Friday, 8:00 a.m. to 5:00 p.m. and the second Saturday
     of each month from 9:00 a.m. to 4:00 p.
-  updated_at: '2026-03-01T10:45:06'
+  updated_at: '2026-03-01T11:49:26'
+  final_blurb: "As the country celebrates 250 years since the signing of the Declaration\
+    \ of Independence, every state has a story to tell about its own contributions\
+    \ to the development of the nation. Texas pride permeates our culture here at\
+    \ home, and we are always eager to promote the state’s people, products, l\r\n\
+    \r\nAs the country celebrates 250 years since the signing of the Declaration of\
+    \ Independence, every state has a story to tell about its own contributions to\
+    \ the development of the nation. Texas pride permeates our culture here at home,\
+    \ and we are always eager to promote the state’s people, products, landscape,\
+    \ innovations, and works of art beyond our borders, showing how the Lone Star\
+    \ State has contributed to the legacy of America.\r\n\r\nThe Lorenzo de Zavala\
+    \ State Archives and Library Building lobby and exhibit gallery is open Monday\
+    \ through Friday, 8:00 a.m. to 5:00 p.m. and the second Saturday of each month\
+    \ from 9:00 a.m. to 4:00 p."

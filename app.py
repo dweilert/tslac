@@ -15,6 +15,7 @@ from routes import (
     quit as quit_route,
     static_files,
     watch,
+    crop,
 )
 from web.handler import RoutedHandler
 from web.router import Router
@@ -32,6 +33,7 @@ def build_router(server) -> Router:
     health.register(r)
     quit_route.register(r, server)
     static_files.register(r)
+    crop.register(r)
     return r
 
 

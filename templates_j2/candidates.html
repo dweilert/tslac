@@ -99,14 +99,23 @@
   <div class="cards" id="docCards">
     {% for d in doc_candidates %}
       {% if d is mapping and d.get("id") %}
+        {% set did = d.get("id") %}
         <div class="card candidate-card"
-             data-title="{{ (d.get('title') or d.get('id') or '')|lower }}"
-             data-source="doc">
+            data-title="{{ (d.get('title') or did or '')|lower }}"
+            data-source="doc">
           <div class="row">
+
+            <!-- ✅ Checkbox (same name as web: "picked") -->
+            <div>
+              <input type="checkbox" name="picked" value="{{ did }}"
+                    {% if did in prechecked %}checked{% endif %}
+                    onchange="updateSelectedCount()"/>
+            </div>
+
             <div style="flex:1;">
               <div class="title">
-                {{ d.get("title") or d.get("id") }}
-                {% if has_blurb_by_docid.get(d.get("id")) %}
+                {{ d.get("title") or did }}
+                {% if has_blurb_by_docid.get(did) %}
                   <span class="badge">curated</span>
                 {% endif %}
               </div>
@@ -114,14 +123,14 @@
               <div class="small">
                 <a href="{{ d.get('url') or '#' }}" target="_blank" rel="noreferrer">Open doc</a>
                 &nbsp;•&nbsp;
-                <a href="/curate_doc?doc_id={{ d.get('id')|urlencode }}">Curate Doc</a>
+                <a href="/curate_doc?doc_id={{ did|urlencode }}">Curate Doc</a>
               </div>
 
-              <div class="small muted"><code>{{ d.get("id") }}</code></div>
+              <div class="small muted"><code>{{ did }}</code></div>
             </div>
 
             <div>
-              <a class="btn" href="/curate_doc?doc_id={{ d.get('id')|urlencode }}">Curate</a>
+              <a class="btn" href="/curate_doc?doc_id={{ did|urlencode }}">Curate</a>
             </div>
           </div>
         </div>

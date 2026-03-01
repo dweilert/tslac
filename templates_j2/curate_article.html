@@ -35,33 +35,25 @@
 {% endif %}
 
 <div class="cards">
-
-  <!-- Final blurb -->
+  <!-- Blurb builder -->
   <div class="card">
-    <div class="title">Final blurb (editable)</div>
+    <div class="title">Blurb builder</div>
 
-    <form method="POST" action="/curate/save">
-      <input type="hidden" name="index" value="{{ index }}"/>
-      <input type="hidden" name="url" value="{{ url }}"/>
+    <div class="small muted" style="margin-bottom:8px;">
+      Capture excerpts from the cleaned article, then combine them into the final blurb.
+    </div>
 
-      <textarea class="field" name="final_blurb" rows="6">{{ final_blurb }}</textarea>
-
-      <div class="toolbar" style="margin-top:10px;">
-        <button class="btn" type="submit">Save blurb</button>
-      </div>
-    </form>
-  </div>
-
-  <!-- Excerpts -->
-  <div class="card">
-    <div class="title">Excerpt capture (highlight text in the article below)</div>
-
+    <!-- Excerpt tools -->
     <div class="toolbar">
       <button class="btn" type="button" onclick="previewSelection()">Preview selection</button>
       <button class="btn" type="button" id="btnAddExcerpt" onclick="addSelectedText()" disabled>Add Selected Text</button>
 
       <button class="btn" type="button" onclick="removeLastExcerpt()">Remove last excerpt</button>
       <button class="btn" type="button" onclick="clearExcerpts()">Clear all excerpts</button>
+
+      <span style="flex:1;"></span>
+
+      <button class="btn" type="button" onclick="composeFinalBlurb()">Combine excerpts → Final blurb</button>
     </div>
 
     <div class="panel">
@@ -86,9 +78,26 @@
         <div class="muted">No excerpts saved yet. Highlight text in the article and click <b>Add Selected Text</b>.</div>
       {% endif %}
     </div>
+
+    <hr style="margin:14px 0;"/>
+
+    <!-- Final blurb -->
+    <div class="small muted">Final blurb (editable)</div>
+
+    <form method="POST" action="/curate/save">
+      <input type="hidden" name="index" value="{{ index }}"/>
+      <input type="hidden" name="url" value="{{ url }}"/>
+
+      <textarea class="field" name="final_blurb" rows="8">{{ final_blurb }}</textarea>
+
+      <div class="toolbar" style="margin-top:10px;">
+        <button class="btn" type="submit">Save blurb</button>
+      </div>
+    </form>
   </div>
 
   <!-- Images -->
+
   <div class="card">
     <div class="title">Detected images</div>
 
@@ -114,7 +123,7 @@
               </div>
 
               <div class="img-actions">
-                <button class="btn" type="button" onclick="openCrop('{{ src }}', '{{ url }}')">Crop</button>
+                <button class="btn" type="button" onclick="openCrop('{{ src }}', '{{ url }}', {{ index }})">Crop</button>
                 <button class="btn" type="button" onclick="copyText('{{ src }}')">Copy URL</button>
 
                 <button class="btn" type="button" onclick="selectImage('{{ src }}')">
@@ -189,8 +198,11 @@ function clearSelectedImage() {
 }
 
 /* --- Crop --- */
-function openCrop(imgUrl, pageUrl) {
-  window.open(`/crop?img=${encodeURIComponent(imgUrl)}&page=${encodeURIComponent(pageUrl)}`, "_blank");
+function openCrop(imgUrl, pageUrl, index) {
+  window.open(
+    `/crop?img=${encodeURIComponent(imgUrl)}&page=${encodeURIComponent(pageUrl)}&index=${encodeURIComponent(String(index ?? 0))}`,
+    "_blank"
+  );
 }
 
 /* --- Excerpts --- */
@@ -239,6 +251,15 @@ function removeLastExcerpt() {
 
 function clearExcerpts() {
   postForm("/curate/clear_excerpts", {
+    index: INDEX,
+    url: URL
+  });
+}
+
+
+/* --- Compose final blurb from stored excerpts --- */
+function composeFinalBlurb() {
+  postForm("/curate/compose_blurb", {
     index: INDEX,
     url: URL
   });

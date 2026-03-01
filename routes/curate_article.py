@@ -11,6 +11,7 @@ from services.curate_article_service import (
     save_blurb,
     save_crop,
     select_image,
+    compose_blurb_from_excerpts,
 )
 from templates import curate_page_html
 from web.errors import BadRequestError
@@ -24,6 +25,7 @@ def register(router: Router) -> None:
 
     router.post("/curate/save", post_curate_save)
     router.post("/curate/add_excerpt", post_curate_add_excerpt)
+    router.post("/curate/compose_blurb", post_curate_compose_blurb)
     router.post("/curate/pop_excerpt", post_curate_pop_excerpt)
     router.post("/curate/save_crop", post_curate_save_crop)
     router.post("/curate/select_image", post_curate_select_image)
@@ -88,6 +90,16 @@ def post_curate_add_excerpt(req: Request) -> Response:
     add_excerpt(url=form.get("url", ""), excerpt=form.get("excerpt", ""))
     return _redirect_curate(idx, "Added excerpt")
 
+def post_curate_compose_blurb(req: Request) -> Response:
+    form = _parse_post_form(req)
+    idx = _safe_int(form.get("index", "0"), 0)
+    url = form.get("url", "")
+    composed = compose_blurb_from_excerpts(url=url)
+    if composed:
+        return _redirect_curate(idx, "Composed final blurb from excerpts")
+    return _redirect_curate(idx, "No excerpts to compose")
+
+
 
 def post_curate_pop_excerpt(req: Request) -> Response:
     form = _parse_post_form(req)
@@ -99,8 +111,13 @@ def post_curate_pop_excerpt(req: Request) -> Response:
 def post_curate_save_crop(req: Request) -> Response:
     form = _parse_post_form(req)
     idx = _safe_int(form.get("index", "0"), 0)
+
+    crop_json = (form.get("crop_json", "") or form.get("crop", "")).strip()
+
     save_crop(
-        url=form.get("url", ""), img_src=form.get("img_src", ""), crop_json=form.get("crop", "")
+        url=form.get("url", ""),
+        img_src=form.get("img_src", ""),
+        crop_json=crop_json,
     )
     return _redirect_curate(idx, "Saved image crop")
 

@@ -130,3 +130,17 @@ I would like to continue the re-factoring. In a previous chat we focused on much
 
 
 I’m working on a local newsletter helper app for tsl.texas.gov. The repo for the current code is in: https://github.com/dweilert/tslac. With the latest code base in the refactor/http-router not in the main branch, .I would like to continue the re-factoring. In a previous chats we have re-factor multiple facets of the code.  Please review the code deeper and make suggestions.  Along with a general review of the repository and other possible suggestions to improve how the code is maintained and tested.
+
+I’m working on a local newsletter helper app for tsl.texas.gov. The repo for the current code is in: https://github.com/dweilert/tslac. With the latest code base in the refactor/http-router not in the main branch.  
+
+Past efforts did significant re-factoring but I did not keep and eye on some of the changes and relize now that some of the core features of the app need to be modified and fixed to return to my original needs.  
+
+I'd like you to review the code, ignoring the Design.md, Design2.md and Design3.md documents.  The current design has two distinct curate approaches: one for the web based located articles and another for the g-drive / local. I'd like to consolidate these into a single approach that can handle both sources of content.
+
+When the curating is performed the final blurb content creation where the scrapped content is copied to create one or excerpts and then combined into a final blurb should be grouped together in a single area of the page; and the image selection should be grouped together as well. So making the image selection more of a separate fucntion from the blurb creation.  Also the button to combine the excerpts into the final blurb area seems to be missing.  
+
+The cureate of the g-drive / local content needs to more aligned with the web based approach so that it can handle both sources in a single way.  I think an apparoach is the current content that summirizes the g-drive info could be placed in the final blurb area and edited there.  
+
+On the main page there also needs to be a selection check box in front of each g-drive articale so that it can be selected for inclusion in the preview process.
+
+There is alot of UI re-design that needs to be done.

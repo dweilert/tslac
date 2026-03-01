@@ -131,6 +131,26 @@ def select_image(*, url: str, img_src: str) -> None:
         upsert_curated_selected_image(url, img_src)
 
 
+
+
+def compose_blurb_from_excerpts(*, url: str, sep: str = "\n\n") -> str:
+    """Combine stored excerpts into final blurb and persist it.
+
+    Returns the composed blurb string (may be empty).
+    """
+    url = (url or "").strip()
+    if not url:
+        return ""
+
+    cur = load_curation()
+    excerpts = get_curated_excerpts(cur, url)
+    composed = sep.join([x.strip() for x in excerpts if x.strip()]).strip()
+
+    if composed:
+        upsert_curated_blurb(url, composed)
+    return composed
+
+
 def clear_selected_image(*, url: str) -> None:
     url = (url or "").strip()
     if url:
