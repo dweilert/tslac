@@ -5,6 +5,7 @@ def test_should_exclude_querymark():
     assert should_exclude("https://example.com/a?b=1", ["?"]) is True
     assert should_exclude("https://example.com/a", ["?"]) is False
 
+
 def test_score_prefers_earlier_topics():
     topics = ["grants", "digitization"]
     page = score_page_against_topics(

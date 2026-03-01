@@ -7,6 +7,7 @@ from collect.collector import collect_candidates
 from collect.rules import CollectRules
 from constants import DEFAULT_INTRO, DEFAULT_SUBJECT
 from doc_store import load_doc_candidates
+from logutil import info
 from state_store import get_curated_blurb, load_curation, load_selected, save_selected
 from storage.collector_store import (
     CANDIDATES_FILE,
@@ -20,7 +21,6 @@ from templates import html_page
 from web.request import Request
 from web.response import Response
 from web.router import Router
-from logutil import info
 
 HOMEPAGE_URL = "https://www.tsl.texas.gov/"
 
@@ -94,8 +94,8 @@ def get_main(req: Request) -> Response:
 
     # UI reads from persisted candidates
     candidates = load_candidates_file(CANDIDATES_FILE)
-    info(F"DEBUG sources:", {getattr(c, "source", None) for c in candidates})
-    info(f"
+    info("DEBUG sources:", {getattr(c, "source", None) for c in candidates})
+
     sel = load_selected()
 
     prechecked: set[str] = set()

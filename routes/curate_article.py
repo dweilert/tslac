@@ -18,7 +18,6 @@ from state_store import (
     upsert_curated_image_crop,
     upsert_curated_selected_image,
 )
-
 from storage.collector_store import load_candidates_file
 from templates import curate_page_html
 from web.errors import BadRequestError
@@ -64,14 +63,17 @@ def _redirect_curate(idx: int, status: str) -> Response:
 def get_curate_by_index(req: Request, params: dict[str, str]) -> Response:
     # idx comes from router regex: ^/curate/(?P<idx>\d+)/?$
     idx_raw = params.get("idx", "")
+
     try:
         idx = int(idx_raw)
-    except ValueError:
-        raise BadRequestError(f"Invalid curate index: {idx_raw!r}")
+    except ValueError as err:
+        raise BadRequestError(f"Invalid curate index: {idx_raw!r}") from err
 
     candidates = load_candidates_file()
     if not candidates:
-        raise BadRequestError("No candidates available. Go back and click Refresh candidates first.")
+        raise BadRequestError(
+            "No candidates available. Go back and click Refresh candidates first."
+        )
 
     if idx < 0 or idx >= len(candidates):
         raise BadRequestError(f"Index out of range: {idx} (0..{len(candidates)-1})")

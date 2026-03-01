@@ -3,6 +3,7 @@ from __future__ import annotations
 import os
 from http.server import ThreadingHTTPServer
 
+from logutil import info
 from routes import (
     api,
     candidates,
@@ -17,7 +18,6 @@ from routes import (
 )
 from web.handler import RoutedHandler
 from web.router import Router
-from logutil import info
 
 
 def build_router(server) -> Router:

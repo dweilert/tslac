@@ -4,6 +4,7 @@ from __future__ import annotations
 import json
 import time
 from collections.abc import Callable
+from contextlib import suppress
 from datetime import datetime
 from threading import Event
 from typing import Any
@@ -40,10 +41,8 @@ def parse_site_line(line: str) -> tuple[str, str, int | None]:
 
     for tok in parts[idx + 1 :]:
         if tok.startswith("max_links="):
-            try:
+            with suppress(Exception):
                 max_links_override = int(tok.split("=", 1)[1])
-            except Exception:
-                pass
 
     return mode, url, max_links_override
 
@@ -98,7 +97,11 @@ def run_watch_scan(
             break
         if time.monotonic() - t0 > max_seconds:
             errors.append(
-                {"site": str(site_line), "url": "", "error": f"Stopped: exceeded max_seconds={max_seconds}"}
+                {
+                    "site": str(site_line),
+                    "url": "",
+                    "error": f"Stopped: exceeded max_seconds={max_seconds}",
+                }
             )
             break
 
@@ -107,10 +110,14 @@ def run_watch_scan(
         if not site:
             continue
 
-        per_site_max_links = max_links_override if max_links_override is not None else max_links_default
+        per_site_max_links = (
+            max_links_override if max_links_override is not None else max_links_default
+        )
 
         if progress_cb:
-            progress_cb(message=f"Fetching ({mode}) ...", current_site=site, current_url=site, sites_done=si)
+            progress_cb(
+                message=f"Fetching ({mode}) ...", current_site=site, current_url=site, sites_done=si
+            )
 
         try:
             home_html, _ct = fetch(site, timeout_s=timeout_s)
@@ -144,11 +151,21 @@ def run_watch_scan(
                     break
                 if pages_done >= max_total_pages:
                     errors.append(
-                        {"site": site, "url": url, "error": f"Stopped: exceeded max_total_pages={max_total_pages}"}
+                        {
+                            "site": site,
+                            "url": url,
+                            "error": f"Stopped: exceeded max_total_pages={max_total_pages}",
+                        }
                     )
                     break
                 if time.monotonic() - t0 > max_seconds:
-                    errors.append({"site": site, "url": url, "error": f"Stopped: exceeded max_seconds={max_seconds}"})
+                    errors.append(
+                        {
+                            "site": site,
+                            "url": url,
+                            "error": f"Stopped: exceeded max_seconds={max_seconds}",
+                        }
+                    )
                     break
 
                 pages_done += 1

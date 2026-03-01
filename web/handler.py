@@ -2,11 +2,11 @@ from __future__ import annotations
 
 from http.server import BaseHTTPRequestHandler
 
+from logutil import error
+from web.errors import BadRequestError  # <-- add this (create web/errors.py)
 from web.request import build_request
 from web.response import Response
 from web.router import Router
-from web.errors import BadRequestError  # <-- add this (create web/errors.py)
-from logutil import error
 
 
 class RoutedHandler(BaseHTTPRequestHandler):
