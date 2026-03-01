@@ -19,17 +19,18 @@ from state_store import (
     upsert_curated_selected_image,
 )
 
-# from collect.collector import load_candidates_file
 from storage.collector_store import load_candidates_file
 from templates import curate_page_html
+from web.errors import BadRequestError
 from web.request import Request
 from web.response import Response
 from web.router import Router
 
 
 def register(router: Router) -> None:
-    # GET /curate/<idx>
-    router.route_regex("GET", r"^/curate/\d+$", get_curate_by_index)
+    # GET /curate/<idx>  (named group -> params["idx"])
+    # Accept optional trailing slash to be tolerant.
+    router.route_regex("GET", r"^/curate/(?P<idx>[0-9]+)/?$", get_curate_by_index)
 
     # POST actions (exact match, same as server.py)
     router.post("/curate/save", post_curate_save)
@@ -60,62 +61,59 @@ def _redirect_curate(idx: int, status: str) -> Response:
     return Response.redirect(f"/curate/{idx}?status={status_q}")
 
 
-def get_curate_by_index(req: Request) -> Response:
+def get_curate_by_index(req: Request, params: dict[str, str]) -> Response:
+    # idx comes from router regex: ^/curate/(?P<idx>\d+)/?$
+    idx_raw = params.get("idx", "")
     try:
-        path_only = req.path.split("?", 1)[0]
-        idx_str = path_only[len("/curate/") :].strip("/")
-        idx = int(idx_str)
+        idx = int(idx_raw)
+    except ValueError:
+        raise BadRequestError(f"Invalid curate index: {idx_raw!r}")
 
-        candidates = load_candidates_file()
-        if not candidates:
-            raise ValueError("No candidates available. Go back and click Refresh candidates first.")
+    candidates = load_candidates_file()
+    if not candidates:
+        raise BadRequestError("No candidates available. Go back and click Refresh candidates first.")
 
-        if idx < 0 or idx >= len(candidates):
-            raise ValueError(f"Index out of range: {idx} (0..{len(candidates)-1})")
+    if idx < 0 or idx >= len(candidates):
+        raise BadRequestError(f"Index out of range: {idx} (0..{len(candidates)-1})")
 
-        status = req.query_first.get("status", "")
+    # query_first is a property dict[str, str]
+    status = req.query_first.get("status", "")
 
-        c = candidates[idx]
-        res = cleaner.clean_article(c.url)
+    c = candidates[idx]
+    res = cleaner.clean_article(c.url)
 
-        cleaned = {
-            "title": res.title,
-            "published_date": res.published_date,
-            "date_confidence": res.date_confidence,
-            "clean_html": res.clean_html,
-            "text_plain": res.text_plain,
-            "images": res.images,
-            "extraction_quality": res.extraction_quality,
-        }
+    cleaned = {
+        "title": res.title,
+        "published_date": res.published_date,
+        "date_confidence": res.date_confidence,
+        "clean_html": res.clean_html,
+        "text_plain": res.text_plain,
+        "images": res.images,
+        "extraction_quality": res.extraction_quality,
+    }
 
-        cur = load_curation()
-        blurb = get_curated_blurb(cur, c.url)
-        excerpts = get_curated_excerpts(cur, c.url)
-        selected_image = get_curated_selected_image(cur, c.url)
+    cur = load_curation()
+    blurb = get_curated_blurb(cur, c.url)
+    excerpts = get_curated_excerpts(cur, c.url)
+    selected_image = get_curated_selected_image(cur, c.url)
 
-        try:
-            crops = get_curated_image_crops(cur, c.url)
-        except Exception:
-            crops = {}
-
-        body = curate_page_html(
-            idx,
-            len(candidates),
-            c,
-            cleaned,
-            final_blurb=blurb,
-            excerpts=excerpts,
-            selected_image=selected_image,
-            status=status,
-            crops=crops,
-        )
-        return Response.html(body)
-
+    try:
+        crops = get_curated_image_crops(cur, c.url)
     except Exception:
-        import traceback
+        crops = {}
 
-        tb = traceback.format_exc()
-        return Response.html(f"<pre>\nCurate error:\n{tb}\n</pre>", status=400)
+    body = curate_page_html(
+        idx,
+        len(candidates),
+        c,
+        cleaned,
+        final_blurb=blurb,
+        excerpts=excerpts,
+        selected_image=selected_image,
+        status=status,
+        crops=crops,
+    )
+    return Response.html(body)
 
 
 def post_curate_save(req: Request) -> Response:

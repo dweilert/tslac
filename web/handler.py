@@ -5,6 +5,8 @@ from http.server import BaseHTTPRequestHandler
 from web.request import build_request
 from web.response import Response
 from web.router import Router
+from web.errors import BadRequestError  # <-- add this (create web/errors.py)
+from logutil import error
 
 
 class RoutedHandler(BaseHTTPRequestHandler):
@@ -20,17 +22,8 @@ class RoutedHandler(BaseHTTPRequestHandler):
     def do_POST(self) -> None:
         self._handle("POST")
 
-    # def do_GET(self):
-    #     assert self.router is not None
-    #     req = Request.from_handler(self)  # if you have this helper
-    #     self.router.dispatch(req, self)
-
-    # def do_POST(self):
-    #     assert self.router is not None
-    #     req = Request.from_handler(self)
-    #     self.router.dispatch(req, self)
-
     def _handle(self, method: str) -> None:
+        # --- read body safely ---
         try:
             length = int(self.headers.get("Content-Length") or "0")
         except Exception:
@@ -39,27 +32,25 @@ class RoutedHandler(BaseHTTPRequestHandler):
         body = self.rfile.read(length) if length > 0 else b""
         req = build_request(method=method, raw_path=self.path, headers=self.headers, body=body)
 
+        # --- dispatch with correct error mapping ---
         try:
             resp = self.router.dispatch(req)
-        except Exception as e:
-            resp = Response.bad_request(f"Unhandled error: {e}")
 
+        except BadRequestError as e:
+            # Client error: missing/invalid input, bad params, etc.
+            # Keep message short and user-facing.
+            resp = Response.bad_request(str(e))
+
+        except Exception:
+            # Server error: bugs, runtime failures, unexpected issues.
+            # Log traceback for debugging, but don't leak details to the client.
+            error(f"Unhandled exception while handling {method} {self.path}", exc_info=True)
+            resp = Response.internal_error()
+
+        # --- write response ---
         self.send_response(resp.status)
         for k, v in (resp.headers or {}).items():
             self.send_header(k, v)
         self.end_headers()
         if resp.body:
             self.wfile.write(resp.body)
-
-
-# def make_handler():
-#     class Handler(BaseHTTPRequestHandler):
-#         router = None
-
-#         def do_GET(self):
-#             self.router.dispatch(self)
-
-#         def do_POST(self):
-#             self.router.dispatch(self)
-
-#     return Handler

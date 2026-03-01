@@ -17,6 +17,7 @@ from routes import (
 )
 from web.handler import RoutedHandler
 from web.router import Router
+from logutil import info
 
 
 def build_router(server) -> Router:
@@ -43,7 +44,7 @@ def main() -> None:
     router = build_router(httpd)
     RoutedHandler.router = router
 
-    print(f"Serving on http://{host}:{port}")
+    info(f"Serving on http://{host}:{port}")
     httpd.serve_forever()
 
 

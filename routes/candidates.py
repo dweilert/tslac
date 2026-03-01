@@ -20,6 +20,7 @@ from templates import html_page
 from web.request import Request
 from web.response import Response
 from web.router import Router
+from logutil import info
 
 HOMEPAGE_URL = "https://www.tsl.texas.gov/"
 
@@ -93,7 +94,8 @@ def get_main(req: Request) -> Response:
 
     # UI reads from persisted candidates
     candidates = load_candidates_file(CANDIDATES_FILE)
-    print("DEBUG sources:", {getattr(c, "source", None) for c in candidates})
+    info(F"DEBUG sources:", {getattr(c, "source", None) for c in candidates})
+    info(f"
     sel = load_selected()
 
     prechecked: set[str] = set()
