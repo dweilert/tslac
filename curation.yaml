@@ -44,8 +44,8 @@ gdrive:1mz2GnMqbsdhFMOKLFzXEKrf0Lgt_NzEM:
     such as shared exhibits, digitization projects, professional exchanges, and outreach
     programs to strengthen historical literacy and improve access to important historical
     records across Texas. This partnership is presented as a valuable opportunity
-    to advance archival practices and educational programming statewide. ABC...XYZ...123
-  updated_at: '2026-02-26T22:20:41'
+    to advance archival practices and educational programming statewide. ABC...XYZ...123...QQQ
+  updated_at: '2026-03-01T10:44:25'
 gdrive:1VICkJFCZ0KjJ7FpW4laX_KD8xkpBP7J8:
   final_blurb: DAV? The document recommends preserving Texas’s historical records
     by creating and maintaining a comprehensive Texas Digital Archive, ensuring both
@@ -74,3 +74,19 @@ https://www.tsl.texas.gov/speedtest:
       img_w: 400
       img_h: 367
   updated_at: '2026-02-26T15:09:35'
+https://www.tsl.texas.gov/texasamerica250exhibit:
+  excerpts:
+  - As the country celebrates 250 years since the signing of the Declaration of Independence,
+    every state has a story to tell about its own contributions to the development
+    of the nation. Texas pride permeates our culture here at home, and we are always
+    eager to promote the state’s people, products, l
+  - As the country celebrates 250 years since the signing of the Declaration of Independence,
+    every state has a story to tell about its own contributions to the development
+    of the nation. Texas pride permeates our culture here at home, and we are always
+    eager to promote the state’s people, products, landscape, innovations, and works
+    of art beyond our borders, showing how the Lone Star State has contributed to
+    the legacy of America.
+  - The Lorenzo de Zavala State Archives and Library Building lobby and exhibit gallery
+    is open Monday through Friday, 8:00 a.m. to 5:00 p.m. and the second Saturday
+    of each month from 9:00 a.m. to 4:00 p.
+  updated_at: '2026-03-01T10:45:06'

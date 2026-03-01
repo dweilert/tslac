@@ -2,7 +2,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
-import export_preview
+from logutil import error
+from services import preview_service
 from web.request import Request
 from web.response import Response
 from web.router import Router
@@ -17,43 +18,33 @@ def register(router: Router) -> None:
 
 
 def get_preview(_: Request) -> Response:
-    # IMPORTANT: return HTML directly; do not redirect.
-    html_bytes = export_preview.build_preview_html()
+    html_bytes = preview_service.build_preview_html()
     return Response.html(html_bytes)
 
 
 def get_preview_file(_: Request) -> Response:
-    p = APP_DIR / "output" / "preview" / "index.html"
-    if not p.exists():
+    data = preview_service.load_preview_index(APP_DIR)
+    if data is None:
         return Response.not_found(
             "Preview file not found. Run the export that generates output/preview/index.html."
         )
-    return Response.html(p.read_bytes())
+    return Response.html(data)
 
 
 def get_preview_image(req: Request) -> Response:
-    # req.path is like: /preview/images/xxx.jpg
-    rel = req.path[len("/preview/") :]  # images/xxx.jpg
-    base = (APP_DIR / "output" / "preview").resolve()
-    img_path = (APP_DIR / "output" / "preview" / rel).resolve()
-
-    # prevent path traversal
-    if not str(img_path).startswith(str(base)):
+    try:
+        fb = preview_service.load_preview_image(APP_DIR, req.path)
+    except ValueError:
         return Response.bad_request("Invalid image path")
+    except Exception:
+        error("Preview image load failed", exc_info=True)
+        return Response.internal_error()
 
-    if not img_path.exists():
+    if fb is None:
         return Response.not_found("Image not found")
 
-    data = img_path.read_bytes()
-    suf = img_path.suffix.lower()
-    ct = "image/jpeg"
-    if suf == ".png":
-        ct = "image/png"
-    elif suf == ".webp":
-        ct = "image/webp"
-    elif suf == ".gif":
-        ct = "image/gif"
-
     return Response(
-        status=200, headers={"Content-Type": ct, "Content-Length": str(len(data))}, body=data
+        status=200,
+        headers={"Content-Type": fb.content_type, "Content-Length": str(len(fb.data))},
+        body=fb.data,
     )

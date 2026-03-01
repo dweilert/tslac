@@ -1,62 +1,14 @@
 from __future__ import annotations
 
-import json
 from datetime import datetime
 from typing import Any
-from urllib.parse import urlparse
 
 import yaml
 
-from config import CURATION_FILE, DEFAULT_INTRO, DEFAULT_SUBJECT, SEEN_FILE, SELECTED_FILE
+from config import CURATION_FILE
+from util.urls import norm_url
 
 
-# ----------------------------
-# URL helpers
-# ----------------------------
-def norm_url(u: str) -> str:
-    u = (u or "").strip()
-    if not u:
-        return u
-    p = urlparse(u)
-    return p._replace(fragment="").geturl()
-
-
-def load_seen() -> set[str]:
-    if not SEEN_FILE.exists():
-        return set()
-    try:
-        return set(json.loads(SEEN_FILE.read_text("utf-8")))
-    except Exception:
-        return set()
-
-
-def save_seen(seen: set[str]) -> None:
-    SEEN_FILE.parent.mkdir(parents=True, exist_ok=True)
-    SEEN_FILE.write_text(json.dumps(sorted(seen), indent=2), "utf-8")
-
-
-# ----------------------------
-# selected.yaml
-# ----------------------------
-def load_selected() -> dict[str, Any]:
-    if not SELECTED_FILE.exists():
-        return {}
-    return yaml.safe_load(SELECTED_FILE.read_text("utf-8")) or {}
-
-
-def save_selected(subject: str, intro: str, urls: list[str]) -> None:
-    doc = {
-        "month": datetime.now().strftime("%Y-%m"),
-        "subject": (subject or "").strip() or DEFAULT_SUBJECT,
-        "intro": (intro or "").strip() or DEFAULT_INTRO,
-        "items": [{"url": u} for u in urls],
-    }
-    SELECTED_FILE.write_text(yaml.safe_dump(doc, sort_keys=False, allow_unicode=True), "utf-8")
-
-
-# ----------------------------
-# curation.yaml
-# ----------------------------
 def load_curation() -> dict[str, Any]:
     if not CURATION_FILE.exists():
         return {}
@@ -83,6 +35,9 @@ def _get_rec(cur: dict[str, Any], url: str) -> dict[str, Any]:
     return rec
 
 
+# ----------------------------
+# Blurbs + excerpts
+# ----------------------------
 def get_curated_blurb(cur: dict[str, Any], url: str) -> str:
     rec = cur.get(norm_url(url))
     if isinstance(rec, dict):
@@ -156,10 +111,6 @@ def get_curated_image_crops(cur: dict[str, Any], url: str) -> dict[str, Any]:
         if isinstance(v, dict):
             return v
     return {}
-
-
-# SAVE CROP (image px) {ix: 88, iy: 69, iw: 436, ih: 458, img_w: 1201, img_h: 1201}
-# canvas {cw: 860, ch: 860} rect {x: 62.897327707454295, y: 49.59212376933896, w: 312.0675105485232, h: 327.7918424753868}
 
 
 def upsert_curated_image_crop(url: str, img_src: str, crop: dict[str, Any]) -> None:

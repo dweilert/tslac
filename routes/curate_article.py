@@ -1,24 +1,17 @@
 from __future__ import annotations
 
-import json
-from urllib.parse import parse_qs
+from urllib.parse import parse_qs, urlencode
 
-import cleaner
-from state_store import (
-    add_curated_excerpt,
-    clear_curated_excerpts,
-    clear_curated_selected_image,
-    get_curated_blurb,
-    get_curated_excerpts,
-    get_curated_image_crops,
-    get_curated_selected_image,
-    load_curation,
-    pop_curated_excerpt,
-    upsert_curated_blurb,
-    upsert_curated_image_crop,
-    upsert_curated_selected_image,
+from services.curate_article_service import (
+    add_excerpt,
+    build_view_by_index,
+    clear_excerpts,
+    clear_selected_image,
+    pop_excerpt,
+    save_blurb,
+    save_crop,
+    select_image,
 )
-from storage.collector_store import load_candidates_file
 from templates import curate_page_html
 from web.errors import BadRequestError
 from web.request import Request
@@ -27,11 +20,8 @@ from web.router import Router
 
 
 def register(router: Router) -> None:
-    # GET /curate/<idx>  (named group -> params["idx"])
-    # Accept optional trailing slash to be tolerant.
     router.route_regex("GET", r"^/curate/(?P<idx>[0-9]+)/?$", get_curate_by_index)
 
-    # POST actions (exact match, same as server.py)
     router.post("/curate/save", post_curate_save)
     router.post("/curate/add_excerpt", post_curate_add_excerpt)
     router.post("/curate/pop_excerpt", post_curate_pop_excerpt)
@@ -55,13 +45,11 @@ def _safe_int(s: str, default: int = 0) -> int:
 
 
 def _redirect_curate(idx: int, status: str) -> Response:
-    # status should already be + friendly (we’ll just replace spaces)
-    status_q = status.replace(" ", "+")
-    return Response.redirect(f"/curate/{idx}?status={status_q}")
+    qs = urlencode({"status": status}, doseq=False)
+    return Response.redirect(f"/curate/{idx}?{qs}")
 
 
 def get_curate_by_index(req: Request, params: dict[str, str]) -> Response:
-    # idx comes from router regex: ^/curate/(?P<idx>\d+)/?$
     idx_raw = params.get("idx", "")
 
     try:
@@ -69,51 +57,20 @@ def get_curate_by_index(req: Request, params: dict[str, str]) -> Response:
     except ValueError as err:
         raise BadRequestError(f"Invalid curate index: {idx_raw!r}") from err
 
-    candidates = load_candidates_file()
-    if not candidates:
-        raise BadRequestError(
-            "No candidates available. Go back and click Refresh candidates first."
-        )
-
-    if idx < 0 or idx >= len(candidates):
-        raise BadRequestError(f"Index out of range: {idx} (0..{len(candidates)-1})")
-
-    # query_first is a property dict[str, str]
     status = req.query_first.get("status", "")
 
-    c = candidates[idx]
-    res = cleaner.clean_article(c.url)
-
-    cleaned = {
-        "title": res.title,
-        "published_date": res.published_date,
-        "date_confidence": res.date_confidence,
-        "clean_html": res.clean_html,
-        "text_plain": res.text_plain,
-        "images": res.images,
-        "extraction_quality": res.extraction_quality,
-    }
-
-    cur = load_curation()
-    blurb = get_curated_blurb(cur, c.url)
-    excerpts = get_curated_excerpts(cur, c.url)
-    selected_image = get_curated_selected_image(cur, c.url)
-
-    try:
-        crops = get_curated_image_crops(cur, c.url)
-    except Exception:
-        crops = {}
+    view = build_view_by_index(idx)
 
     body = curate_page_html(
-        idx,
-        len(candidates),
-        c,
-        cleaned,
-        final_blurb=blurb,
-        excerpts=excerpts,
-        selected_image=selected_image,
+        view.idx,
+        view.total,
+        view.candidate,
+        view.cleaned,
+        final_blurb=view.final_blurb,
+        excerpts=view.excerpts,
+        selected_image=view.selected_image,
         status=status,
-        crops=crops,
+        crops=view.crops,
     )
     return Response.html(body)
 
@@ -121,79 +78,49 @@ def get_curate_by_index(req: Request, params: dict[str, str]) -> Response:
 def post_curate_save(req: Request) -> Response:
     form = _parse_post_form(req)
     idx = _safe_int(form.get("index", "0"), 0)
-    url = (form.get("url") or "").strip()
-    final_blurb = (form.get("final_blurb") or "").strip()
-    if url:
-        upsert_curated_blurb(url, final_blurb)
+    save_blurb(url=form.get("url", ""), final_blurb=form.get("final_blurb", ""))
     return _redirect_curate(idx, "Saved blurb")
 
 
 def post_curate_add_excerpt(req: Request) -> Response:
     form = _parse_post_form(req)
     idx = _safe_int(form.get("index", "0"), 0)
-    url = (form.get("url") or "").strip()
-    excerpt = (form.get("excerpt") or "").strip()
-    if url and excerpt:
-        add_curated_excerpt(url, excerpt)
+    add_excerpt(url=form.get("url", ""), excerpt=form.get("excerpt", ""))
     return _redirect_curate(idx, "Added excerpt")
 
 
 def post_curate_pop_excerpt(req: Request) -> Response:
     form = _parse_post_form(req)
     idx = _safe_int(form.get("index", "0"), 0)
-    url = (form.get("url") or "").strip()
-    if url:
-        pop_curated_excerpt(url)
+    pop_excerpt(url=form.get("url", ""))
     return _redirect_curate(idx, "Removed last excerpt")
 
 
 def post_curate_save_crop(req: Request) -> Response:
     form = _parse_post_form(req)
     idx = _safe_int(form.get("index", "0"), 0)
-    url = (form.get("url") or "").strip()
-    img_src = (form.get("img_src") or "").strip()
-    crop_json = (form.get("crop") or "").strip()
-
-    try:
-        crop = json.loads(crop_json) if crop_json else {}
-    except Exception:
-        crop = {}
-
-    if url and img_src and crop:
-        upsert_curated_image_crop(url, img_src, crop)
-
+    save_crop(
+        url=form.get("url", ""), img_src=form.get("img_src", ""), crop_json=form.get("crop", "")
+    )
     return _redirect_curate(idx, "Saved image crop")
 
 
 def post_curate_select_image(req: Request) -> Response:
     form = _parse_post_form(req)
     idx = _safe_int(form.get("index", "0"), 0)
-    url = (form.get("url") or "").strip()
-    img_src = (form.get("img_src") or "").strip()
-
-    # match server.py safety: only allow http(s)
-    if img_src and not (img_src.startswith("http://") or img_src.startswith("https://")):
-        img_src = ""
-
-    if url and img_src:
-        upsert_curated_selected_image(url, img_src)
-
+    select_image(url=form.get("url", ""), img_src=form.get("img_src", ""))
     return _redirect_curate(idx, "Selected image")
 
 
 def post_curate_clear_selected_image(req: Request) -> Response:
     form = _parse_post_form(req)
     idx = _safe_int(form.get("index", "0"), 0)
-    url = (form.get("url") or "").strip()
-    if url:
-        clear_curated_selected_image(url)
+    clear_selected_image(url=form.get("url", ""))
     return _redirect_curate(idx, "Cleared selected image")
 
 
 def post_curate_clear_excerpts(req: Request) -> Response:
     form = _parse_post_form(req)
     idx = _safe_int(form.get("index", "0"), 0)
-    url = (form.get("url") or "").strip()
-    if url:
-        clear_curated_excerpts(url)
+    clear_excerpts(url=form.get("url", ""))
     return _redirect_curate(idx, "Cleared excerpts")

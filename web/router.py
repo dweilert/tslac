@@ -53,19 +53,36 @@ class Router:
 
     # --- Dispatch ---
     def dispatch(self, req: Request) -> Response:
-        for r in self._routes:
-            if r.method != req.method:
-                continue
+        allowed: set[str] = set()
 
+        for r in self._routes:
+            params: dict[str, str] = {}
+
+            # First: does the PATH match (ignoring method)?
             if r.kind == "exact":
-                if req.path == r.pattern:
-                    return self._call_handler(r.handler, req, {})
+                if req.path != r.pattern:
+                    continue
 
             elif r.kind == "regex":
                 assert r.regex is not None
                 m = r.regex.match(req.path)
-                if m:
-                    params = m.groupdict()  # <-- named groups become params
-                    return self._call_handler(r.handler, req, params)
+                if not m:
+                    continue
+                params = m.groupdict()  # named groups become params
+
+            else:
+                # Unknown route kind; ignore it
+                continue
+
+            # If we got here, the path matched.
+            allowed.add(r.method)
+
+            # Now check method
+            if r.method == req.method:
+                return self._call_handler(r.handler, req, params)
+
+        # Path matched at least one route, but method didn't match any of them
+        if allowed:
+            return Response.method_not_allowed(list(allowed))
 
         return Response.not_found(f"No route for {req.method} {req.path}")

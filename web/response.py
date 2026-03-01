@@ -55,7 +55,14 @@ class Response:
     @staticmethod
     def redirect(location: str, status: int = 302) -> Response:
         # Keep body empty; browsers follow Location.
-        return Response(status=status, headers={"Location": location}, body=b"")
+        return Response(
+            status=status,
+            headers={
+                "Location": location,
+                "Content-Length": "0",
+            },
+            body=b"",
+        )
 
     @staticmethod
     def not_found(msg: str = "Not Found") -> Response:
@@ -72,7 +79,12 @@ class Response:
         If you pass a message, we HTML-escape it so it is safe to embed in HTML.
         """
         safe = html.escape(msg or "Internal Server Error")
-        return Response.html(
-            f"<h1>500 Internal Server Error</h1><p>{safe}</p>",
-            status=500,
-        )
+        body = f"<h1>500 Internal Server Error</h1><p>{safe}</p>"
+        return Response.html(body, status=500)
+
+    @staticmethod
+    def method_not_allowed(allowed: list[str], msg: str = "Method Not Allowed") -> Response:
+        # RFC: include Allow header
+        r = Response.text(msg, status=405)
+        r.headers["Allow"] = ", ".join(sorted(set(allowed)))
+        return r

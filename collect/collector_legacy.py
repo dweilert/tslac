@@ -32,7 +32,8 @@ from doc_sources import GDriveSource, LocalDirSource
 from doc_store import save_doc_candidates
 from logutil import info
 from models import Candidate
-from state_store import load_seen, norm_url, save_seen
+from storage.seen_store import load_seen, save_seen
+from util.urls import norm_url
 
 
 def is_tsl_url(u: str) -> bool:

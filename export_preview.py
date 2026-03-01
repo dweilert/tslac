@@ -8,7 +8,7 @@ from urllib.parse import quote, unquote
 import yaml
 
 from doc_store import load_doc_candidates
-from state_store import get_curated_blurb, load_curation
+from storage.curation_store import get_curated_blurb, load_curation
 
 APP_DIR = Path(__file__).resolve().parent
 SELECTED_FILE = APP_DIR / "selected.yaml"
