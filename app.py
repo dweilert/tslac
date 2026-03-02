@@ -7,6 +7,7 @@ from logutil import info
 from routes import (
     api,
     candidates,
+    crop,
     curate_article,
     curate_doc,
     health,
@@ -15,7 +16,6 @@ from routes import (
     quit as quit_route,
     static_files,
     watch,
-    crop,
 )
 from web.handler import RoutedHandler
 from web.router import Router

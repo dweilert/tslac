@@ -44,10 +44,10 @@ def get_crop(req: Request) -> Response:
     html_text = render(
         "crop.html",
         title="Crop image",
-        img_url=img,           # original image URL (used when saving crop)
-        img_proxy=img_proxy,   # proxied image URL (used for loading/display)
+        img_url=img,  # original image URL (used when saving crop)
+        img_proxy=img_proxy,  # proxied image URL (used for loading/display)
         page_url=page,
         index=index,
-        saved_crop=saved_crop, # dict with ix,iy,iw,ih,img_w,img_h (if present)
+        saved_crop=saved_crop,  # dict with ix,iy,iw,ih,img_w,img_h (if present)
     )
     return Response.html(html_text)

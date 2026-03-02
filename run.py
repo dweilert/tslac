@@ -4,6 +4,7 @@ from __future__ import annotations
 # macOS TLS fix: validate like curl (Keychain trust store)
 try:
     import truststore
+
     truststore.inject_into_ssl()
 except Exception:
     pass

@@ -78,7 +78,11 @@ def build_view_by_doc_id(doc_id: str) -> CurateDocView:
         raise BadRequestError("No doc candidates available. Go back and refresh docs first.")
 
     idx = next(
-        (i for i, d in enumerate(docs) if isinstance(d, dict) and (d.get("id") or "").strip() == doc_id),
+        (
+            i
+            for i, d in enumerate(docs)
+            if isinstance(d, dict) and (d.get("id") or "").strip() == doc_id
+        ),
         None,
     )
     if idx is None:

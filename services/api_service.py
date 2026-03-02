@@ -121,7 +121,9 @@ def _build_clean_html(root, *, max_paragraphs: int = 10, max_chars: int = 6000) 
     return "\n".join(out_parts)
 
 
-def _extract_images(soup: BeautifulSoup, root, base_url: str, *, max_images: int = 12) -> list[dict[str, Any]]:
+def _extract_images(
+    soup: BeautifulSoup, root, base_url: str, *, max_images: int = 12
+) -> list[dict[str, Any]]:
     imgs: list[dict[str, Any]] = []
 
     # 1) og:image is usually the hero image (this is what you likely want)
@@ -188,15 +190,15 @@ def clean_article_payload(url: str) -> dict[str, Any]:
             timeout=25,
             headers={
                 "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
-                              "AppleWebKit/537.36 (KHTML, like Gecko) "
-                              "Chrome/120.0 Safari/537.36",
+                "AppleWebKit/537.36 (KHTML, like Gecko) "
+                "Chrome/120.0 Safari/537.36",
                 "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
                 "Accept-Language": "en-US,en;q=0.9",
             },
             allow_redirects=True,
         )
-        status = r.status_code
-        final_url = r.url
+        # status = r.status_code
+        # final_url = r.url
         r.raise_for_status()
         html = r.text
     except requests.exceptions.SSLError as e:
@@ -214,7 +216,6 @@ def clean_article_payload(url: str) -> dict[str, Any]:
     except requests.exceptions.RequestException as e:
         raise BadRequestError(f"Request error fetching URL: {url} ({e})") from e
 
-
     soup = BeautifulSoup(html, "lxml")
 
     # Title
@@ -231,6 +232,6 @@ def clean_article_payload(url: str) -> dict[str, Any]:
 
     return {
         "title": title,
-        "html": cleaned_html,   # Curate uses this
-        "images": images,       # Curate uses this
+        "html": cleaned_html,  # Curate uses this
+        "images": images,  # Curate uses this
     }

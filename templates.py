@@ -4,8 +4,9 @@ import html
 from typing import Any
 from urllib.parse import quote
 
-from models import Candidate
+from doc_store import load_doc_candidates
 from render import render
+
 
 def _esc(s: object) -> str:
     return html.escape("" if s is None else str(s), quote=True)
@@ -84,15 +85,16 @@ def curate_page_html(
     next_url = f"/curate/{idx+1}" if idx < (total - 1) else ""
 
     # Cleaned title/body/images (robust keys)
-    title = (cleaned.get("title") if isinstance(cleaned, dict) else "") or cand_title or "Curate Article"
+    title = (
+        (cleaned.get("title") if isinstance(cleaned, dict) else "")
+        or cand_title
+        or "Curate Article"
+    )
 
     cleaned_html = ""
     if isinstance(cleaned, dict):
         cleaned_html = (
-            cleaned.get("html")
-            or cleaned.get("cleaned_html")
-            or cleaned.get("content_html")
-            or ""
+            cleaned.get("html") or cleaned.get("cleaned_html") or cleaned.get("content_html") or ""
         )
 
     # Images: prefer cleaned["images"], else candidate.images
@@ -119,25 +121,19 @@ def curate_page_html(
         page_css="/static/css/curate_article.css",
         index=idx,
         total=total,
-
         url=url,
         original_url=original_url,
         json_url=json_url,
-
         prev_url=prev_url,
         next_url=next_url,
-
         final_blurb=final_blurb or "",
         excerpts=excerpts,
         images=images,
         selected_image=selected_image or "",
         crops=crops,
-
         cleaned_html=cleaned_html,
     )
     return html.encode("utf-8")
-
-
 
 
 def watch_page_html(
@@ -196,19 +192,16 @@ def curate_doc_page_html(*, view, status: str = "") -> bytes:
         title="Curate Document",
         page_css="/static/css/curate_doc.css",
         status=status,
-
         # meta
         doc_id=doc_id,
         doc_title=title,
         source=source,
-        idx=view.idx + 1,         # 1-based for display
+        idx=view.idx + 1,  # 1-based for display
         total=view.total,
-
         # content
         summary=summary,
         excerpts=view.excerpts or [],
         final_blurb=final_blurb,
-
         # nav
         prev_url=prev_url,
         next_url=next_url,
