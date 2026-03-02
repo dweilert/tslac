@@ -4,7 +4,7 @@ import json
 from dataclasses import dataclass
 from typing import Any
 
-from doc_store import load_doc_candidates
+from docsys.store import load_doc_candidates
 from storage.curation_store import (
     add_curated_excerpt,
     clear_curated_excerpts,

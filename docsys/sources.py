@@ -6,7 +6,7 @@ import pathlib
 import shutil
 from abc import ABC, abstractmethod
 
-from doc_types import DocRef
+from .types import DocRef
 from gdrive_service import find_folder_id, get_drive_service, list_files_in_folder
 from logutil import debug, info
 

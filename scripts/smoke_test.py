@@ -33,7 +33,7 @@ def get_doc_id_sample() -> str | None:
     # Best-effort: try importing your doc_store and reading one id
     try:
         sys.path.insert(0, REPO)
-        from doc_store import load_doc_candidates  # type: ignore
+        from docsys.store import load_doc_candidates  # type: ignore
 
         docs = load_doc_candidates()
         for d in docs or []:

@@ -3,7 +3,7 @@ from __future__ import annotations
 from urllib.parse import parse_qs, urlencode
 
 from constants import DEFAULT_INTRO, DEFAULT_SUBJECT
-from doc_store import load_doc_candidates
+from docsys.store import load_doc_candidates
 from logutil import debug
 from services.candidates_service import load_persisted_candidates, refresh_candidates, save_picks
 from storage.curation_store import get_curated_blurb, load_curation

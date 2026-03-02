@@ -7,7 +7,7 @@ from typing import Any
 
 from collect.collector import collect_candidates
 from collect.rules import CollectRules
-from doc_store import load_doc_candidates
+from docsys.store import load_doc_candidates
 from storage.collector_store import (
     CANDIDATES_FILE,
     SEEN_URLS_FILE,

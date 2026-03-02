@@ -27,9 +27,9 @@ from config import (
     OUT_DIR,
     STATE_DIR,
 )
-from doc_pipeline import build_doc_candidates
-from doc_sources import GDriveSource, LocalDirSource
-from doc_store import save_doc_candidates
+from docsys.pipeline import build_doc_candidates
+from docsys.sources import GDriveSource, LocalDirSource
+from docsys.store import save_doc_candidates
 from logutil import info
 from models import Candidate
 from storage.seen_store import load_seen, save_seen

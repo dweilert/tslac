@@ -2,8 +2,8 @@ import os
 
 from dotenv import load_dotenv
 
-from doc_pipeline import build_doc_candidates
-from doc_sources import GDriveSource, LocalDirSource
+from docsys.pipeline import build_doc_candidates
+from docsys.sources import GDriveSource, LocalDirSource
 
 load_dotenv()
 

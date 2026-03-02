@@ -4,9 +4,9 @@ import hashlib
 import time
 from typing import Any
 
-from doc_cache import load_cached_summary, save_cached_summary
-from doc_extract import extract_text
-from doc_sources import DocumentSource
+from .cache import load_cached_summary, save_cached_summary
+from .extract import extract_text
+from .sources import DocumentSource
 from logutil import debug, info, warn
 from openai_client import summarize_document
 

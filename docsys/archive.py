@@ -1,6 +1,6 @@
 import os
 
-from doc_sources import GDriveSource, LocalDirSource
+from .sources import GDriveSource, LocalDirSource
 
 
 def archive_docs() -> int:

@@ -144,3 +144,16 @@ The cureate of the g-drive / local content needs to more aligned with the web ba
 On the main page there also needs to be a selection check box in front of each g-drive articale so that it can be selected for inclusion in the preview process.
 
 There is alot of UI re-design that needs to be done.
+
+### ----------------------
+
+
+I’m working on a local newsletter helper app for tsl.texas.gov. 
+
+With your help I've been re-factoring the code in this github repo: https://github.com/dweilert/tslac. With the latest code base in the refactor/http-router branch not in the main branch.  
+
+Past efforts did significant re-factoring and I would like you to reivew the code and help me understand the architecture and design approaches used in the re-factoring.  Please ignore the information in the Design.md, Design2.md, and Design3.md documents as it is out of date.
+
+I'd like new design documents that tell me what this application does along with interaction diagrams if possible. 
+
+Some of what is confussing is the separation of code into different modules and how they interact.  Why is the services layer used in conjunction with other layers. Why leave all of the doc_* modules in the root and not move them to a separate directory / package, etc. 
