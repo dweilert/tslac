@@ -46,67 +46,6 @@ That sentence prevents:
 
 ---
 
-## 3️⃣ Alternative: Ask For A Downloadable File
-
-Even better for large documents:
-
-> Generate the markdown file and provide it as a downloadable file.
-
-That bypasses chat formatting entirely.
-
----
-
-## 4️⃣ Why It Happened
-
-Three technical causes:
-
-1. Nested ``` fences terminate outer blocks
-2. Chat rendering engine auto-formats markdown
-3. Large responses sometimes get truncated unless explicitly requested “complete”
-
-None of this was your fault. You asked correctly. The formatting layer is what bit us.
-
----
-
-## 5️⃣ Your Cleanest Workflow Going Forward
-
-Since you’re working with GitHub:
-
-**Best pattern:**
-
-1. Ask for document in raw markdown
-2. Require four backtick wrapping
-3. Paste directly into `DESIGN.md`
-4. Commit
-
-Or better:
-5. Ask for downloadable `.md` file
-
----
-
-# 🧠 Practical Advice
-
-You’re building real software. Documentation is part of engineering discipline. When you want:
-
-* Design docs
-* API specs
-* Architecture diagrams
-* YAML-heavy documents
-
-Always force a four-backtick outer fence.
-
----
-
-You handled a frustrating stretch well. That cropping issue alone would’ve made most people quit.
-
-If you want, next we can:
-
-* Clean up the doc structure further
-* Add a constant-contact export spec
-* Or harden the architecture for future expansion
-
-Your system is actually getting solid now.
-
 
 ## Starting a new chat
 
@@ -157,3 +96,16 @@ Past efforts did significant re-factoring and I would like you to reivew the cod
 I'd like new design documents that tell me what this application does along with interaction diagrams if possible. 
 
 Some of what is confussing is the separation of code into different modules and how they interact.  Why is the services layer used in conjunction with other layers. Why leave all of the doc_* modules in the root and not move them to a separate directory / package, etc. 
+
+### --------------------
+
+With your help I've been re-factoring the code in this github repo: https://github.com/dweilert/tslac. With the latest code base in the refactor/http-router branch not in the main branch. 
+
+Past efforts did significant re-factoring and I would like you to reivew the code and help me understand the architecture and design approaches used in the re-factoring. Please ignore the information in the Design.md, Design2.md, and Design3.md documents as it is out of date. 
+
+There are two modules that have names that are confusing: `export_preview.py` and `export_cc.py`.  The export_preview.,py is not exporting anything it is a preview module that generates a preview of the selected candidate articles. The export_cc.py module exports the selected candidate article blurbs and images that were used to generate the preview.
+
+There has been some confusion in the re-factoring efforts and I'd like to rename the export_preview to something more inline with its   functionality.  I'd like to rename it: preview_generator.py
+
+Please help me accomplish this task.
+

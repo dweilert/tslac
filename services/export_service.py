@@ -1,8 +1,8 @@
 # services/export_service.py
 from __future__ import annotations
 
-import export_cc
+import constant_contact_exporter
 
 
 def build_constant_contact_zip() -> tuple[bytes, str]:
-    return export_cc.build_constant_contact_zip()
+    return constant_contact_exporter.build_constant_contact_zip()
