@@ -1,11 +1,9 @@
 from __future__ import annotations
 
+import requests
 from typing import Any
 from urllib.parse import urljoin
-
-import requests
 from bs4 import BeautifulSoup
-
 from web.errors import BadRequestError
 
 
