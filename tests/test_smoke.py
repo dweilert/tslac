@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import os
-
 import pytest
 import requests
 
@@ -32,8 +30,12 @@ def test_watch_status(server_base_url: str) -> None:
     assert isinstance(data, dict)
 
 
-@pytest.mark.skipif(os.environ.get("TEST_TRY_CURATE", "0") != "1", reason="External fetch test")
+@pytest.mark.integration
 def test_curate0(server_base_url: str) -> None:
+    """
+    Integration test: may depend on external fetching / candidate availability.
+    Excluded by default (see pytest.ini).
+    """
     r = requests.get(server_base_url + "/curate/0", timeout=60)
     assert r.status_code == 200
 
@@ -44,6 +46,5 @@ def test_refresh_redirect(server_base_url: str) -> None:
         timeout=30,
         allow_redirects=False,
     )
-
     assert r.status_code in (301, 302, 303)
     assert r.headers.get("Location", "").startswith("/?status=")

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections.abc import Callable
 from typing import Any
 from urllib.parse import urljoin
 
@@ -172,49 +173,49 @@ def _extract_images(
 # -----------------------------
 # Public API used by routes/api.py and Curate
 # -----------------------------
-def clean_article_payload(url: str) -> dict[str, Any]:
+# services/api_service.py (only the public function section needs changing)
+
+
+def clean_article_payload(
+    url: str,
+    *,
+    fetch_html: Callable[[str], str] | None = None,
+) -> dict[str, Any]:
     url = (url or "").strip()
     if not url:
         raise BadRequestError("Missing url")
 
-    # try:
-    #     r = requests.get(url, timeout=25, headers={"User-Agent": "tslac-newsletter-helper/1.0"})
-    #     r.raise_for_status()
-    #     html = r.text
-    # except Exception as e:
-    #     raise BadRequestError(f"Failed to fetch URL: {url}") from e
+    def _default_fetch(u: str) -> str:
+        try:
+            r = requests.get(
+                u,
+                timeout=25,
+                headers={
+                    "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
+                    "AppleWebKit/537.36 (KHTML, like Gecko) "
+                    "Chrome/120.0 Safari/537.36",
+                    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+                    "Accept-Language": "en-US,en;q=0.9",
+                },
+                allow_redirects=True,
+            )
+            r.raise_for_status()
+            return r.text
+        except requests.exceptions.SSLError as e:
+            raise BadRequestError(f"SSL error fetching URL: {u} ({e})") from e
+        except requests.exceptions.Timeout as e:
+            raise BadRequestError(f"Timeout fetching URL: {u} ({e})") from e
+        except requests.exceptions.TooManyRedirects as e:
+            raise BadRequestError(f"Too many redirects fetching URL: {u} ({e})") from e
+        except requests.exceptions.HTTPError as e:
+            code = getattr(getattr(e, "response", None), "status_code", None)
+            raise BadRequestError(
+                f"HTTP {code} fetching URL: {u} (final: {getattr(r,'url',u)})"
+            ) from e
+        except requests.exceptions.RequestException as e:
+            raise BadRequestError(f"Request error fetching URL: {u} ({e})") from e
 
-    try:
-        r = requests.get(
-            url,
-            timeout=25,
-            headers={
-                "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
-                "AppleWebKit/537.36 (KHTML, like Gecko) "
-                "Chrome/120.0 Safari/537.36",
-                "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-                "Accept-Language": "en-US,en;q=0.9",
-            },
-            allow_redirects=True,
-        )
-        # status = r.status_code
-        # final_url = r.url
-        r.raise_for_status()
-        html = r.text
-    except requests.exceptions.SSLError as e:
-        raise BadRequestError(f"SSL error fetching URL: {url} ({e})") from e
-    except requests.exceptions.Timeout as e:
-        raise BadRequestError(f"Timeout fetching URL: {url} ({e})") from e
-    except requests.exceptions.TooManyRedirects as e:
-        raise BadRequestError(f"Too many redirects fetching URL: {url} ({e})") from e
-    except requests.exceptions.HTTPError as e:
-        # include status + final url for debugging
-        code = getattr(getattr(e, "response", None), "status_code", None)
-        raise BadRequestError(
-            f"HTTP {code} fetching URL: {url} (final: {getattr(r,'url',url)})"
-        ) from e
-    except requests.exceptions.RequestException as e:
-        raise BadRequestError(f"Request error fetching URL: {url} ({e})") from e
+    html = (fetch_html or _default_fetch)(url)
 
     soup = BeautifulSoup(html, "lxml")
 
@@ -232,6 +233,6 @@ def clean_article_payload(url: str) -> dict[str, Any]:
 
     return {
         "title": title,
-        "html": cleaned_html,  # Curate uses this
-        "images": images,  # Curate uses this
+        "html": cleaned_html,
+        "images": images,
     }

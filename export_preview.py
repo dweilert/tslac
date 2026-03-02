@@ -1,18 +1,12 @@
 from __future__ import annotations
 
 import html
-from pathlib import Path
 from typing import Any
 from urllib.parse import quote, unquote
 
-import yaml
-
 from docsys.store import load_doc_candidates
 from storage.curation_store import get_curated_blurb, load_curation
-
-APP_DIR = Path(__file__).resolve().parent
-SELECTED_FILE = APP_DIR / "selected.yaml"
-CURATION_FILE = APP_DIR / "curation.yaml"
+from storage.selected_store import load_selected
 
 DEFAULT_SUBJECT = "Monthly Update — New from the Texas State Library"
 DEFAULT_INTRO = (
@@ -25,20 +19,8 @@ def _norm_img_key(s: str) -> str:
     return (s or "").strip()
 
 
-def _load_yaml(p: Path) -> dict[str, Any]:
-    if not p.exists():
-        return {}
-    data = yaml.safe_load(p.read_text("utf-8")) or {}
-    return data if isinstance(data, dict) else {}
-
-
 def _esc(s: str) -> str:
     return html.escape(s or "", quote=True)
-
-
-def _img_proxy(u: str) -> str:
-    # Use your local proxy so hotlink/CORS policies don’t matter
-    return "/img?u=" + quote(u or "", safe="")
 
 
 def _crop_style(crop: dict[str, Any]) -> str:
@@ -48,6 +30,7 @@ def _crop_style(crop: dict[str, Any]) -> str:
     Uses:
       width/height as % so it scales with container
       left/top as % of container (reliable)
+
     Crop format (image px):
       ix, iy, iw, ih, img_w, img_h
     """
@@ -88,117 +71,9 @@ def _is_http_url(u: str) -> bool:
     return (u or "").startswith(("http://", "https://"))
 
 
-# def build_preview_html() -> bytes:
-#     sel = _load_yaml(SELECTED_FILE)
-#     cur = _load_yaml(CURATION_FILE)
-
-#     subject = (sel.get("subject") or "").strip() or DEFAULT_SUBJECT
-#     intro = (sel.get("intro") or "").strip() or DEFAULT_INTRO
-#     items = sel.get("items") or []
-#     if not isinstance(items, list):
-#         items = []
-
-#     # Build sections
-#     blocks = []
-#     for it in items:
-#         if not isinstance(it, dict):
-#             continue
-#         url = (it.get("url") or "").strip()
-#         if not url:
-#             continue
-
-#         rec = cur.get(url) if isinstance(cur, dict) else None
-#         title = ""
-#         blurb = ""
-
-#         img = ""
-#         crops = {}
-
-#         if isinstance(rec, dict):
-#             title = (rec.get("title") or "").strip()
-#             blurb = (rec.get("final_blurb") or "").strip()
-
-#             img = (rec.get("selected_image") or "").strip()
-
-#             crops = rec.get("image_crops") if isinstance(rec.get("image_crops"), dict) else {}
-
-#         # If no selected_image, but we have crops saved, use the first cropped image as the image
-#         if not img and isinstance(crops, dict) and crops:
-#             # choose the first key deterministically
-#             img = sorted([k for k in crops.keys() if isinstance(k, str) and k.strip()])[0]
-
-
-#         # fallbacks if title not stored
-#         if not title:
-#             title = url
-
-#         # if no blurb, show excerpts as fallback
-#         if not blurb and isinstance(rec, dict):
-#             ex = rec.get("excerpts")
-#             if isinstance(ex, list):
-#                 ex2 = [x.strip() for x in ex if isinstance(x, str) and x.strip()]
-#                 if ex2:
-#                     blurb = " ".join(ex2)
-
-
-#         # --- Pick crop record for the chosen image (IMPORTANT) ---
-#         crop = None
-#         if isinstance(crops, dict) and img:
-#             crop = crops.get(img) or crops.get(_norm_img_key(img)) or crops.get(unquote(img))
-
-
-#         img_html = ""
-#         if img:
-#             # Use proxy so image always loads locally
-#             # img_src = "/img?u=" + quote(img, safe=":/%?=&")
-#             img_src = "/img?u=" + quote(img, safe=":/%?=&")
-#             if isinstance(crop, dict) and all(k in crop for k in ("ix", "iy", "iw", "ih", "img_w", "img_h")):
-#                 style = _crop_style(crop)
-
-#                 # Aspect ratio box based on crop
-#                 try:
-#                     pad = (float(crop["ih"]) / float(crop["iw"])) * 100.0
-#                     if pad <= 0 or pad > 300:
-#                         pad = 56.25
-#                 except Exception:
-#                     pad = 56.25
-
-#                 # compute style as before
-#                 style = _crop_style(crop)
-
-#                 img_html = (
-#                     f'<div class="heroCrop" style="padding-top:{pad:.3f}%;">'
-#                     f'  <img class="heroCropImg" src="{_esc(img_src)}" alt="" style="{style}" />'
-#                     f'</div>'
-#                 )
-#             else:
-#                 # no crop saved for this image, show full image
-#                 img_html = f'<img class="hero" src="{_esc(img_src)}" alt="" />'
-
-
-#         blocks.append(f"""
-#           <tr>
-#             <td style="padding: 0 18px 18px 18px; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;">
-#               {img_html}
-#               <div style="font-size:12px; color:#666; margin: 0 0 6px 0;">Texas State Library and Archives Commission</div>
-#               <div style="font-size:16px; font-weight:700; color:#111; margin: 0 0 6px 0;">{_esc(title)}</div>
-#               <div style="font-size:14px; color:#333; line-height:1.45;">
-#                 {(_esc(blurb) if blurb else "<em style='color:#777;'>No blurb saved yet. Use Curate to write one.</em>")}
-#               </div>
-#               <div style="margin-top:10px; font-size:14px;">
-#                 <a href="{_esc(url)}" target="_blank" rel="noopener" style="color:#0b57d0; text-decoration:none;">Read more</a>
-#               </div>
-#             </td>
-#           </tr>
-#           <tr><td><hr style="border:0; border-bottom:1px solid #666; margin:10px 18px 10px 18px;"></td></tr>
-#         """)
-
-
 def build_preview_html() -> bytes:
-    sel = _load_yaml(SELECTED_FILE)
-
-    # IMPORTANT: use the same curation loader everyone else uses
-    cur = load_curation()  # instead of _load_yaml(CURATION_FILE)
+    sel = load_selected()
+    cur = load_curation()
 
     subject = (sel.get("subject") or "").strip() or DEFAULT_SUBJECT
     intro = (sel.get("intro") or "").strip() or DEFAULT_INTRO
@@ -215,7 +90,7 @@ def build_preview_html() -> bytes:
             if did:
                 doc_by_id[did] = d
 
-    blocks = []
+    blocks: list[str] = []
     for it in items:
         if not isinstance(it, dict):
             continue
@@ -229,10 +104,9 @@ def build_preview_html() -> bytes:
         # ----------------------------
         if _is_doc_id(key):
             d = doc_by_id.get(key) or {}
-
-            # Title: prefer doc candidate title, else curation-stored title, else id
             rec = cur.get(key) if isinstance(cur, dict) else None
 
+            # Title: prefer doc candidate title, else curation-stored title, else id
             title = (d.get("title") or "").strip()
             if not title and isinstance(rec, dict):
                 title = (rec.get("title") or "").strip()
@@ -290,7 +164,6 @@ def build_preview_html() -> bytes:
             crops = rec.get("image_crops") if isinstance(rec.get("image_crops"), dict) else {}
 
         if not img and isinstance(crops, dict) and crops:
-            # img = sorted([k for k in crops.keys() if isinstance(k, str) and k.strip()])[0]
             img = sorted([k for k in crops if isinstance(k, str) and k.strip()])[0]
 
         if not title:
@@ -351,13 +224,6 @@ def build_preview_html() -> bytes:
     else:
         blocks_html = "\n".join(blocks)
 
-    # ---- Constant Contact-ish HTML shell for Preview ----
-    # NOTE:
-    # - This is preview-only, but uses table layout + inline styles like CC templates.
-    # - No rounded corners, no borders on images, no topic borders/separators.
-    # - Keep using your existing img_html generation (hero / heroCrop), but we
-    #   override the CSS so it behaves like email HTML (tables + inline styles).
-
     PREHEADER_TEXT = "Donate to Texas Library and Archives Foundation today!"
     HEADER_LOGO_URL = (
         "https://files.constantcontact.com/d9aacb82801/f364e9d2-e7dd-4a1b-bee9-59bc4186acc6.png"
@@ -374,7 +240,6 @@ def build_preview_html() -> bytes:
   <title>{_esc(subject)}</title>
 
   <style>
-    /* Preview-only helpers (keep it light; CC relies heavily on inline styles) */
     img {{ display:block; height:auto; max-width:100%; border:0; outline:none; text-decoration:none; }}
     table {{ border-collapse:collapse; }}
     .shell_width-row {{ width: 622px; }}
@@ -385,13 +250,12 @@ def build_preview_html() -> bytes:
       .pad10 {{ padding-left:10px !important; padding-right:10px !important; }}
     }}
 
-    /* Your preview hero styles, but without borders/rounding */
     .hero {{ width:100%; height:auto; margin: 0 0 10px 0; }}
     .heroCrop {{ position: relative; width:100%; overflow:hidden; margin: 0 0 10px 0; }}
     .heroCropImg {{ position:absolute; left:0; top:0; }}
 
     .heroCropImg {{
-        max-width: none !important;   /* allow >100% scaling for crop */
+        max-width: none !important;
         max-height: none !important;
     }}
   </style>

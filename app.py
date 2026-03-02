@@ -10,6 +10,7 @@ from routes import (
     crop,
     curate_article,
     curate_doc,
+    export as export_routes,
     health,
     img_proxy,
     preview,
@@ -23,17 +24,18 @@ from web.router import Router
 
 def build_router(server) -> Router:
     r = Router()
-    candidates.register(r)
-    preview.register(r)
-    watch.register(r)
     api.register(r)
+    candidates.register(r)
+    crop.register(r)
     curate_doc.register(r)
     curate_article.register(r)
-    img_proxy.register(r)
+    export_routes.register(r),
     health.register(r)
+    img_proxy.register(r)
+    preview.register(r)
     quit_route.register(r, server)
     static_files.register(r)
-    crop.register(r)
+    watch.register(r)
     return r
 
 

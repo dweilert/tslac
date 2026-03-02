@@ -12,6 +12,9 @@ class Response:
     headers: dict[str, str] = field(default_factory=dict)
     body: bytes = b""
 
+    # ----------------------------
+    # Core builders
+    # ----------------------------
     @staticmethod
     def html(content: str | bytes, status: int = 200) -> Response:
         b = content.encode("utf-8") if isinstance(content, str) else (content or b"")
@@ -52,6 +55,52 @@ class Response:
             body=b,
         )
 
+    @staticmethod
+    def bytes(
+        data: bytes,
+        *,
+        status: int = 200,
+        content_type: str = "application/octet-stream",
+        headers: dict[str, str] | None = None,
+    ) -> Response:
+        """
+        Raw bytes response for downloads (zip/png/pdf/etc).
+
+        Example:
+          return Response.bytes(zip_bytes, content_type="application/zip")
+        """
+        b = data or b""
+        h = {
+            "Content-Type": content_type,
+            "Content-Length": str(len(b)),
+        }
+        if headers:
+            h.update(headers)
+        return Response(status=status, headers=h, body=b)
+
+    @staticmethod
+    def download(
+        data: bytes,
+        *,
+        filename: str,
+        content_type: str = "application/octet-stream",
+        status: int = 200,
+        headers: dict[str, str] | None = None,
+    ) -> Response:
+        """
+        Convenience wrapper for downloadable attachments.
+        """
+        h = {
+            "Content-Disposition": f'attachment; filename="{filename}"',
+            "Cache-Control": "no-store",
+        }
+        if headers:
+            h.update(headers)
+        return Response.bytes(data, status=status, content_type=content_type, headers=h)
+
+    # ----------------------------
+    # Redirects and errors
+    # ----------------------------
     @staticmethod
     def redirect(location: str, status: int = 302) -> Response:
         # Keep body empty; browsers follow Location.

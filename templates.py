@@ -40,7 +40,7 @@ def html_page(
         selected_path="selected.yaml",
         curation_path="curation.yaml",
         selected_count=len(prechecked),
-        show_export_zip=False,
+        show_export_zip=True,
     )
 
     return html.encode("utf-8")

@@ -8,24 +8,20 @@ import urllib.request
 import zipfile
 from contextlib import suppress
 from datetime import datetime
-from pathlib import Path
 from typing import Any
 from urllib.parse import quote, unquote, urljoin, urlparse
 
-import yaml
-
-# Pillow is required for server-side crop rendering
 from PIL import Image
 
-APP_DIR = Path(__file__).resolve().parent
-SELECTED_FILE = APP_DIR / "selected.yaml"
-CURATION_FILE = APP_DIR / "curation.yaml"
+from storage.curation_store import load_curation, norm_url
+from storage.selected_store import load_selected
 
 
+# -----------------------------
+# Helpers
+# -----------------------------
 def _esc(s: object) -> str:
-    if s is None:
-        return ""
-    return html.escape(str(s), quote=True)
+    return html.escape("" if s is None else str(s), quote=True)
 
 
 def _safe_url(url: object) -> str:
@@ -35,27 +31,18 @@ def _safe_url(url: object) -> str:
     u = str(url).strip()
     p = urlparse(u)
 
-    # allow absolute http/https
     if p.scheme in ("http", "https"):
-        return html.escape(u, quote=True)
+        return _esc(u)
 
-    # allow relative URLs like "/node/123" (optional)
     if p.scheme == "" and u.startswith("/"):
-        return html.escape(u, quote=True)
+        return _esc(u)
 
     return "#"
 
 
-def _load_yaml(p: Path) -> dict[str, Any]:
-    if not p.exists():
-        return {}
-    data = yaml.safe_load(p.read_text("utf-8")) or {}
-    return data if isinstance(data, dict) else {}
-
-
 def _is_http_url(u: str) -> bool:
     try:
-        p = urlparse(u)
+        p = urlparse((u or "").strip())
         return p.scheme in ("http", "https") and bool(p.netloc)
     except Exception:
         return False
@@ -69,19 +56,11 @@ def _normalize_url_for_fetch(u: str, base: str = "") -> str:
     u = (u or "").strip()
     base = (base or "").strip()
 
-    # # resolve relative if needed
-    # if base:
-    #     try:
-    #         u = urljoin(base, u)
-    #     except Exception:
-    #         pass
-
-    # resolve relative if needed
     if base:
         with suppress(Exception):
             u = urljoin(base, u)
 
-    u = unquote(u)  # normalize any % encodings for consistent quoting
+    u = unquote(u)
     p = urlparse(u)
 
     if not (p.scheme in ("http", "https") and p.netloc):
@@ -93,29 +72,18 @@ def _normalize_url_for_fetch(u: str, base: str = "") -> str:
 
 
 def _norm_img_key(u: str) -> str:
-    """
-    Key normalization so crop dict lookup is stable even if
-    you stored encoded vs decoded variants.
-    """
     return _normalize_url_for_fetch(u, base="")
 
 
 def _fetch_bytes(url: str, timeout: int = 20) -> tuple[bytes, str]:
-    """
-    Fetch remote bytes with friendly headers.
-    Returns (data, content_type).
-    """
     url = (url or "").strip()
     if not _is_http_url(url):
         raise ValueError(f"Not an http(s) url: {url}")
 
-    # Referer helps for some hotlink protection
     referer = ""
-    try:
+    with suppress(Exception):
         pp = urlparse(url)
         referer = f"{pp.scheme}://{pp.netloc}/"
-    except Exception:
-        referer = ""
 
     req = urllib.request.Request(
         url,
@@ -135,10 +103,8 @@ def _fetch_bytes(url: str, timeout: int = 20) -> tuple[bytes, str]:
 def _crop_image_to_png(image_bytes: bytes, crop: dict[str, Any]) -> bytes:
     """
     Crop using pixel coordinates saved in curation.yaml:
-
-      ix, iy, iw, ih, img_w, img_h
-
-    Crop is clamped to the actual loaded image dimensions.
+      ix, iy, iw, ih
+    Optional: img_w, img_h
     Output: PNG bytes.
     """
     with Image.open(io.BytesIO(image_bytes)) as im:
@@ -166,7 +132,6 @@ def _crop_image_to_png(image_bytes: bytes, crop: dict[str, Any]) -> bytes:
 
 
 def _pick_item_title(url: str, rec: dict[str, Any] | None) -> str:
-    # If you later store curated title, use it; otherwise fallback to URL
     if isinstance(rec, dict):
         t = (rec.get("title") or "").strip()
         if t:
@@ -174,7 +139,7 @@ def _pick_item_title(url: str, rec: dict[str, Any] | None) -> str:
     return url
 
 
-def _pick_item_blurb(url: str, rec: dict[str, Any] | None) -> tuple[str, str]:
+def _pick_item_blurb(rec: dict[str, Any] | None) -> tuple[str, str]:
     """
     Returns (blurb, source) where source is:
       final_blurb | excerpts | none
@@ -193,7 +158,7 @@ def _pick_item_blurb(url: str, rec: dict[str, Any] | None) -> tuple[str, str]:
     return "", "none"
 
 
-def _pick_item_image(url: str, rec: dict[str, Any] | None) -> tuple[str, dict[str, Any]]:
+def _pick_item_image(rec: dict[str, Any] | None) -> tuple[str, dict[str, Any]]:
     """
     Returns (img_url, crops_dict).
     Image selection rules:
@@ -211,7 +176,6 @@ def _pick_item_image(url: str, rec: dict[str, Any] | None) -> tuple[str, dict[st
             crops = v
 
     if not img and crops:
-        # keys = sorted([k for k in crops.keys() if isinstance(k, str) and k.strip()])
         keys = sorted([k for k in crops if isinstance(k, str) and k.strip()])
         if keys:
             img = keys[0]
@@ -219,9 +183,12 @@ def _pick_item_image(url: str, rec: dict[str, Any] | None) -> tuple[str, dict[st
     return img, crops
 
 
+# -----------------------------
+# Public API
+# -----------------------------
 def build_constant_contact_zip() -> tuple[bytes, str]:
-    sel = _load_yaml(SELECTED_FILE)
-    cur = _load_yaml(CURATION_FILE)
+    sel = load_selected()
+    cur = load_curation()
 
     subject = (
         sel.get("subject") or ""
@@ -230,6 +197,7 @@ def build_constant_contact_zip() -> tuple[bytes, str]:
         "Hello everyone—here are highlights and resources recently published by the Texas State Library "
         "and Archives Commission."
     )
+
     items = sel.get("items") or []
     if not isinstance(items, list):
         items = []
@@ -245,40 +213,39 @@ def build_constant_contact_zip() -> tuple[bytes, str]:
         "items": [],
     }
 
-    # Build HTML blocks + plain text blocks
     html_blocks: list[str] = []
     txt_blocks: list[str] = []
-
-    # Collected image outputs: zip_path -> bytes
     image_files: list[tuple[str, bytes]] = []
 
     item_num = 0
     for it in items:
         if not isinstance(it, dict):
             continue
+
         url = (it.get("url") or "").strip()
         if not url:
             continue
 
-        rec = cur.get(url) if isinstance(cur, dict) else None
+        if not _is_http_url(url):
+            # For now: skip non-article keys in the CC export (keeps scope tight)
+            # You can add doc exports later.
+            continue
+
+        rec = cur.get(norm_url(url)) if isinstance(cur, dict) else None
 
         title = _pick_item_title(url, rec)
-        blurb, blurb_source = _pick_item_blurb(url, rec)
-        img_url, crops = _pick_item_image(url, rec)
+        blurb, blurb_source = _pick_item_blurb(rec)
+        img_url, crops = _pick_item_image(rec)
 
         item_num += 1
-        hero_rel = ""  # relative path inside zip, like images/item01_hero.png
-
+        hero_rel = ""
         img_entry: dict[str, Any] = {"present": False}
 
-        # Build/emit image if we have one
         if img_url:
-            # Normalize image URL (handles spaces etc.)
             img_fetch = _normalize_url_for_fetch(img_url, base=url)
 
             crop = None
             if isinstance(crops, dict):
-                # Try multiple lookup keys defensively
                 crop = (
                     crops.get(img_url)
                     or crops.get(_norm_img_key(img_url))
@@ -286,11 +253,9 @@ def build_constant_contact_zip() -> tuple[bytes, str]:
                     or crops.get(_norm_img_key(img_fetch))
                 )
 
-            # Fetch source image
             try:
-                raw, ctype = _fetch_bytes(img_fetch, timeout=25)
+                raw, _ctype = _fetch_bytes(img_fetch, timeout=25)
 
-                # Crop if crop dict present
                 if isinstance(crop, dict) and all(k in crop for k in ("ix", "iy", "iw", "ih")):
                     out_png = _crop_image_to_png(raw, crop)
                     hero_rel = f"images/item{item_num:02d}_hero.png"
@@ -304,7 +269,6 @@ def build_constant_contact_zip() -> tuple[bytes, str]:
                         "output_type": "image/png",
                     }
                 else:
-                    # No crop: still include as PNG (normalize formats for email import)
                     with Image.open(io.BytesIO(raw)) as im:
                         im = im.convert("RGBA")
                         out = io.BytesIO()
@@ -323,53 +287,36 @@ def build_constant_contact_zip() -> tuple[bytes, str]:
                     }
 
             except Exception as e:
-                # Do not fail the whole export—just omit the hero
-                img_entry = {
-                    "present": False,
-                    "source_url": img_url,
-                    "error": str(e),
-                }
+                img_entry = {"present": False, "source_url": img_url, "error": str(e)}
                 hero_rel = ""
 
-        # HTML
         hero_html = ""
         if hero_rel:
             hero_html = (
                 f'<img src="{_esc(hero_rel)}" alt="" '
-                f'style="width:100%;height:auto;border-radius:12px;border:1px solid #eee;margin:0 0 10px 0;" />'
+                f'style="width:100%;height:auto;border:0;margin:0 0 10px 0;" />'
             )
 
-        safe_blurb = (
-            _esc(blurb)
-            if blurb
-            else '<em style="color:#6b7280;">No blurb saved yet. Use Curate to write one.</em>'
-        )
+        safe_blurb = _esc(blurb) if blurb else '<em style="color:#6b7280;">No blurb saved yet.</em>'
 
         html_blocks.append(f"""
-          <div style="border-top:1px solid #eee;padding-top:14px;margin-top:14px;">
-            {hero_html}
-            <div style="font-size:12px;color:#6b7280;margin-bottom:6px;">Texas State Library and Archives Commission</div>
-            <div style="font-size:18px;font-weight:650;margin-bottom:6px;color:#111827;">{_esc(title)}</div>
-            <div style="color:#374151;line-height:1.45;">{safe_blurb}</div>
-            <div style="margin-top:10px;">
-              <a href="{_safe_url(url)}" style="color:#0b57d0;text-decoration:none;">Read more</a>
-            </div>
-          </div>
-        """)
+<div style="border-top:1px solid #eee;padding-top:14px;margin-top:14px;">
+  {hero_html}
+  <div style="font-size:12px;color:#6b7280;margin-bottom:6px;">Texas State Library and Archives Commission</div>
+  <div style="font-size:18px;font-weight:650;margin-bottom:6px;color:#111827;">{_esc(title)}</div>
+  <div style="color:#374151;line-height:1.45;">{safe_blurb}</div>
+  <div style="margin-top:10px;">
+    <a href="{_safe_url(url)}" style="color:#0b57d0;text-decoration:none;">Read more</a>
+  </div>
+</div>
+""".strip())
 
-        # Plain text
-        txt_blocks.append(f"{item_num}) {title}\n" f"{blurb}\n" f"{url}\n")
+        txt_blocks.append(f"{item_num}) {title}\n{blurb}\n{url}\n")
 
         manifest["items"].append(
-            {
-                "url": url,
-                "title": title,
-                "blurb_source": blurb_source,
-                "image": img_entry,
-            }
+            {"url": url, "title": title, "blurb_source": blurb_source, "image": img_entry}
         )
 
-    # index.html (email HTML)
     html_doc = f"""<!doctype html>
 <html>
 <head>
@@ -384,7 +331,7 @@ def build_constant_contact_zip() -> tuple[bytes, str]:
       <div style="color:#374151;margin:0 0 14px 0;line-height:1.4;">{_esc(intro)}</div>
       {''.join(html_blocks) if html_blocks else '<div style="color:#6b7280;">No selected items found in selected.yaml.</div>'}
       <div style="margin-top:14px;font-size:12px;color:#6b7280;">
-        Export generated by tslac-newsletter-helper. Import into Constant Contact using “New Email from .ZIP”.
+        Import into Constant Contact using “New Email from .ZIP”.
       </div>
     </div>
   </div>
@@ -392,12 +339,10 @@ def build_constant_contact_zip() -> tuple[bytes, str]:
 </html>
 """
 
-    # plain.txt
     plain = f"SUBJECT: {subject}\n\n{intro}\n\n" + (
         "\n".join(txt_blocks) if txt_blocks else "(No items)\n"
     )
 
-    # Build ZIP in memory
     buf = io.BytesIO()
     with zipfile.ZipFile(buf, mode="w", compression=zipfile.ZIP_DEFLATED) as z:
         z.writestr("index.html", html_doc.encode("utf-8"))
@@ -405,8 +350,6 @@ def build_constant_contact_zip() -> tuple[bytes, str]:
         z.writestr(
             "manifest.json", json.dumps(manifest, indent=2, ensure_ascii=False).encode("utf-8")
         )
-
-        # images
         for rel, data in image_files:
             z.writestr(rel, data)
 

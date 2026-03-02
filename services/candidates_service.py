@@ -96,7 +96,7 @@ def refresh_candidates(
 
 def save_picks(*, subject: str, intro: str, picked_urls: list[str]) -> int:
     """
-    Persist selection to selected.yaml. Returns number of items saved.
+    Persist selection to the selected-items store. Returns number of items saved.
     """
     save_selected(subject, intro, picked_urls)
     return len(picked_urls)
