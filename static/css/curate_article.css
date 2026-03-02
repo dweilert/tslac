@@ -30,15 +30,7 @@
 }
 
 /* Excerpts */
-.exlist { display: flex; flex-direction: column; gap: 10px; margin-top: 8px; }
-.exrow { display: flex; gap: 10px; align-items: flex-start; }
-.extext {
-  flex: 1;
-  background: #f3f3f3;
-  padding: 10px;
-  border-radius: 10px;
-  white-space: pre-wrap;
-}
+
 
 /* Images */
 .imggrid {
@@ -78,3 +70,106 @@
   overflow-x: auto;
 }
 
+
+  details { margin: 12px 0; }
+  .section-summary {
+    cursor: pointer;
+    padding: 10px 12px;
+    background: #f5f5f5;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-weight: 600;
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 10px;
+  }
+  .section-hint {
+    font-weight: 400;
+    font-size: 0.9em;
+    color: #666;
+  }
+  .section-body {
+    border: 1px solid #ddd;
+    border-top: 0;
+    border-radius: 0 0 6px 6px;
+    padding: 12px;
+    background: #fff;
+  }
+
+  /* optional: make images grid nicer if you don't already have it */
+  .img-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 12px;
+  }
+  .img-card img {
+    max-width: 100%;
+    height: auto;
+    display: block;
+  }
+  .img-actions {
+    margin-top: 8px;
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  .breakall { word-break: break-all; }
+
+
+/* ------------------------------------ */ 
+
+/* Excerpts */
+.exlist {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.exrow {
+  display: flex !important;
+  flex-direction: row !important;   /* side-by-side */
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.excontrols {
+  display: flex;
+  flex-direction: column;           /* stack buttons vertically */
+  gap: 6px;
+  flex: 0 0 34px;                   /* fixed left column */
+}
+
+.exbtn.danger {
+  background: #f3caca;
+}
+
+.extext {
+  flex: 1;
+  background: #f3f3f3;
+  padding: 10px;
+  border-radius: 10px;
+  white-space: pre-wrap;
+  line-height: 1.4;
+  min-width: 0;                     /* important for flex wrapping */
+}
+
+/* Compact buttons used inside excerpts */
+.exbtn {
+  padding: 2px 5px;
+  font-size: 12px;
+  line-height: 1;
+  width: 24px;
+  height: 22px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* tighten vertical spacing */
+.excontrols {
+  gap: 3px;
+}

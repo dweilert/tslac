@@ -7,7 +7,6 @@ from urllib.parse import quote
 from models import Candidate
 from render import render
 
-
 def _esc(s: object) -> str:
     return html.escape("" if s is None else str(s), quote=True)
 
@@ -46,56 +45,99 @@ def html_page(
     return html.encode("utf-8")
 
 
+def _get_attr(obj, name: str, default=None):
+    try:
+        return getattr(obj, name)
+    except Exception:
+        return default
+
+
 def curate_page_html(
-    index: int,
+    idx: int,
     total: int,
-    c: Candidate,
-    cleaned: dict[str, Any],
-    final_blurb: str,
-    excerpts: list[str],
-    selected_image: str,
-    status: str,
-    crops: dict[str, Any],
+    c,
+    cleaned: dict,
+    *,
+    final_blurb: str = "",
+    excerpts: list[str] | None = None,
+    selected_image: str = "",
+    status: str = "",
+    crops: dict | None = None,
 ) -> bytes:
-    title = cleaned.get("title") or c.title
-    pub = cleaned.get("published_date") or "n/a"
-    conf = cleaned.get("date_confidence") or "n/a"
-    images = cleaned.get("images") or []
-    clean_html = cleaned.get("clean_html") or "<p><em>No cleaned HTML returned.</em></p>"
+    excerpts = excerpts or []
+    crops = crops or {}
 
-    prev_url = f"/curate/{index-1}" if index > 0 else ""
-    next_url = f"/curate/{index+1}" if (index + 1) < total else ""
-    original_url = c.url
+    # Candidate fields (object or dict)
+    if isinstance(c, dict):
+        url = (c.get("url") or c.get("original_url") or "").strip()
+        cand_title = c.get("title") or ""
+        original_url = c.get("original_url") or url
+        json_url = c.get("json_url") or ""
+    else:
+        url = (str(_get_attr(c, "url", "")) or str(_get_attr(c, "original_url", "")) or "").strip()
+        cand_title = str(_get_attr(c, "title", "") or "")
+        original_url = str(_get_attr(c, "original_url", "") or url)
+        json_url = str(_get_attr(c, "json_url", "") or "")
 
-    # If you don't have /api/clean yet, set this to "" to hide the button.
-    json_url = f"/api/clean?url={quote(c.url, safe='')}"
+    # Prev/Next
+    prev_url = f"/curate/{idx-1}" if idx > 0 else ""
+    next_url = f"/curate/{idx+1}" if idx < (total - 1) else ""
+
+    # Cleaned title/body/images (robust keys)
+    title = (cleaned.get("title") if isinstance(cleaned, dict) else "") or cand_title or "Curate Article"
+
+    cleaned_html = ""
+    if isinstance(cleaned, dict):
+        cleaned_html = (
+            cleaned.get("html")
+            or cleaned.get("cleaned_html")
+            or cleaned.get("content_html")
+            or ""
+        )
+
+    # Images: prefer cleaned["images"], else candidate.images
+    images = []
+    if isinstance(cleaned, dict):
+        v = cleaned.get("images") or cleaned.get("image_candidates") or []
+        if isinstance(v, list):
+            images = v
+
+    if not images:
+        if isinstance(c, dict):
+            v = c.get("images") or c.get("image_candidates") or []
+            if isinstance(v, list):
+                images = v
+        else:
+            v = _get_attr(c, "images", None) or _get_attr(c, "image_candidates", None) or []
+            if isinstance(v, list):
+                images = v
 
     html = render(
         "curate_article.html",
-        title="Curate Article",
+        title=title,
+        status=status,
         page_css="/static/css/curate_article.css",
-        prev_url=prev_url,
-        next_url=next_url,
+        index=idx,
+        total=total,
+
+        url=url,
         original_url=original_url,
         json_url=json_url,
-        index=index,
-        item_num=index + 1,
-        total=total,
-        url=c.url,
-        source=c.source,
-        title_text=title,
-        # title=title,
-        pub=pub,
-        conf=conf,
+
+        prev_url=prev_url,
+        next_url=next_url,
+
         final_blurb=final_blurb or "",
-        excerpts=excerpts or [],
+        excerpts=excerpts,
         images=images,
-        crops=crops or {},
-        selected_image=(selected_image or "").strip(),
-        clean_html=clean_html,
-        status=status or "",
+        selected_image=selected_image or "",
+        crops=crops,
+
+        cleaned_html=cleaned_html,
     )
     return html.encode("utf-8")
+
+
 
 
 def watch_page_html(
@@ -122,19 +164,53 @@ def watch_page_html(
     return html.encode("utf-8")
 
 
-def curate_doc_page_html(doc: dict, status: str = "") -> bytes:
-    doc_id = doc.get("id", "")
-    # title = doc.get("title", "Document")
-    summary = doc.get("summary", "")
-    source = doc.get("source", "doc")
+def curate_doc_page_html(*, view, status: str = "") -> bytes:
+    d = view.doc or {}
+    doc_id = d.get("id", "")
+    title = d.get("title", "Document")
+    source = d.get("source", "doc")
+    summary = d.get("summary", "")
+
+    # Use curated final blurb if present, else fall back to summary
+    final_blurb = view.final_blurb or summary
+
+    prev_url = ""
+    next_url = ""
+
+    # Basic prev/next navigation by index
+    try:
+        if view.idx > 0:
+            prev_id = (load_doc_candidates() or [])[view.idx - 1].get("id", "")
+            if prev_id:
+                prev_url = f"/curate_doc?doc_id={quote(str(prev_id))}"
+        if view.idx < (view.total - 1):
+            next_id = (load_doc_candidates() or [])[view.idx + 1].get("id", "")
+            if next_id:
+                next_url = f"/curate_doc?doc_id={quote(str(next_id))}"
+    except Exception:
+        prev_url = ""
+        next_url = ""
 
     html = render(
         "curate_doc.html",
         title="Curate Document",
         page_css="/static/css/curate_doc.css",
         status=status,
+
+        # meta
         doc_id=doc_id,
-        summary=summary,
+        doc_title=title,
         source=source,
+        idx=view.idx + 1,         # 1-based for display
+        total=view.total,
+
+        # content
+        summary=summary,
+        excerpts=view.excerpts or [],
+        final_blurb=final_blurb,
+
+        # nav
+        prev_url=prev_url,
+        next_url=next_url,
     )
     return html.encode("utf-8")

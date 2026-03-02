@@ -4,17 +4,19 @@ import json
 from dataclasses import dataclass
 from typing import Any
 
-import cleaner
+from services.api_service import clean_article_payload
 from storage.collector_store import load_candidates_file
 from storage.curation_store import (
     add_curated_excerpt,
     clear_curated_excerpts,
     clear_curated_selected_image,
+    delete_curated_excerpt,
     get_curated_blurb,
     get_curated_excerpts,
     get_curated_image_crops,
     get_curated_selected_image,
     load_curation,
+    move_curated_excerpt,
     pop_curated_excerpt,
     upsert_curated_blurb,
     upsert_curated_image_crop,
@@ -24,7 +26,7 @@ from web.errors import BadRequestError
 
 
 @dataclass(frozen=True)
-class CurateArticleView:
+class CurateView:
     idx: int
     total: int
     candidate: Any
@@ -35,45 +37,82 @@ class CurateArticleView:
     crops: dict[str, Any]
 
 
-def build_view_by_index(idx: int) -> CurateArticleView:
-    candidates = load_candidates_file()
-    if not candidates:
-        raise BadRequestError(
-            "No candidates available. Go back and click Refresh candidates first."
-        )
+def _get_attr(obj: Any, name: str, default: Any = "") -> Any:
+    try:
+        return getattr(obj, name)
+    except Exception:
+        return default
 
-    if idx < 0 or idx >= len(candidates):
-        raise BadRequestError(f"Index out of range: {idx} (0..{len(candidates)-1})")
 
-    c = candidates[idx]
-    res = cleaner.clean_article(c.url)
+def _cand_url(c: Any) -> str:
+    if c is None:
+        return ""
+    if isinstance(c, dict):
+        return (c.get("url") or c.get("original_url") or "").strip()
+    return str(_get_attr(c, "url", "") or _get_attr(c, "original_url", "") or "").strip()
 
-    cleaned = {
-        "title": res.title,
-        "published_date": res.published_date,
-        "date_confidence": res.date_confidence,
-        "clean_html": res.clean_html,
-        "text_plain": res.text_plain,
-        "images": res.images,
-        "extraction_quality": res.extraction_quality,
+
+def _cand_title(c: Any) -> str:
+    if c is None:
+        return ""
+    if isinstance(c, dict):
+        return str(c.get("title") or "")
+    return str(_get_attr(c, "title", "") or "")
+
+
+def _build_cleaned_from_api(url: str, fallback_title: str) -> dict[str, Any]:
+    """
+    candidates.json only contains metadata, so we fetch/extract on demand via api_service.
+    """
+    payload = clean_article_payload(url) or {}
+
+    title = payload.get("title") or fallback_title or "Curate Article"
+    html = payload.get("html") or payload.get("content_html") or payload.get("cleaned_html") or ""
+    if not isinstance(html, str):
+        html = str(html or "")
+
+    images = payload.get("images") or payload.get("image_candidates") or []
+    if not isinstance(images, list):
+        images = []
+
+    # templates.py is tolerant, but we provide all common keys
+    return {
+        "title": title,
+        "html": html,
+        "content_html": html,
+        "cleaned_html": html,
+        "images": images,
     }
 
+
+def build_view_by_index(idx: int) -> CurateView:
+    cands = load_candidates_file()
+    if not cands:
+        raise BadRequestError("No candidates. Go back and refresh candidates first.")
+
+    if idx < 0 or idx >= len(cands):
+        raise BadRequestError(f"Index out of range: {idx} (0..{len(cands)-1})")
+
+    c = cands[idx]
+    url = _cand_url(c)
+    if not url:
+        raise BadRequestError("Candidate missing url.")
+
+    fallback_title = _cand_title(c)
+    cleaned = _build_cleaned_from_api(url, fallback_title)
+
     cur = load_curation()
-    blurb = get_curated_blurb(cur, c.url)
-    excerpts = get_curated_excerpts(cur, c.url)
-    selected_image = get_curated_selected_image(cur, c.url)
+    final_blurb = get_curated_blurb(cur, url)
+    excerpts = get_curated_excerpts(cur, url)
+    selected_image = get_curated_selected_image(cur, url)
+    crops = get_curated_image_crops(cur, url)
 
-    try:
-        crops = get_curated_image_crops(cur, c.url)
-    except Exception:
-        crops = {}
-
-    return CurateArticleView(
+    return CurateView(
         idx=idx,
-        total=len(candidates),
+        total=len(cands),
         candidate=c,
         cleaned=cleaned,
-        final_blurb=blurb,
+        final_blurb=final_blurb,
         excerpts=excerpts,
         selected_image=selected_image,
         crops=crops,
@@ -105,6 +144,41 @@ def clear_excerpts(*, url: str) -> None:
         clear_curated_excerpts(url)
 
 
+def delete_excerpt(*, url: str, excerpt_index: int) -> None:
+    url = (url or "").strip()
+    if not url:
+        return
+    try:
+        i = int(excerpt_index)
+    except Exception:
+        return
+    delete_curated_excerpt(url, i)
+
+
+def move_excerpt(*, url: str, excerpt_index: int, direction: str) -> None:
+    url = (url or "").strip()
+    if not url:
+        return
+    try:
+        i = int(excerpt_index)
+    except Exception:
+        return
+    move_curated_excerpt(url, i, direction)
+
+
+def compose_blurb_from_excerpts(*, url: str, sep: str = "\n\n") -> str:
+    url = (url or "").strip()
+    if not url:
+        return ""
+
+    cur = load_curation()
+    xs = get_curated_excerpts(cur, url) or []
+    composed = sep.join([x.strip() for x in xs if (x or "").strip()]).strip()
+    if composed:
+        upsert_curated_blurb(url, composed)
+    return composed
+
+
 def save_crop(*, url: str, img_src: str, crop_json: str) -> None:
     url = (url or "").strip()
     img_src = (img_src or "").strip()
@@ -123,32 +197,11 @@ def select_image(*, url: str, img_src: str) -> None:
     url = (url or "").strip()
     img_src = (img_src or "").strip()
 
-    # Only allow http(s)
     if img_src and not (img_src.startswith("http://") or img_src.startswith("https://")):
         img_src = ""
 
     if url and img_src:
         upsert_curated_selected_image(url, img_src)
-
-
-
-
-def compose_blurb_from_excerpts(*, url: str, sep: str = "\n\n") -> str:
-    """Combine stored excerpts into final blurb and persist it.
-
-    Returns the composed blurb string (may be empty).
-    """
-    url = (url or "").strip()
-    if not url:
-        return ""
-
-    cur = load_curation()
-    excerpts = get_curated_excerpts(cur, url)
-    composed = sep.join([x.strip() for x in excerpts if x.strip()]).strip()
-
-    if composed:
-        upsert_curated_blurb(url, composed)
-    return composed
 
 
 def clear_selected_image(*, url: str) -> None:

@@ -7,6 +7,8 @@ from services.curate_article_service import (
     build_view_by_index,
     clear_excerpts,
     clear_selected_image,
+    delete_excerpt,
+    move_excerpt,
     pop_excerpt,
     save_blurb,
     save_crop,
@@ -25,13 +27,24 @@ def register(router: Router) -> None:
 
     router.post("/curate/save", post_curate_save)
     router.post("/curate/add_excerpt", post_curate_add_excerpt)
-    router.post("/curate/compose_blurb", post_curate_compose_blurb)
     router.post("/curate/pop_excerpt", post_curate_pop_excerpt)
+    router.post("/curate/delete_excerpt", post_curate_delete_excerpt)
+    router.post("/curate/move_excerpt", post_curate_move_excerpt)
+
     router.post("/curate/save_crop", post_curate_save_crop)
     router.post("/curate/select_image", post_curate_select_image)
     router.post("/curate/clear_selected_image", post_curate_clear_selected_image)
     router.post("/curate/clear_excerpts", post_curate_clear_excerpts)
+    router.post("/curate/compose_blurb", post_curate_compose_blurb)
 
+def post_curate_compose_blurb(req: Request) -> Response:
+    form = _parse_post_form(req)
+    idx = _safe_int(form.get("index", "0"), 0)
+    url = form.get("url", "")
+    composed = compose_blurb_from_excerpts(url=url)
+    if composed:
+        return _redirect_curate(idx, "Composed final blurb from excerpts")
+    return _redirect_curate(idx, "No excerpts to compose")
 
 def _parse_post_form(req: Request) -> dict[str, str]:
     raw = req.body.decode("utf-8", errors="replace")
@@ -90,16 +103,6 @@ def post_curate_add_excerpt(req: Request) -> Response:
     add_excerpt(url=form.get("url", ""), excerpt=form.get("excerpt", ""))
     return _redirect_curate(idx, "Added excerpt")
 
-def post_curate_compose_blurb(req: Request) -> Response:
-    form = _parse_post_form(req)
-    idx = _safe_int(form.get("index", "0"), 0)
-    url = form.get("url", "")
-    composed = compose_blurb_from_excerpts(url=url)
-    if composed:
-        return _redirect_curate(idx, "Composed final blurb from excerpts")
-    return _redirect_curate(idx, "No excerpts to compose")
-
-
 
 def post_curate_pop_excerpt(req: Request) -> Response:
     form = _parse_post_form(req)
@@ -108,17 +111,29 @@ def post_curate_pop_excerpt(req: Request) -> Response:
     return _redirect_curate(idx, "Removed last excerpt")
 
 
+def post_curate_delete_excerpt(req: Request) -> Response:
+    form = _parse_post_form(req)
+    idx = _safe_int(form.get("index", "0"), 0)
+    ex_idx = _safe_int(form.get("excerpt_index", "0"), 0)
+    delete_excerpt(url=form.get("url", ""), excerpt_index=ex_idx)
+    return _redirect_curate(idx, f"Deleted excerpt #{ex_idx + 1}")
+
+
+def post_curate_move_excerpt(req: Request) -> Response:
+    form = _parse_post_form(req)
+    idx = _safe_int(form.get("index", "0"), 0)
+    ex_idx = _safe_int(form.get("excerpt_index", "0"), 0)
+    direction = (form.get("direction", "") or "").strip().lower()
+    if direction not in ("up", "down"):
+        return _redirect_curate(idx, "Invalid move direction")
+    move_excerpt(url=form.get("url", ""), excerpt_index=ex_idx, direction=direction)
+    return _redirect_curate(idx, f"Moved excerpt #{ex_idx + 1} {direction}")
+
+
 def post_curate_save_crop(req: Request) -> Response:
     form = _parse_post_form(req)
     idx = _safe_int(form.get("index", "0"), 0)
-
-    crop_json = (form.get("crop_json", "") or form.get("crop", "")).strip()
-
-    save_crop(
-        url=form.get("url", ""),
-        img_src=form.get("img_src", ""),
-        crop_json=crop_json,
-    )
+    save_crop(url=form.get("url", ""), img_src=form.get("img_src", ""), crop_json=form.get("crop", ""))
     return _redirect_curate(idx, "Saved image crop")
 
 

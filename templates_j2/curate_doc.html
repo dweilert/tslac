@@ -1,13 +1,21 @@
 {% extends "base.html" %}
+
+{% block page_css %}
+{% if page_css %}<link rel="stylesheet" href="{{ page_css }}">{% endif %}
+{% endblock %}
+
 {% block content %}
 
 <div class="toolbar">
   <a class="btn" href="/">← Back to list</a>
+  {% if prev_url %}<a class="btn" href="{{ prev_url }}">◀ Prev</a>{% endif %}
+  {% if next_url %}<a class="btn" href="{{ next_url }}">Next ▶</a>{% endif %}
 </div>
 
-<h1>{{ title }}</h1>
+<h1 class="page-title">{{ doc_title }}</h1>
 
-<div class="small">
+<div class="small meta">
+  Item: <code>{{ idx }}</code> / <code>{{ total }}</code><br/>
   Source: <code>{{ source }}</code><br/>
   Doc ID: <code>{{ doc_id }}</code>
 </div>
@@ -16,17 +24,78 @@
   <div class="msg">{{ status }}</div>
 {% endif %}
 
-<div class="card">
-  <form method="POST" action="/curate_doc/save">
-    <input type="hidden" name="doc_id" value="{{ doc_id }}"/>
+<div class="cards">
 
-    <div class="small">Document Summary (editable)</div>
-    <textarea class="field" name="final_blurb" rows="6">{{ summary }}</textarea>
+  <!-- Blurb builder -->
+  <div class="card">
+    <div class="title">Blurb builder</div>
 
-    <div class="toolbar" style="margin-top:12px;">
-      <button class="btn" type="submit">Save curated document</button>
+    <div class="small" style="margin-top: 8px;">Add an excerpt (paste text here)</div>
+    <form method="POST" action="/curate_doc/add_excerpt">
+      <input type="hidden" name="doc_id" value="{{ doc_id }}"/>
+      <textarea class="field" name="excerpt" rows="3" placeholder="Paste an excerpt to keep..."></textarea>
+      <div class="toolbar" style="margin-top:8px;">
+        <button class="btn" type="submit">Add excerpt</button>
+      </div>
+    </form>
+
+    <div style="margin-top:12px;">
+      <div class="small">Saved excerpts ({{ excerpts|length }})</div>
+
+      {% if excerpts and excerpts|length > 0 %}
+        <ol class="small" style="margin-top:6px;">
+          {% for x in excerpts %}
+            <li style="margin-bottom:6px; white-space: pre-wrap;">{{ x }}</li>
+          {% endfor %}
+        </ol>
+
+        <div class="toolbar" style="margin-top:8px;">
+          <form method="POST" action="/curate_doc/pop_excerpt" style="display:inline;">
+            <input type="hidden" name="doc_id" value="{{ doc_id }}"/>
+            <button class="btn" type="submit">Remove last excerpt</button>
+          </form>
+
+          <form method="POST" action="/curate_doc/clear_excerpts" style="display:inline;">
+            <input type="hidden" name="doc_id" value="{{ doc_id }}"/>
+            <button class="btn" type="submit">Clear excerpts</button>
+          </form>
+
+          <form method="POST" action="/curate_doc/compose_blurb" style="display:inline;">
+            <input type="hidden" name="doc_id" value="{{ doc_id }}"/>
+            <button class="btn" type="submit">Combine excerpts → Final blurb</button>
+          </form>
+        </div>
+      {% else %}
+        <div class="small muted" style="margin-top:6px;">No excerpts saved yet.</div>
+      {% endif %}
     </div>
-  </form>
+
+    <hr style="margin:14px 0;"/>
+
+    <div class="small">Final blurb (editable)</div>
+    <form method="POST" action="/curate_doc/save">
+      <input type="hidden" name="doc_id" value="{{ doc_id }}"/>
+      <textarea class="field" name="final_blurb" rows="10">{{ final_blurb }}</textarea>
+
+      <div class="toolbar" style="margin-top:12px;">
+        <button class="btn" type="submit">Save curated document</button>
+      </div>
+    </form>
+
+    {% if summary %}
+      <details style="margin-top: 12px;">
+        <summary class="small">Show original document summary</summary>
+        <div class="small muted" style="margin-top:8px; white-space: pre-wrap;">{{ summary }}</div>
+      </details>
+    {% endif %}
+  </div>
+
+  <!-- Images (docs currently have none, but keep section for consistency) -->
+  <div class="card">
+    <div class="title">Images</div>
+    <div class="small muted">No images detected for documents (gdrive/local) in the current pipeline.</div>
+  </div>
+
 </div>
 
 {% endblock %}

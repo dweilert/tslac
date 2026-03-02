@@ -1,9 +1,5 @@
 {% extends "base.html" %}
 
-{% block page_css %}
-<link rel="stylesheet" href="/static/css/curate_article.css">
-{% endblock %}
-
 {% block content %}
 
 <div class="toolbar">
@@ -12,144 +8,165 @@
   {% if prev_url %}<a class="btn" href="{{ prev_url }}">◀ Prev</a>{% endif %}
   {% if next_url %}<a class="btn" href="{{ next_url }}">Next ▶</a>{% endif %}
 
-  {% if original_url %}
-    <a class="btn" href="{{ original_url }}" target="_blank" rel="noopener">Open original ↗</a>
-  {% endif %}
-
-  {% if json_url %}
-    <a class="btn" href="{{ json_url }}" target="_blank" rel="noopener">View JSON ↗</a>
-  {% endif %}
+  <a class="btn" href="{{ original_url }}" target="_blank" rel="noopener">Open original ↗</a>
+  <a class="btn" href="{{ json_url }}" target="_blank" rel="noopener">View JSON ↗</a>
 </div>
 
-<h1 class="page-title">{{ title }}</h1>
+<h1>{{ title }}</h1>
 
-<div class="small meta">
-  Item: <code>{{ item_num }}</code> / <code>{{ total }}</code><br/>
-  Source: <code>{{ source }}</code><br/>
-  Published: <code>{{ pub }}</code> (confidence: <code>{{ conf }}</code>)<br/>
-  URL: <a href="{{ url }}" target="_blank" rel="noreferrer">{{ url }}</a>
-</div>
+<style>
+  .card { background: #fff; border: 1px solid #ddd; border-radius: 8px; padding: 12px; }
+  .card .title { font-weight: 700; margin-bottom: 8px; }
+  .card .toolbar { display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+  .muted { color: #666; }
+  .small { font-size: 0.92em; }
+  .field { width: 100%; }
+  .breakall { word-break: break-all; }
 
-{% if status %}
-  <div class="msg">{{ status }}</div>
-{% endif %}
+  /* Toggle bar above cards */
+  .togglebar {
+    display:flex;
+    gap:8px;
+    flex-wrap:wrap;
+    align-items:center;
+    margin: 0 0 10px 0;
+  }
 
-<div class="cards">
-  <!-- Blurb builder -->
+  /* Collapsible card bodies */
+  .card-collapsed .card-body { display: none; }
+  .card-body { margin-top: 10px; }
+
+  /* Images grid */
+  .img-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 12px;
+  }
+  .img-card img { max-width: 100%; height: auto; display: block; }
+  .img-actions { margin-top: 8px; display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+
+  /* Source article */
+  .article { line-height: 1.35; }
+  .article p { margin: 0 0 10px 0; }
+</style>
+
+<div class="grid">
+
+  <!-- Blurb -->
   <div class="card">
-    <div class="title">Blurb builder</div>
-
-    <div class="small muted" style="margin-bottom:8px;">
-      Capture excerpts from the cleaned article, then combine them into the final blurb.
-    </div>
-
-    <!-- Excerpt tools -->
-    <div class="toolbar">
-      <button class="btn" type="button" onclick="previewSelection()">Preview selection</button>
-      <button class="btn" type="button" id="btnAddExcerpt" onclick="addSelectedText()" disabled>Add Selected Text</button>
-
-      <button class="btn" type="button" onclick="removeLastExcerpt()">Remove last excerpt</button>
-      <button class="btn" type="button" onclick="clearExcerpts()">Clear all excerpts</button>
-
-      <span style="flex:1;"></span>
-
-      <button class="btn" type="button" onclick="composeFinalBlurb()">Combine excerpts → Final blurb</button>
-    </div>
-
-    <div class="panel">
-      <div class="small muted">Selection preview</div>
-      <div id="selectionPreview" class="selection-preview">Nothing selected yet.</div>
-    </div>
-
-    <div style="margin-top:12px;">
-      <div class="small muted">Saved excerpts</div>
-
-      {% if excerpts and excerpts|length > 0 %}
-        <div class="exlist">
-          {% for x in excerpts %}
-            <div class="exrow">
-              <div class="extext" id="ex_{{ loop.index0 }}">{{ x }}</div>
-              <button class="btn" type="button"
-                      onclick="copyText(document.getElementById('ex_{{ loop.index0 }}').innerText)">Copy</button>
-            </div>
-          {% endfor %}
-        </div>
-      {% else %}
-        <div class="muted">No excerpts saved yet. Highlight text in the article and click <b>Add Selected Text</b>.</div>
-      {% endif %}
-    </div>
-
-    <hr style="margin:14px 0;"/>
-
-    <!-- Final blurb -->
-    <div class="small muted">Final blurb (editable)</div>
+    <div class="title">Final blurb</div>
 
     <form method="POST" action="/curate/save">
       <input type="hidden" name="index" value="{{ index }}"/>
       <input type="hidden" name="url" value="{{ url }}"/>
 
-      <textarea class="field" name="final_blurb" rows="8">{{ final_blurb }}</textarea>
+      <textarea class="field" name="final_blurb" rows="14">{{ final_blurb }}</textarea>
 
-      <div class="toolbar" style="margin-top:10px;">
-        <button class="btn" type="submit">Save blurb</button>
+      <div class="toolbar" style="margin-top: 8px;">
+        <button class="btn" type="submit">Save curated blurb</button>
       </div>
     </form>
   </div>
 
-  <!-- Images -->
-
+  <!-- Excerpts -->
   <div class="card">
-    <div class="title">Detected images</div>
+    <div class="title">Excerpts</div>
 
-    {% if images and images|length > 0 %}
-      <div class="imggrid">
-        {% for im in images[:12] %}
-          {% set src = im.get("src") or "" %}
-          {% if src %}
-            {% set alt = im.get("alt") or "" %}
-            {% set score = im.get("score") or "" %}
-            {% set is_selected = (selected_image == src) %}
-            {% set is_cropped = (src in crops) %}
+    <div class="small">Select text in the article below, then click Add.</div>
 
-            <div class="imgcard">
-              <a href="{{ src }}" target="_blank" rel="noopener">
-                <img src="{{ src }}" alt="{{ alt }}" loading="lazy"/>
-              </a>
+    <div class="toolbar" style="margin-top: 8px;">
+      <button id="btnAddExcerpt" class="btn" type="button" onclick="addSelectedText()" disabled>Add Selected Text</button>
+      <button class="btn" type="button" onclick="removeLastExcerpt()">Remove last</button>
+      <button class="btn" type="button" onclick="clearExcerpts()">Clear</button>
+      <button class="btn" type="button" onclick="composeBlurb()">Combine → Final blurb</button>
+    </div>
 
-              <div class="small">
-                score: <code>{{ score }}</code>
-                {% if is_cropped %}<span class="badge">cropped</span>{% endif %}
-                {% if is_selected %}<span class="badge">selected</span>{% endif %}
-              </div>
+    <div class="small muted" id="selectionPreview" style="margin-top: 10px;">Nothing selected yet.</div>
 
-              <div class="img-actions">
-                <button class="btn" type="button" onclick="openCrop('{{ src }}', '{{ url }}', {{ index }})">Crop</button>
-                <button class="btn" type="button" onclick="copyText('{{ src }}')">Copy URL</button>
+    <hr style="margin: 12px 0;"/>
 
-                <button class="btn" type="button" onclick="selectImage('{{ src }}')">
-                  {{ "Selected" if is_selected else "Use in newsletter" }}
-                </button>
-              </div>
-            </div>
-          {% endif %}
-        {% endfor %}
+<div class="small">Saved excerpts</div>
+
+{% if excerpts and excerpts|length > 0 %}
+  <div class="exlist">
+    {% for x in excerpts %}
+      <div class="exrow">
+        <div class="excontrols">
+          <button class="btn exbtn" type="button"
+                  onclick="moveExcerpt({{ loop.index0 }}, 'up')"
+                  {% if loop.first %}disabled{% endif %}>▲</button>
+
+          <button class="btn exbtn" type="button"
+                  onclick="moveExcerpt({{ loop.index0 }}, 'down')"
+                  {% if loop.last %}disabled{% endif %}>▼</button>
+
+          <button class="btn exbtn danger" type="button"
+                  onclick="deleteExcerpt({{ loop.index0 }})">✕</button>
+        </div>
+
+        <div class="extext" id="ex_{{ loop.index0 }}">{{ x }}</div>
       </div>
+    {% endfor %}
+  </div>
+{% else %}
+  <div class="muted">No excerpts saved yet. Highlight text and click <b>Add Selected Text</b>.</div>
+{% endif %}
 
-      <div class="toolbar" style="margin-top:12px;">
-        <button class="btn" type="button" onclick="clearSelectedImage()">Clear selected image</button>
-      </div>
-
-    {% else %}
-      <div class="muted">No images detected for this page.</div>
-    {% endif %}
   </div>
 
-  <!-- Cleaned HTML -->
-  <div class="card">
-    <div class="title">Cleaned Article</div>
-    <div class="small muted">This is the cleaned HTML preview.</div>
-    <div class="clean-html" id="cleanHtml">
-      {{ clean_html | safe }}
+  <!-- Toggle controls ABOVE the cards -->
+  <div class="togglebar">
+    <span class="small muted">View:</span>
+    <button class="btn" type="button" onclick="toggleCard('card-content')">Toggle content</button>
+    <button class="btn" type="button" onclick="toggleCard('card-images')">Toggle images</button>
+    <button class="btn" type="button" onclick="showBoth()">Show both</button>
+    <button class="btn" type="button" onclick="hideBoth()">Hide both</button>
+  </div>
+
+  <!-- Source Content (as a card) -->
+  <div class="card" id="card-content">
+    <div class="title">Source content</div>
+    <div class="card-body">
+      <div class="article">
+        {{ cleaned_html | safe }}
+      </div>
+    </div>
+  </div>
+
+  <!-- Detected Images (as a card) -->
+  <div class="card" id="card-images">
+    <div class="title">Detected images</div>
+    <div class="card-body">
+      {% if images and images|length > 0 %}
+        <div class="img-grid">
+          {% for im in images %}
+            {% set src = im.src if im is mapping and im.src is defined else (im["src"] if im is mapping and "src" in im else im) %}
+            <div class="img-card">
+              <a href="{{ src }}" target="_blank" rel="noopener">
+                <img src="{{ src }}" alt="{{ im.alt if im is mapping and im.alt is defined else '' }}">
+              </a>
+
+              <div class="img-actions">
+                <button class="btn" type="button"
+                        onclick="selectImage('{{ src|e }}')">Select</button>
+
+                <button class="btn" type="button"
+                        onclick="openCrop('{{ src|e }}', '{{ url|e }}')">Crop</button>
+
+                {% if crops and (src in crops) %}
+                  <span class="small muted">Crop saved</span>
+                {% endif %}
+              </div>
+
+              <div class="small muted breakall">
+                {{ src }}
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <div class="small muted">No images detected.</div>
+      {% endif %}
     </div>
   </div>
 
@@ -160,10 +177,6 @@
 const INDEX = {{ index }};
 const URL = {{ url | tojson }};
 const CROPS = {{ crops | tojson }};
-
-function copyText(t) {
-  navigator.clipboard?.writeText(t);
-}
 
 function postForm(action, fields) {
   const form = document.createElement("form");
@@ -179,6 +192,13 @@ function postForm(action, fields) {
   }
   document.body.appendChild(form);
   form.submit();
+}
+
+function composeBlurb() {
+  postForm("/curate/compose_blurb", {
+    index: INDEX,
+    url: URL
+  });
 }
 
 /* --- Image selection: persist immediately --- */
@@ -198,11 +218,8 @@ function clearSelectedImage() {
 }
 
 /* --- Crop --- */
-function openCrop(imgUrl, pageUrl, index) {
-  window.open(
-    `/crop?img=${encodeURIComponent(imgUrl)}&page=${encodeURIComponent(pageUrl)}&index=${encodeURIComponent(String(index ?? 0))}`,
-    "_blank"
-  );
+function openCrop(imgUrl, pageUrl) {
+  window.open(`/crop?img=${encodeURIComponent(imgUrl)}&page=${encodeURIComponent(pageUrl)}`, "_blank");
 }
 
 /* --- Excerpts --- */
@@ -211,10 +228,11 @@ function getSelectionText() {
   return (sel && sel.toString()) ? sel.toString().trim() : "";
 }
 
-function previewSelection() {
+document.addEventListener("selectionchange", () => {
   const txt = getSelectionText();
-  const box = document.getElementById("selectionPreview");
   const btn = document.getElementById("btnAddExcerpt");
+  const box = document.getElementById("selectionPreview");
+  if (!btn || !box) return;
 
   if (!txt) {
     box.textContent = "Nothing selected yet.";
@@ -223,13 +241,6 @@ function previewSelection() {
   }
   box.textContent = txt.length > 800 ? (txt.slice(0, 800) + "…") : txt;
   btn.disabled = false;
-}
-
-document.addEventListener("selectionchange", () => {
-  // lightweight: enable Add button only when there is a selection
-  const txt = getSelectionText();
-  const btn = document.getElementById("btnAddExcerpt");
-  if (btn) btn.disabled = !txt;
 });
 
 function addSelectedText() {
@@ -239,6 +250,23 @@ function addSelectedText() {
     index: INDEX,
     url: URL,
     excerpt: txt
+  });
+}
+
+function deleteExcerpt(i) {
+  postForm("/curate/delete_excerpt", {
+    index: INDEX,
+    url: URL,
+    excerpt_index: i
+  });
+}
+
+function moveExcerpt(i, direction) {
+  postForm("/curate/move_excerpt", {
+    index: INDEX,
+    url: URL,
+    excerpt_index: i,
+    direction: direction
   });
 }
 
@@ -256,14 +284,45 @@ function clearExcerpts() {
   });
 }
 
-
-/* --- Compose final blurb from stored excerpts --- */
-function composeFinalBlurb() {
-  postForm("/curate/compose_blurb", {
-    index: INDEX,
-    url: URL
-  });
+/* --- Card collapse controls --- */
+function toggleCard(id) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.classList.toggle("card-collapsed");
+  rememberCardState(id);
 }
+function setCardCollapsed(id, collapsed) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.classList.toggle("card-collapsed", !!collapsed);
+  rememberCardState(id);
+}
+function showBoth() {
+  setCardCollapsed("card-content", false);
+  setCardCollapsed("card-images", false);
+}
+function hideBoth() {
+  setCardCollapsed("card-content", true);
+  setCardCollapsed("card-images", true);
+}
+
+/* Remember open/closed state for cards */
+function rememberCardState(id) {
+  try {
+    const el = document.getElementById(id);
+    if (!el) return;
+    localStorage.setItem("curate.card." + id, el.classList.contains("card-collapsed") ? "collapsed" : "open");
+  } catch (e) {}
+}
+(function restoreCardStates() {
+  try {
+    for (const id of ["card-content", "card-images"]) {
+      const v = localStorage.getItem("curate.card." + id);
+      if (v === "collapsed") setCardCollapsed(id, true);
+      if (v === "open") setCardCollapsed(id, false);
+    }
+  } catch (e) {}
+})();
 </script>
 
 {% endblock %}

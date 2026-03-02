@@ -1,10 +1,11 @@
 https://www.tsl.texas.gov/txbookchat:
   excerpts:
-  - Hosted in the Public Event Space at the Lorenzo de Zavala State Archives and Library
-    Building, Capitol Complex, 1201 Brazos St. in Austin, these events are free and
-    open to the public. Parking is available at the Capitol Visitors Parking Garage
-    across the street. Additional parking options, including handicapped parking,
-    along with directions and maps, are available on TSLAC’s website at www.tsl.texas.gov/visit.
+  - "Hosted in the Public Event Space at the Lorenzo de Zavala State Archives and\
+    \ Library Building, Capitol Complex, 1201 Brazos St. in Austin, these events are\
+    \ free and open to the public. Parking is available at the Capitol Visitors Parking\
+    \ Garage across the street. Additional parking options, including handicapped\
+    \ parking, along with directions and maps, are available on TSLAC\u2019s website\
+    \ at www.tsl.texas.gov/visit."
   updated_at: '2026-02-25T09:32:46'
   image_crops:
     ? https://www.tsl.texas.gov/sites/default/files/public/tslac/exec/txbookchat/2026%20TCFB%20TXBookChat%20with%20Sam%20Haynes%20-%20SQ.png
@@ -46,31 +47,27 @@ https://www.tsl.texas.gov/workshops:
       img_w: 800
       img_h: 488
 gdrive:1mz2GnMqbsdhFMOKLFzXEKrf0Lgt_NzEM:
-  final_blurb: The document recommends that the Texas State Library and Archives Commission
-    collaborate with the Lyndon B. Johnson Presidential Library to enhance archival
-    preservation, digitization, and public engagement efforts. It suggests joint initiatives
-    such as shared exhibits, digitization projects, professional exchanges, and outreach
-    programs to strengthen historical literacy and improve access to important historical
-    records across Texas. This partnership is presented as a valuable opportunity
-    to advance archival practices and educational programming statewide. ABC...XYZ...123...QQQ
-  updated_at: '2026-03-01T10:44:25'
+  final_blurb: Bob ate the cat once he ahd seen what it could do for his mental health.
+  updated_at: '2026-03-01T14:33:39'
+  excerpts:
+  - Bob ate the cat once he ahd seen what it could do for his mental health.
 gdrive:1VICkJFCZ0KjJ7FpW4laX_KD8xkpBP7J8:
-  final_blurb: DAV? The document recommends preserving Texas’s historical records
-    by creating and maintaining a comprehensive Texas Digital Archive, ensuring both
-    official and everyday citizens' histories are safeguarded from loss. It emphasizes
-    the importance of making these digital archives accessible to all, supporting
-    genealogical research and public knowledge. The work is presented as an ongoing
-    responsibility to honor the past and educate future generations.
+  final_blurb: "DAV? The document recommends preserving Texas\u2019s historical records\
+    \ by creating and maintaining a comprehensive Texas Digital Archive, ensuring\
+    \ both official and everyday citizens' histories are safeguarded from loss. It\
+    \ emphasizes the importance of making these digital archives accessible to all,\
+    \ supporting genealogical research and public knowledge. The work is presented\
+    \ as an ongoing responsibility to honor the past and educate future generations."
   updated_at: '2026-02-26T12:27:36'
 gdrive:1Int3JhKvRTSAw2SH5CQ2myFxJ7PZKpP9:
-  final_blurb: The document recommends that the Texas State Library and Archives Commission
-    collaborate with the Lyndon B. Johnson Presidential Library to enhance archival
-    preservation, digitization, and public engagement. It suggests joint initiatives
-    such as shared exhibits, digitization projects, professional exchanges, and coordinated
-    outreach to improve historical literacy and statewide access to important records.
-    This partnership would help the Texas State Library leverage LBJ Library's expertise
-    and resources to advance its mission of preserving and promoting Texas’s documentary
-    heritage. LARRY
+  final_blurb: "The document recommends that the Texas State Library and Archives\
+    \ Commission collaborate with the Lyndon B. Johnson Presidential Library to enhance\
+    \ archival preservation, digitization, and public engagement. It suggests joint\
+    \ initiatives such as shared exhibits, digitization projects, professional exchanges,\
+    \ and coordinated outreach to improve historical literacy and statewide access\
+    \ to important records. This partnership would help the Texas State Library leverage\
+    \ LBJ Library's expertise and resources to advance its mission of preserving and\
+    \ promoting Texas\u2019s documentary heritage. LARRY"
   updated_at: '2026-02-26T14:53:08'
 https://www.tsl.texas.gov/speedtest:
   image_crops:
@@ -84,30 +81,43 @@ https://www.tsl.texas.gov/speedtest:
   updated_at: '2026-02-26T15:09:35'
 https://www.tsl.texas.gov/texasamerica250exhibit:
   excerpts:
-  - As the country celebrates 250 years since the signing of the Declaration of Independence,
-    every state has a story to tell about its own contributions to the development
-    of the nation. Texas pride permeates our culture here at home, and we are always
-    eager to promote the state’s people, products, l
-  - As the country celebrates 250 years since the signing of the Declaration of Independence,
-    every state has a story to tell about its own contributions to the development
-    of the nation. Texas pride permeates our culture here at home, and we are always
-    eager to promote the state’s people, products, landscape, innovations, and works
-    of art beyond our borders, showing how the Lone Star State has contributed to
-    the legacy of America.
-  - The Lorenzo de Zavala State Archives and Library Building lobby and exhibit gallery
-    is open Monday through Friday, 8:00 a.m. to 5:00 p.m. and the second Saturday
-    of each month from 9:00 a.m. to 4:00 p.
-  updated_at: '2026-03-01T11:49:26'
-  final_blurb: "As the country celebrates 250 years since the signing of the Declaration\
-    \ of Independence, every state has a story to tell about its own contributions\
-    \ to the development of the nation. Texas pride permeates our culture here at\
-    \ home, and we are always eager to promote the state’s people, products, l\r\n\
-    \r\nAs the country celebrates 250 years since the signing of the Declaration of\
-    \ Independence, every state has a story to tell about its own contributions to\
-    \ the development of the nation. Texas pride permeates our culture here at home,\
-    \ and we are always eager to promote the state’s people, products, landscape,\
-    \ innovations, and works of art beyond our borders, showing how the Lone Star\
-    \ State has contributed to the legacy of America.\r\n\r\nThe Lorenzo de Zavala\
-    \ State Archives and Library Building lobby and exhibit gallery is open Monday\
-    \ through Friday, 8:00 a.m. to 5:00 p.m. and the second Saturday of each month\
-    \ from 9:00 a.m. to 4:00 p."
+  - "As the country celebrates 250 years since the signing of the Declaration of Independence,\
+    \ every state has a story to tell about its own contributions to the development\
+    \ of the nation. Texas pride permeates our culture here at home, and we are always\
+    \ eager to promote the state\u2019s people, products, landscape, innovations,\
+    \ and works of art beyond our borders, showing how the Lone Star State has contributed\
+    \ to the legacy of America.\_\r\n\r\nT"
+  - "The Lorenzo de Zavala State Archives and Library Building lobby and exhibit gallery\
+    \ is open Monday through Friday, 8:00 a.m. to 5:00 p.m. and the second Saturday\
+    \ of each month from 9:00 a.m. to 4:00 p.m.\_\r\n\r\nBig Bend, 1980-1982. Texas\
+    \ Tourist Development Agency photographs and audiovisual materials, 2012/193-01-01-007.\
+    \ \_Click or tap on image to view larger version."
+  updated_at: '2026-03-01T21:38:32'
+  final_blurb: "The Lorenzo de Zavala State Archives and Library Building lobby and\
+    \ exhibit gallery is open Monday through Friday, 8:00 a.m. to 5:00 p.m. and the\
+    \ second Saturday of each month from 9:00 a.m. to 4:00 p.\r\n\r\nAs the country\
+    \ celebrates 250 years since the signing of the Declaration of Independence, every\
+    \ state has a story to tell about its own contributions to the development of\
+    \ the nation. Texas pride permeates our culture here at home, and we are always\
+    \ eager to promote the state\u2019s people, products, l"
+  selected_image: https://www.tsl.texas.gov/sites/default/files/public/tslac/exec/america250/thumbnail_TX-AM%20250%20Digital%20Graphics%20-%20636x203.png
+  image_crops:
+    ? https://www.tsl.texas.gov/sites/default/files/public/tslac/exec/america250/thumbnail_TX-AM
+      250 Digital Graphics - 636x203.png
+    : ix: 125
+      iy: 22
+      iw: 390
+      ih: 158
+      img_w: 637
+      img_h: 204
+undefined:
+  image_crops:
+    ? https://www.tsl.texas.gov/sites/default/files/public/tslac/exhibits/txamerica250/Section
+      6_Case 6_bigbend_river_2012193_01_01_007FIRSTPAGE.png
+    : ix: 145
+      iy: 24
+      iw: 107
+      ih: 148
+      img_w: 332
+      img_h: 490
+  updated_at: '2026-03-01T20:40:55'

@@ -68,6 +68,25 @@ def build_view_by_index(idx: int) -> CurateDocView:
     )
 
 
+def build_view_by_doc_id(doc_id: str) -> CurateDocView:
+    doc_id = (doc_id or "").strip()
+    if not doc_id:
+        raise BadRequestError("Missing doc_id")
+
+    docs = load_doc_candidates() or []
+    if not docs:
+        raise BadRequestError("No doc candidates available. Go back and refresh docs first.")
+
+    idx = next(
+        (i for i, d in enumerate(docs) if isinstance(d, dict) and (d.get("id") or "").strip() == doc_id),
+        None,
+    )
+    if idx is None:
+        raise BadRequestError(f"Doc not found: {doc_id}")
+
+    return build_view_by_index(int(idx))
+
+
 def save_blurb(*, doc_id: str, final_blurb: str) -> None:
     doc_id = (doc_id or "").strip()
     if doc_id:
@@ -91,6 +110,23 @@ def clear_excerpts(*, doc_id: str) -> None:
     doc_id = (doc_id or "").strip()
     if doc_id:
         clear_curated_excerpts(doc_id)
+
+
+def compose_blurb_from_excerpts(*, doc_id: str, sep: str = "\n\n") -> str:
+    """
+    Combine stored excerpts into final blurb and persist it.
+    Returns the composed blurb string (may be empty).
+    """
+    doc_id = (doc_id or "").strip()
+    if not doc_id:
+        return ""
+
+    cur = load_curation()
+    excerpts = get_curated_excerpts(cur, doc_id) or []
+    composed = sep.join([x.strip() for x in excerpts if (x or "").strip()]).strip()
+    if composed:
+        upsert_curated_blurb(doc_id, composed)
+    return composed
 
 
 def save_crop(*, doc_id: str, img_src: str, crop_json: str) -> None:
@@ -122,45 +158,3 @@ def clear_selected_image(*, doc_id: str) -> None:
     doc_id = (doc_id or "").strip()
     if doc_id:
         clear_curated_selected_image(doc_id)
-
-
-@dataclass(frozen=True)
-class CurateDocModel:
-    doc: dict[str, Any]
-    status: str
-
-
-def load_doc_for_curate(*, doc_id: str, status: str = "") -> CurateDocModel:
-    doc_id = (doc_id or "").strip()
-    status = (status or "").strip()
-
-    if not doc_id:
-        raise BadRequestError("Missing doc_id")
-
-    doc_candidates = load_doc_candidates() or []
-    d = next(
-        (
-            x
-            for x in doc_candidates
-            if isinstance(x, dict) and (x.get("id") or "").strip() == doc_id
-        ),
-        None,
-    )
-    if not d:
-        raise BadRequestError(f"Doc not found: {doc_id}")
-
-    cur = load_curation()
-    final_blurb = get_curated_blurb(cur, doc_id)
-
-    doc_d = dict(d)
-    if final_blurb:
-        doc_d["summary"] = final_blurb
-
-    return CurateDocModel(doc=doc_d, status=status)
-
-
-def save_doc_blurb(*, doc_id: str, final_blurb: str) -> None:
-    doc_id = (doc_id or "").strip()
-    if not doc_id:
-        raise BadRequestError("Missing doc_id (hidden field not posted)")
-    upsert_curated_blurb(doc_id, (final_blurb or "").strip())

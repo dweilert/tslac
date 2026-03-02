@@ -1,42 +1,44 @@
 from __future__ import annotations
 
+import json
 from datetime import datetime
+from pathlib import Path
 from typing import Any
 
 import yaml
 
-from config import CURATION_FILE
-from util.urls import norm_url
+APP_DIR = Path(__file__).resolve().parent.parent
+CURATION_FILE = APP_DIR / "curation.yaml"
+
+
+def norm_url(url: str) -> str:
+    return (url or "").strip()
 
 
 def load_curation() -> dict[str, Any]:
     if not CURATION_FILE.exists():
         return {}
     try:
-        data = yaml.safe_load(CURATION_FILE.read_text("utf-8")) or {}
-        return data if isinstance(data, dict) else {}
+        return yaml.safe_load(CURATION_FILE.read_text(encoding="utf-8")) or {}
     except Exception:
         return {}
 
 
 def save_curation(cur: dict[str, Any]) -> None:
-    CURATION_FILE.write_text(
-        yaml.safe_dump(cur, sort_keys=False, allow_unicode=True),
-        "utf-8",
-    )
+    CURATION_FILE.write_text(yaml.safe_dump(cur, sort_keys=False), encoding="utf-8")
 
 
 def _get_rec(cur: dict[str, Any], url: str) -> dict[str, Any]:
-    url = norm_url(url)
-    rec = cur.get(url)
+    k = norm_url(url)
+    rec = cur.get(k)
     if not isinstance(rec, dict):
         rec = {}
-        cur[url] = rec
+        cur[k] = rec
     return rec
 
 
 # ----------------------------
-# Blurbs + excerpts
+# Blurb + excerpts (curation.yaml)
 # ----------------------------
 def get_curated_blurb(cur: dict[str, Any], url: str) -> str:
     rec = cur.get(norm_url(url))
@@ -47,14 +49,6 @@ def get_curated_blurb(cur: dict[str, Any], url: str) -> str:
     return ""
 
 
-def upsert_curated_blurb(url: str, final_blurb: str) -> None:
-    cur = load_curation()
-    rec = _get_rec(cur, url)
-    rec["final_blurb"] = (final_blurb or "").strip()
-    rec["updated_at"] = datetime.now().isoformat(timespec="seconds")
-    save_curation(cur)
-
-
 def get_curated_excerpts(cur: dict[str, Any], url: str) -> list[str]:
     rec = cur.get(norm_url(url))
     if isinstance(rec, dict):
@@ -62,6 +56,14 @@ def get_curated_excerpts(cur: dict[str, Any], url: str) -> list[str]:
         if isinstance(xs, list):
             return [x.strip() for x in xs if isinstance(x, str) and x.strip()]
     return []
+
+
+def upsert_curated_blurb(url: str, final_blurb: str) -> None:
+    cur = load_curation()
+    rec = _get_rec(cur, url)
+    rec["final_blurb"] = (final_blurb or "").strip()
+    rec["updated_at"] = datetime.now().isoformat(timespec="seconds")
+    save_curation(cur)
 
 
 def add_curated_excerpt(url: str, excerpt: str) -> None:
@@ -100,11 +102,63 @@ def clear_curated_excerpts(url: str) -> None:
     save_curation(cur)
 
 
+def delete_curated_excerpt(url: str, idx: int) -> None:
+    """Delete a specific excerpt by 0-based index."""
+    cur = load_curation()
+    rec = cur.get(norm_url(url))
+    if not isinstance(rec, dict):
+        return
+    xs = rec.get("excerpts")
+    if not isinstance(xs, list):
+        return
+    try:
+        i = int(idx)
+    except Exception:
+        return
+    if i < 0 or i >= len(xs):
+        return
+    xs.pop(i)
+    rec["updated_at"] = datetime.now().isoformat(timespec="seconds")
+    save_curation(cur)
+
+
+def move_curated_excerpt(url: str, idx: int, direction: str) -> None:
+    """Move excerpt up/down by swapping with neighbor."""
+    cur = load_curation()
+    rec = cur.get(norm_url(url))
+    if not isinstance(rec, dict):
+        return
+    xs = rec.get("excerpts")
+    if not isinstance(xs, list):
+        return
+    try:
+        i = int(idx)
+    except Exception:
+        return
+    if i < 0 or i >= len(xs):
+        return
+
+    dir_norm = (direction or "").strip().lower()
+    if dir_norm == "up":
+        j = i - 1
+    elif dir_norm == "down":
+        j = i + 1
+    else:
+        return
+
+    if j < 0 or j >= len(xs):
+        return
+
+    xs[i], xs[j] = xs[j], xs[i]
+    rec["updated_at"] = datetime.now().isoformat(timespec="seconds")
+    save_curation(cur)
+
+
 # ----------------------------
 # Image crops (curation.yaml)
 # ----------------------------
 def get_curated_image_crops(cur: dict[str, Any], url: str) -> dict[str, Any]:
-    """Return dict keyed by image src: {src: {x,y,w,h,iw,ih,cw,ch}}"""
+    """image_crops: {src: {x,y,w,h,iw,ih,cw,ch}}"""
     rec = cur.get(norm_url(url))
     if isinstance(rec, dict):
         v = rec.get("image_crops")
@@ -114,35 +168,13 @@ def get_curated_image_crops(cur: dict[str, Any], url: str) -> dict[str, Any]:
 
 
 def upsert_curated_image_crop(url: str, img_src: str, crop: dict[str, Any]) -> None:
-    """
-    Stores a crop box for a given image src.
-    crop should include:
-      x,y,w,h (canvas coords)
-      iw,ih (image natural size)
-      cw,ch (canvas size)
-    """
-    url = norm_url(url)
-    img_src = (img_src or "").strip()
-    if not url or not img_src or not isinstance(crop, dict):
-        return
-
-    # basic validation
-    for k in ("ix", "iy", "iw", "ih", "img_w", "img_h"):
-        if k not in crop:
-            return
-
     cur = load_curation()
-    rec = cur.get(url)
-    if not isinstance(rec, dict):
-        rec = {}
-        cur[url] = rec
-
+    rec = _get_rec(cur, url)
     crops = rec.get("image_crops")
     if not isinstance(crops, dict):
         crops = {}
         rec["image_crops"] = crops
-
-    crops[img_src] = crop
+    crops[(img_src or "").strip()] = crop
     rec["updated_at"] = datetime.now().isoformat(timespec="seconds")
     save_curation(cur)
 
@@ -155,32 +187,21 @@ def get_curated_selected_image(cur: dict[str, Any], url: str) -> str:
     if isinstance(rec, dict):
         v = rec.get("selected_image")
         if isinstance(v, str):
-            return v.strip()
+            return v
     return ""
 
 
 def upsert_curated_selected_image(url: str, img_src: str) -> None:
-    url = norm_url(url)
-    img_src = (img_src or "").strip()
-    if not url or not img_src:
-        return
-
     cur = load_curation()
     rec = _get_rec(cur, url)
-    rec["selected_image"] = img_src
+    rec["selected_image"] = (img_src or "").strip()
     rec["updated_at"] = datetime.now().isoformat(timespec="seconds")
     save_curation(cur)
 
 
 def clear_curated_selected_image(url: str) -> None:
-    url = norm_url(url)
-    if not url:
-        return
     cur = load_curation()
-    rec = cur.get(url)
-    if not isinstance(rec, dict):
-        return
-    if "selected_image" in rec:
-        rec.pop("selected_image", None)
-        rec["updated_at"] = datetime.now().isoformat(timespec="seconds")
-        save_curation(cur)
+    rec = _get_rec(cur, url)
+    rec["selected_image"] = ""
+    rec["updated_at"] = datetime.now().isoformat(timespec="seconds")
+    save_curation(cur)
