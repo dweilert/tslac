@@ -6,9 +6,10 @@ import pathlib
 import shutil
 from abc import ABC, abstractmethod
 
-from .types import DocRef
 from gdrive_service import find_folder_id, get_drive_service, list_files_in_folder
 from logutil import debug, info
+
+from .types import DocRef
 
 GOOGLE_DOC_MIME = "application/vnd.google-apps.document"
 GOOGLE_SHEET_MIME = "application/vnd.google-apps.spreadsheet"

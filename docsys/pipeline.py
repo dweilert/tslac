@@ -4,11 +4,12 @@ import hashlib
 import time
 from typing import Any
 
+from logutil import debug, info, warn
+from openai_client import summarize_document
+
 from .cache import load_cached_summary, save_cached_summary
 from .extract import extract_text
 from .sources import DocumentSource
-from logutil import debug, info, warn
-from openai_client import summarize_document
 
 
 def _hash_bytes(b: bytes) -> str:
