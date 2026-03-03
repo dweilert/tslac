@@ -209,8 +209,8 @@ __marimo__/
 # User direcotries
 ./state
 ./output
-output/
-state/
+/output/
+/state/
 
 # user-specific files
 .env
