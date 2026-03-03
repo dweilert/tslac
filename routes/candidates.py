@@ -1,17 +1,23 @@
 from __future__ import annotations
 
-from urllib.parse import parse_qs, urlencode
+from urllib.parse import parse_qs, urlencode, urlparse
 
 from constants import DEFAULT_INTRO, DEFAULT_SUBJECT
 from docsys.store import load_doc_candidates
 from logutil import debug
-from services.candidates_service import load_persisted_candidates, refresh_candidates, save_picks
+from services.candidates_service import load_persisted_candidates, refresh_candidates, save_picks, reset_seen_urls
 from storage.curation_store import get_curated_blurb, load_curation
 from storage.selected_store import load_selected
 from templates import html_page
+
 from web.request import Request
 from web.response import Response
 from web.router import Router
+
+from storage.collector_store import load_seen
+
+from urllib.parse import parse_qs
+from services.candidates_service import reset_seen_urls
 
 HOMEPAGE_URL = "https://www.tsl.texas.gov/"
 
@@ -20,6 +26,7 @@ def register(router: Router) -> None:
     router.get("/", get_main)
     router.get("/refresh", get_refresh)
     router.post("/save", post_save)
+    router.post("/seen/reset", post_seen_reset)
 
 
 def _redir_status(status: str) -> Response:
@@ -32,13 +39,50 @@ def _parse_post_form(req: Request) -> dict[str, list[str]]:
     raw = req.body.decode("utf-8", errors="replace")
     return parse_qs(raw, keep_blank_values=True)
 
+def post_seen_reset(req: Request, params: dict[str, Any] | None = None) -> Response:
+    # Parse form body: confirm=1
+    raw = req.body.decode("utf-8", errors="replace")
+    form = parse_qs(raw, keep_blank_values=True)
 
-def get_refresh(_: Request) -> Response:
+    if form.get("confirm", [""])[0] != "1":
+        return _redir_status("Reset seen URLs cancelled")
+
+    reset_seen_urls()
+    return _redir_status("Reset seen URLs (seen_urls.json cleared)")
+
+def get_refreshOLD(req: Request) -> Response:
     try:
-        res = refresh_candidates()
+        # NEW: read ?ignore_seen=1
+        parsed = urlparse(req.path)
+        qs = parse_qs(parsed.query)
+        ignore_seen = qs.get("ignore_seen", ["0"])[0] == "1"
+
+        # NEW: pass flag through
+        res = refresh_candidates(ignore_seen=ignore_seen)
 
         err_note = f" (errors:{res.error_count})" if res.error_count else ""
-        return _redir_status(f"Refreshed candidate list (docs:{res.doc_count}){err_note}")
+        note = " (ignored seen URLs)" if ignore_seen else ""
+        return _redir_status(f"Refreshed candidate list (docs:{res.doc_count}){err_note}{note}")
+
+    except Exception as e:
+        return _redir_status(f"Refresh failed: {e}")
+
+def get_refresh(req: Request) -> Response:
+    try:
+        # Parse query string for ?ignore_seen=1
+        parsed = urlparse(req.path)
+        qs = parse_qs(parsed.query)
+        ignore_seen = qs.get("ignore_seen", ["0"])[0] == "1"
+
+        # Pass flag into refresh logic
+        res = refresh_candidates(ignore_seen=ignore_seen)
+
+        err_note = f" (errors:{res.error_count})" if res.error_count else ""
+        note = " (ignored seen URLs)" if ignore_seen else ""
+
+        return _redir_status(
+            f"Refreshed candidate list (docs:{res.doc_count}){err_note}{note}"
+        )
 
     except Exception as e:
         return _redir_status(f"Refresh failed: {e}")

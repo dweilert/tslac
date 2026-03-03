@@ -18,6 +18,7 @@ from storage.collector_store import (
 )
 from storage.selected_store import save_selected
 
+
 HOMEPAGE_URL = "https://www.tsl.texas.gov/"
 
 
@@ -41,6 +42,7 @@ def refresh_candidates(
     *,
     today: date | None = None,
     months_back: int = 3,
+    ignore_seen: bool = False,
     collect_fn: CollectFn | None = None,
     load_seen_fn: LoadSeenFn | None = None,
     save_seen_fn: SaveSeenFn | None = None,
@@ -64,7 +66,7 @@ def refresh_candidates(
     save_candidates_fn = save_candidates_fn or save_candidates_json
     load_docs_fn = load_docs_fn or load_doc_candidates
 
-    seen = load_seen_fn(SEEN_URLS_FILE)
+    seen = set() if ignore_seen else load_seen_fn(SEEN_URLS_FILE)
 
     rules = CollectRules(
         months_back=months_back,
@@ -92,6 +94,15 @@ def refresh_candidates(
         candidate_count=len(candidates),
         error_count=len(errors),
     )
+
+
+def reset_seen_urls(*, save_seen_fn: SaveSeenFn | None = None) -> None:
+    """
+    Wipe seen_urls.json so refresh can rediscover previously seen URLs.
+    DI param exists to make unit tests easy.
+    """
+    save_seen_fn = save_seen_fn or save_seen
+    save_seen_fn(SEEN_URLS_FILE, set())
 
 
 def save_picks(*, subject: str, intro: str, picked_urls: list[str]) -> int:
