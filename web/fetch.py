@@ -5,6 +5,7 @@ from dataclasses import dataclass
 import requests
 
 from web.ssl_bootstrap import setup_tls_truststore
+
 setup_tls_truststore()
 
 DEFAULT_HEADERS = {

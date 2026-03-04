@@ -1,7 +1,9 @@
 from datetime import date, datetime, timedelta
 from urllib.parse import urljoin
-from .models import RawCandidate
+
 from bs4 import BeautifulSoup
+
+from .models import RawCandidate
 
 
 def parse_info_news_candidates(
@@ -27,7 +29,7 @@ def parse_info_news_candidates(
     out: list[RawCandidate] = []
 
     # Usually newest-first; break once we drop older than cutoff
-    for t in soup.select('time[datetime]'):
+    for t in soup.select("time[datetime]"):
         published = _parse_info_visible_date(t.get_text(" ", strip=True))
         if published is None:
             continue
@@ -35,12 +37,7 @@ def parse_info_news_candidates(
         if published < cutoff:
             break
 
-        entry = (
-            t.find_parent("article")
-            or t.find_parent("li")
-            or t.find_parent("div")
-            or t.parent
-        )
+        entry = t.find_parent("article") or t.find_parent("li") or t.find_parent("div") or t.parent
         if entry is None:
             continue
 

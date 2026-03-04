@@ -129,7 +129,7 @@ def _derive_paths() -> dict[str, str]:
     }
 
 
-def get_config(req: Request, _params: dict[str, str] | None = None) -> Response:    
+def get_config(req: Request, _params: dict[str, str] | None = None) -> Response:
     secrets_env.load_env()
 
     cfg = _load_config_yaml()
@@ -182,20 +182,34 @@ def post_config(req: Request, _params: dict[str, str] | None = None) -> Response
     cfg = _load_config_yaml()
 
     # ---- Update YAML (non-secrets) ----
-    cfg["tsl"]["base_url"] = (form.get("base_url") or [cfg["tsl"]["base_url"]])[0].strip() or cfg["tsl"]["base_url"]
-    cfg["tsl"]["news_path"] = (form.get("news_path") or [cfg["tsl"]["news_path"]])[0].strip() or cfg["tsl"]["news_path"]
+    cfg["tsl"]["base_url"] = (form.get("base_url") or [cfg["tsl"]["base_url"]])[0].strip() or cfg[
+        "tsl"
+    ]["base_url"]
+    cfg["tsl"]["news_path"] = (form.get("news_path") or [cfg["tsl"]["news_path"]])[
+        0
+    ].strip() or cfg["tsl"]["news_path"]
 
-    cfg["server"]["host"] = (form.get("host") or [cfg["server"]["host"]])[0].strip() or cfg["server"]["host"]
-    cfg["server"]["port"] = _to_int((form.get("port") or [str(cfg["server"]["port"])])[0], int(cfg["server"]["port"]))
+    cfg["server"]["host"] = (form.get("host") or [cfg["server"]["host"]])[0].strip() or cfg[
+        "server"
+    ]["host"]
+    cfg["server"]["port"] = _to_int(
+        (form.get("port") or [str(cfg["server"]["port"])])[0], int(cfg["server"]["port"])
+    )
 
-    cfg["http"]["user_agent"] = (form.get("user_agent") or [cfg["http"]["user_agent"]])[0].strip() or cfg["http"]["user_agent"]
+    cfg["http"]["user_agent"] = (form.get("user_agent") or [cfg["http"]["user_agent"]])[
+        0
+    ].strip() or cfg["http"]["user_agent"]
 
     cfg["defaults"]["subject"] = (form.get("default_subject") or [cfg["defaults"]["subject"]])[0]
     cfg["defaults"]["intro"] = (form.get("default_intro") or [cfg["defaults"]["intro"]])[0]
 
-    cfg["filtering"]["exact_exclude_paths"] = _lines_to_list((form.get("exact_exclude_paths") or [""])[0])
+    cfg["filtering"]["exact_exclude_paths"] = _lines_to_list(
+        (form.get("exact_exclude_paths") or [""])[0]
+    )
     cfg["filtering"]["exclude_texts"] = _lines_to_list((form.get("exclude_texts") or [""])[0])
-    cfg["filtering"]["last_3_months_days"] = _to_int((form.get("last_3_months_days") or ["92"])[0], 92)
+    cfg["filtering"]["last_3_months_days"] = _to_int(
+        (form.get("last_3_months_days") or ["92"])[0], 92
+    )
 
     cfg["watch"]["sites"] = _lines_to_list((form.get("watch_sites") or [""])[0])
     cfg["watch"]["keywords"] = _lines_to_list((form.get("watch_keywords") or [""])[0])

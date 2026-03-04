@@ -1,11 +1,9 @@
 # secrets_env.py
 from __future__ import annotations
 
-from pathlib import Path
-from typing import Iterable
-
 import os
 import re
+from pathlib import Path
 
 # Repo root assumed to be the directory containing this file.
 # If your layout differs, adjust ENV_PATH accordingly.
@@ -37,7 +35,9 @@ def load_env(path: Path = ENV_PATH, *, override: bool = False) -> None:
 
         # Strip surrounding quotes if present
         val = raw_val
-        if (val.startswith('"') and val.endswith('"')) or (val.startswith("'") and val.endswith("'")):
+        if (val.startswith('"') and val.endswith('"')) or (
+            val.startswith("'") and val.endswith("'")
+        ):
             val = val[1:-1]
 
         if override or key not in os.environ:
@@ -69,7 +69,9 @@ def read_secret(name: str, *, path: Path = ENV_PATH) -> str:
             continue
 
         val = raw_val.strip()
-        if (val.startswith('"') and val.endswith('"')) or (val.startswith("'") and val.endswith("'")):
+        if (val.startswith('"') and val.endswith('"')) or (
+            val.startswith("'") and val.endswith("'")
+        ):
             val = val[1:-1]
         return val
 

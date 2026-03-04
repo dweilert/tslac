@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from urllib.parse import parse_qs, urlencode
 
-import templates
 from logutil import error
 from services import watch_service
 from web.request import Request
@@ -105,4 +104,3 @@ def _parse_post_form(req: Request) -> dict[str, str]:
         return out
 
     return {}
-

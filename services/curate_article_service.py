@@ -207,7 +207,6 @@ def save_crop(*, url: str, img_src: str, crop_json: str) -> None:
         curation_store.upsert_curated_image_crop(url, img_src, crop)
 
 
-
 def select_image(*, content_id: str, img_src: str) -> None:
     content_id = (content_id or "").strip()
     img_src = (img_src or "").strip()
@@ -227,7 +226,6 @@ def select_image(*, content_id: str, img_src: str) -> None:
     curation_store.upsert_curated_selected_image(content_id, img_src)
 
 
-
 # Back-compat wrapper (optional, but avoids touching other callers yet)
 def select_image_for_url(*, url: str, img_src: str) -> None:
     select_image(content_id=url, img_src=img_src)
@@ -236,5 +234,4 @@ def select_image_for_url(*, url: str, img_src: str) -> None:
 def clear_selected_image(*, url: str) -> None:
     url = (url or "").strip()
     if url:
-        curation_store.clear_curated_selected_image(url) 
-
+        curation_store.clear_curated_selected_image(url)

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections import Counter
 from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import date
@@ -18,9 +19,6 @@ from storage.collector_store import (
 )
 from storage.selected_store import save_selected
 from watch.scan import load_latest_results
-from collections import Counter
-from logutil import info
-
 
 HOMEPAGE_URL = "https://www.tsl.texas.gov/"
 
@@ -30,7 +28,7 @@ class WatchCandidate:
     url: str
     title: str
     published: str = ""
-    summary: str = ""          
+    summary: str = ""
     source: str = "watch"
     watched: bool = True
     site: str = ""
@@ -73,8 +71,7 @@ def refresh_candidates(
     DI parameters are optional; they exist to make unit tests easy.
     """
 
-    from logutil import info
-    #info(f"DEBUG: inside services.refresh_candidates(ignore_seen={ignore_seen})")    
+    # info(f"DEBUG: inside services.refresh_candidates(ignore_seen={ignore_seen})")
 
     def _default_collect(homepage: str, rules: CollectRules, day: date, seen_urls: set[str]):
         return collect_candidates(homepage, rules=rules, today=day, seen_urls=seen_urls)
@@ -93,7 +90,7 @@ def refresh_candidates(
         exclude_title_substrings=(),
     )
 
-    #info("DEBUG: calling collect_candidates()")
+    # info("DEBUG: calling collect_candidates()")
 
     candidates, errors = collect_fn(
         HOMEPAGE_URL,
@@ -102,28 +99,25 @@ def refresh_candidates(
         seen,
     )
 
-    #info(f"DEBUG: collector returned candidates={len(candidates)} errors={len(errors)}")
+    # info(f"DEBUG: collector returned candidates={len(candidates)} errors={len(errors)}")
 
     sources = sorted({getattr(c, "source", "?") for c in candidates})
-    #info(f"DEBUG: collector sources={sources}")
-
+    # info(f"DEBUG: collector sources={sources}")
 
     # ---- Merge watch results into candidates ----
     try:
         wr = load_latest_results()
         w_results = wr.get("results") or []
-        #info(f"DEBUG: watch results loaded={len(w_results)}")
+        # info(f"DEBUG: watch results loaded={len(w_results)}")
         watch_candidates: list[Any] = []
-        #info(f"DEBUG: watch candidates added={len(watch_candidates)}")
+        # info(f"DEBUG: watch candidates added={len(watch_candidates)}")
 
         for r in w_results:
             if not isinstance(r, dict):
                 continue
 
             # Try hard to find a URL field; fall back to site
-            url = (
-                (r.get("url") or r.get("page_url") or r.get("link") or r.get("href") or "")
-            )
+            url = r.get("url") or r.get("page_url") or r.get("link") or r.get("href") or ""
             url = str(url).strip() or str(r.get("site") or "").strip()
             if not url:
                 continue
@@ -134,7 +128,9 @@ def refresh_candidates(
                 WatchCandidate(
                     url=url,
                     title=title,
-                    summary=str(r.get("excerpt") or r.get("snippet") or r.get("summary") or "").strip(),
+                    summary=str(
+                        r.get("excerpt") or r.get("snippet") or r.get("summary") or ""
+                    ).strip(),
                     site=str(r.get("site") or "").strip(),
                     score=r.get("score") or 0,
                     best_topic=str(r.get("best_topic") or r.get("topic") or "").strip(),
@@ -143,27 +139,26 @@ def refresh_candidates(
 
         # Append watch items after TSL scrape items
         candidates = list(candidates) + watch_candidates
-        #info(f"DEBUG: total candidates after watch merge={len(candidates)}")
+        # info(f"DEBUG: total candidates after watch merge={len(candidates)}")
     except Exception:
         # Watch is best-effort; do not fail refresh if watch results can’t load
         pass
 
     save_candidates_fn(CANDIDATES_FILE, candidates)
-    #info(f"DEBUG: saving candidates to {CANDIDATES_FILE} count={len(candidates)}")
+    # info(f"DEBUG: saving candidates to {CANDIDATES_FILE} count={len(candidates)}")
 
     src_counts = Counter((getattr(c, "source", None) or "Unknown") for c in candidates)
-    #info(f"REFRESH saved candidates={len(candidates)} sources={dict(src_counts)} errors={len(errors)} ignore_seen={ignore_seen}")
-
+    # info(f"REFRESH saved candidates={len(candidates)} sources={dict(src_counts)} errors={len(errors)} ignore_seen={ignore_seen}")
 
     # candidates are expected to have .url
     seen.update(c.url for c in candidates)
 
-    #info(f"DEBUG: updating seen URLs with {len(candidates)} candidates")
+    # info(f"DEBUG: updating seen URLs with {len(candidates)} candidates")
     save_seen_fn(SEEN_URLS_FILE, seen)
 
     doc_cnt = len(load_docs_fn())
 
-    #info(f"DEBUG: refresh complete doc_count={doc_cnt} candidate_count={len(candidates)} error_count={len(errors)}")
+    # info(f"DEBUG: refresh complete doc_count={doc_cnt} candidate_count={len(candidates)} error_count={len(errors)}")
     return RefreshResult(
         doc_count=doc_cnt,
         candidate_count=len(candidates),

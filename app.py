@@ -1,10 +1,9 @@
 from __future__ import annotations
 
 import os
-import config_ui
-
 from http.server import ThreadingHTTPServer
 
+import config_ui
 from logutil import info
 from routes import (
     api,
@@ -22,8 +21,6 @@ from routes import (
 )
 from web.handler import RoutedHandler
 from web.router import Router
-
-
 
 
 def build_router(server) -> Router:

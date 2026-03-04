@@ -1,28 +1,25 @@
 from __future__ import annotations
 
+from typing import Any
 from urllib.parse import parse_qs, urlencode, urlparse
 
+import storage.curation_store as curation_store
 from constants import DEFAULT_INTRO, DEFAULT_SUBJECT
 from docsys.store import load_doc_candidates
 from logutil import debug
-from services.candidates_service import load_persisted_candidates, refresh_candidates, save_picks, reset_seen_urls
+from services import watch_service
+from services.candidates_service import (
+    load_persisted_candidates,
+    refresh_candidates,
+    reset_seen_urls,
+    save_picks,
+)
 from storage.curation_store import get_curated_blurb, load_curation
-import storage.curation_store as curation_store
 from storage.selected_store import load_selected
 from templates import html_page
-
 from web.request import Request
 from web.response import Response
 from web.router import Router
-
-from storage.collector_store import load_seen
-
-from urllib.parse import parse_qs
-from services.candidates_service import reset_seen_urls
-from services import watch_service
-from typing import Any
-from logutil import info
-
 
 HOMEPAGE_URL = "https://www.tsl.texas.gov/"
 
@@ -44,6 +41,7 @@ def _parse_post_form(req: Request) -> dict[str, list[str]]:
     raw = req.body.decode("utf-8", errors="replace")
     return parse_qs(raw, keep_blank_values=True)
 
+
 def post_seen_reset(req: Request, params: dict[str, Any] | None = None) -> Response:
     # Parse form body: confirm=1
     raw = req.body.decode("utf-8", errors="replace")
@@ -54,9 +52,10 @@ def post_seen_reset(req: Request, params: dict[str, Any] | None = None) -> Respo
 
     reset_seen_urls()
     return _redir_status("Reset seen URLs (seen_urls.json cleared)")
- 
+
+
 def get_refresh(req: Request) -> Response:
-    #info("DEBUG: /refresh handler called")
+    # info("DEBUG: /refresh handler called")
     try:
         # Parse query string for ?ignore_seen=1
         parsed = urlparse(req.path)
@@ -115,7 +114,9 @@ def get_main(req: Request, params: dict[str, Any] | None = None) -> Response:
             if isinstance(it, dict) and it.get("url"):
                 prechecked.add(it["url"])
 
-    subject = sel.get("subject") if isinstance(sel, dict) and sel.get("subject") else DEFAULT_SUBJECT
+    subject = (
+        sel.get("subject") if isinstance(sel, dict) and sel.get("subject") else DEFAULT_SUBJECT
+    )
     intro = sel.get("intro") if isinstance(sel, dict) and sel.get("intro") else DEFAULT_INTRO
 
     # ✅ MUST be defined before any comprehensions use it

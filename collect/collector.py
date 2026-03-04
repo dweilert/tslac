@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import date, datetime
 from typing import Any
 
-from logutil import info, debug
+from logutil import debug, info
 from models import Candidate
 from web.fetch import FetchError, fetch_html
 
@@ -53,6 +53,7 @@ def _count_by_source(items: list[object]) -> dict[str, int]:
         src = _norm_source(getattr(it, "source", None))
         out[src] = out.get(src, 0) + 1
     return out
+
 
 def _as_date(p: Any) -> date | None:
     """
@@ -136,14 +137,14 @@ def collect_candidates(
     # Fetch homepage + parse
     # ---------------------------
     try:
-        #info("DEBUG collector: fetching homepage...")
+        # info("DEBUG collector: fetching homepage...")
         home = fetch_html(homepage_url, timeout_s=timeout_s)
         debug(f"collector: homepage fetched bytes={len(home.text)} url={home.url}")
     except FetchError as e:
         debug(f"collector: homepage fetch FAILED: {e}")
         return ([], [str(e)])
 
-    #info("DEBUG collector: parsing homepage candidates...")
+    # info("DEBUG collector: parsing homepage candidates...")
     home_raw = parse_homepage_candidates(home.text, base_url=home.url)
 
     # ---------------------------
@@ -193,20 +194,25 @@ def collect_candidates(
     results: list[Candidate] = []
     # ... build results ...
 
-    info(f"SCRAPE final counts={_count_by_source(results)} total={len(results)} errors={len(errors)}")
-
+    info(
+        f"SCRAPE final counts={_count_by_source(results)} total={len(results)} errors={len(errors)}"
+    )
 
     # ---------------------------
     # Combine + seen filter
     # ---------------------------
     raw = list(home_raw) + list(news_raw)
     info(f"SCRAPE collector: raw combined count={len(raw)}")
-    info(f"SCRAPE collector: raw sources before seen={sorted({getattr(c, 'source', '?') for c in raw})}")
+    info(
+        f"SCRAPE collector: raw sources before seen={sorted({getattr(c, 'source', '?') for c in raw})}"
+    )
 
     before = len(raw)
     raw = [c for c in raw if c.url not in seen_urls]
     info(f"SCRAPE collector: seen filter removed={before - len(raw)} remaining={len(raw)}")
-    info(f"SCRAPE collector: raw sources after seen={sorted({getattr(c, 'source', '?') for c in raw})}")
+    info(
+        f"SCRAPE collector: raw sources after seen={sorted({getattr(c, 'source', '?') for c in raw})}"
+    )
 
     # ---------------------------
     # Apply rules + finalize

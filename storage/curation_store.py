@@ -281,6 +281,7 @@ def get_curated_selected_image(cur: dict[str, Any], url: str) -> str:
             return v
     return ""
 
+
 def clear_curated_selected_image(url: str) -> None:
     """
     Remove the stored selected image for this url/content_id.
@@ -305,10 +306,10 @@ def upsert_curated_selected_image(url: str, img_src: str) -> None:
     _touch(rec)
     save_curation(cur)
 
+
 def clear_curated_selected_image(url: str) -> None:
     cur = load_curation()
     rec = _get_rec(cur, url)
     rec.pop("selected_image", None)
     _touch(rec)
     save_curation(cur)
-

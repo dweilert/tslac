@@ -386,7 +386,7 @@ def _collect_images(container: BeautifulSoup, base_url: str) -> list[dict[str, A
     #         seen.add(s)
     out = []
     for it in imgs:
-        out.append(it)       
+        out.append(it)
     return out
 
 

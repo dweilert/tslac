@@ -3,8 +3,10 @@ from __future__ import annotations
 
 from datetime import date, datetime
 from urllib.parse import urljoin
-from logutil import debug
+
 from bs4 import BeautifulSoup
+
+from logutil import debug
 
 from .models import RawCandidate
 
@@ -15,19 +17,19 @@ def parse_homepage_candidates(html: str, *, base_url: str) -> list[RawCandidate]
     debug(f"parse_homepage: start html_len={len(html)} base_url={base_url}")
 
     soup = BeautifulSoup(html, "html.parser")
-    #info("DEBUG parse_homepage: soup built")
+    # info("DEBUG parse_homepage: soup built")
 
     out: list[RawCandidate] = []
 
     # Carousel / slideshow
-    #info("DEBUG parse_homepage: parsing slideshow...")
+    # info("DEBUG parse_homepage: parsing slideshow...")
     slides = _parse_slideshow(soup, base_url=base_url)
     debug(f"parse_homepage: slideshow count={len(slides)}")
     out.extend(slides)
 
     # Featured News (if implemented)
     if "_parse_featured_news" in globals():
-        #info("DEBUG parse_homepage: parsing featured...")
+        # info("DEBUG parse_homepage: parsing featured...")
         featured = _parse_featured_news(soup, base_url=base_url)
         debug(f"parse_homepage: featured count={len(featured)}")
         out.extend(featured)
@@ -49,7 +51,6 @@ def parse_homepage_candidates(html: str, *, base_url: str) -> list[RawCandidate]
 
 
 def _parse_featured_news(soup: BeautifulSoup, *, base_url: str) -> list[RawCandidate]:
-    from logutil import info
     out: list[RawCandidate] = []
 
     h2 = None
@@ -157,17 +158,16 @@ def _dedup_raw_by_url(items: list[RawCandidate]) -> list[RawCandidate]:
 
 
 def _parse_slideshow(soup: BeautifulSoup, *, base_url: str) -> list[RawCandidate]:
-    from logutil import info
 
     candidates: list[RawCandidate] = []
 
-    #info("DEBUG slideshow: locating slideshow block...")
+    # info("DEBUG slideshow: locating slideshow block...")
     block = soup.select_one("#block-tslac-views-block-wr-homepage-slideshow-block-1")
     debug(f"slideshow: block found={bool(block)}")
     if not block:
         return candidates
 
-    #info("DEBUG slideshow: selecting slide nodes...")
+    # info("DEBUG slideshow: selecting slide nodes...")
     slides = block.select(".views_slideshow_cycle_slide, .views_slideshow_slide")
     debug(f"slideshow: slide nodes={len(slides)}")
 
@@ -209,7 +209,6 @@ def _parse_slideshow(soup: BeautifulSoup, *, base_url: str) -> list[RawCandidate
     return candidates
 
 
-
 def _parse_info_visible_date(s: str) -> date | None:
     s = (s or "").strip()
     if not s:
@@ -221,4 +220,3 @@ def _parse_info_visible_date(s: str) -> date | None:
         except ValueError:
             continue
     return None
-

@@ -6,9 +6,11 @@ from typing import Literal
 
 SourceKind = Literal["Carousel", "Featured", "News", "Doc"]
 
+
 @dataclass(frozen=True)
 class RawCandidate:
     """Result of parsing the homepage only (no per-article fetch)."""
+
     title: str
     url: str
     source: SourceKind

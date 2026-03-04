@@ -7,10 +7,10 @@ from urllib.parse import urljoin
 
 from bs4 import BeautifulSoup
 
-
 # -------------------------
 # Data models
 # -------------------------
+
 
 @dataclass(frozen=True)
 class InfoParseResult:
@@ -23,6 +23,7 @@ class IndexCandidate:
     A lightweight normalized candidate produced by parsing the /info listing page.
     Collector can map this into your real models.Candidate.
     """
+
     title: str
     url: str
     source: str  # "News"
@@ -47,6 +48,7 @@ DATE_PATTERNS = [
 # -------------------------
 # Article page parsing (existing behavior)
 # -------------------------
+
 
 def parse_info_page(html: str) -> InfoParseResult:
     """
@@ -111,6 +113,7 @@ def _scan_text_for_date(text: str) -> date | None:
 # NEW: /info index/listing parsing (Milestone 1)
 # -------------------------
 
+
 def parse_info_index_candidates(
     html: str,
     *,
@@ -136,7 +139,7 @@ def parse_info_index_candidates(
 
     out: list[IndexCandidate] = []
 
-    for t in soup.select('time[datetime]'):
+    for t in soup.select("time[datetime]"):
         published = _parse_info_visible_date(_text(t))
         if published is None:
             # If we can't parse the visible date, skip this entry (don’t guess).
@@ -146,12 +149,7 @@ def parse_info_index_candidates(
             # /info listings are typically newest-first; stop once we drop past cutoff.
             break
 
-        entry = (
-            t.find_parent("article")
-            or t.find_parent("li")
-            or t.find_parent("div")
-            or t.parent
-        )
+        entry = t.find_parent("article") or t.find_parent("li") or t.find_parent("div") or t.parent
         if entry is None:
             continue
 
