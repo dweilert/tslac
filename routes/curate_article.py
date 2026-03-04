@@ -63,7 +63,7 @@ def _safe_int(s: str, default: int = 0) -> int:
 
 def _redirect_curate(idx: int, status: str) -> Response:
     qs = urlencode({"status": status}, doseq=False)
-    return Response.redirect(f"/curate/{idx}?{qs}")
+    return Response.redirect(f"/curate/{idx}?{qs}#detected-images")
 
 
 def get_curate_by_index(req: Request, params: dict[str, str]) -> Response:
@@ -144,7 +144,10 @@ def post_curate_save_crop(req: Request) -> Response:
 def post_curate_select_image(req: Request) -> Response:
     form = _parse_post_form(req)
     idx = _safe_int(form.get("index", "0"), 0)
-    select_image(url=form.get("url", ""), img_src=form.get("img_src", ""))
+
+    content_id = form.get("content_id", "") or form.get("doc_id", "") or form.get("url", "")
+    select_image(content_id=content_id, img_src=form.get("img_src", ""))
+
     return _redirect_curate(idx, "Selected image")
 
 

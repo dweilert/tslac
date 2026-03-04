@@ -4,16 +4,15 @@ from dataclasses import dataclass
 from datetime import date
 from typing import Literal
 
-SourceKind = Literal["featured", "carousel", "other"]
-
+SourceKind = Literal["Carousel", "Featured", "News", "Doc"]
 
 @dataclass(frozen=True)
 class RawCandidate:
     """Result of parsing the homepage only (no per-article fetch)."""
-
     title: str
     url: str
     source: SourceKind
+    published: date | None = None
     summary: str | None = None
 
 
@@ -24,5 +23,5 @@ class Candidate:
     title: str
     url: str
     source: SourceKind
-    published: date | None
+    published: date | None = None
     summary: str | None = None

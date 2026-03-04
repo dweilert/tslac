@@ -8,6 +8,7 @@ from typing import Any
 import docsys.store as doc_store
 import storage.curation_store as curation_store
 from web.errors import BadRequestError
+from services.curate_article_service import select_image  # adjust import path to match your project
 
 
 @dataclass(frozen=True)
@@ -151,16 +152,21 @@ def save_crop(*, doc_id: str, img_src: str, crop_json: str) -> None:
         curation_store.upsert_curated_image_crop(doc_id, img_src, crop)
 
 
+# def select_image(*, doc_id: str, img_src: str) -> None:
+#     doc_id = (doc_id or "").strip()
+#     img_src = (img_src or "").strip()
+
+#     if img_src and not (img_src.startswith("http://") or img_src.startswith("https://")):
+#         img_src = ""
+
+#     if doc_id and img_src:
+#         curation_store.upsert_curated_selected_image(doc_id, img_src)
+
+
+
+
 def select_image(*, doc_id: str, img_src: str) -> None:
-    doc_id = (doc_id or "").strip()
-    img_src = (img_src or "").strip()
-
-    if img_src and not (img_src.startswith("http://") or img_src.startswith("https://")):
-        img_src = ""
-
-    if doc_id and img_src:
-        curation_store.upsert_curated_selected_image(doc_id, img_src)
-
+    select_image(content_id=doc_id, img_src=img_src)
 
 def clear_selected_image(*, doc_id: str) -> None:
     doc_id = (doc_id or "").strip()

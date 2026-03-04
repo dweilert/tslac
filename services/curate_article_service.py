@@ -207,19 +207,34 @@ def save_crop(*, url: str, img_src: str, crop_json: str) -> None:
         curation_store.upsert_curated_image_crop(url, img_src, crop)
 
 
-def select_image(*, url: str, img_src: str) -> None:
-    url = (url or "").strip()
+
+def select_image(*, content_id: str, img_src: str) -> None:
+    content_id = (content_id or "").strip()
     img_src = (img_src or "").strip()
 
-    # Only allow absolute http(s) for now (consistent with your prior behavior)
-    if img_src and not (img_src.startswith("http://") or img_src.startswith("https://")):
-        img_src = ""
+    if not content_id:
+        return
 
-    if url and img_src:
-        curation_store.upsert_curated_selected_image(url, img_src)
+    # Clear selected image
+    if not img_src:
+        curation_store.clear_curated_selected_image(content_id)
+        return
+
+    # Only allow absolute http(s)
+    if not (img_src.startswith("http://") or img_src.startswith("https://")):
+        return
+
+    curation_store.upsert_curated_selected_image(content_id, img_src)
+
+
+
+# Back-compat wrapper (optional, but avoids touching other callers yet)
+def select_image_for_url(*, url: str, img_src: str) -> None:
+    select_image(content_id=url, img_src=img_src)
 
 
 def clear_selected_image(*, url: str) -> None:
     url = (url or "").strip()
     if url:
-        curation_store.clear_curated_selected_image(url)
+        curation_store.clear_curated_selected_image(url) 
+

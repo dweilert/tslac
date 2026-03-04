@@ -16,4 +16,65 @@ a:hover { text-decoration:underline; }
 .msg { background:#e7f3ff; border:1px solid #b6daff; padding:10px; border-radius:10px; margin:12px 0; }
 .muted { color:#777; }
 code { background:#f3f3f3; padding:2px 4px; border-radius:6px; }
-.badge { font-size: 11px; padding: 2px 6px; border: 1px solid #ccc; border-radius: 999px; margin-left: 6px; color:#444; background:#fafafa; }
+
+.statusdot { display:inline-flex; align-items:center; gap:6px; margin-left:10px; }
+.dot { width:10px; height:10px; border-radius:999px; display:inline-block; }
+.dot.ok { background:#22c55e; }
+.dot.bad { background:#ef4444; }
+
+/* Base badge style */
+.badge { 
+    font-size: 11px; 
+    padding: 2px 8px; 
+    border: 1px solid #ccc; 
+    margin-left: 6px; 
+    color:#444; 
+    background:#b5cef3; 
+    display: inline-block;
+    border-radius: 10px;
+    font-weight: 600;
+    letter-spacing: .2px;
+    text-transform: uppercase;
+}
+
+/* Carousel (homepage hero) */
+.badge-carousel {
+  background: #e0f2fe;
+  color: #0369a1;
+}
+
+/* Featured items */
+.badge-featured {
+  background: #ede9fe;
+  color: #5b21b6;
+}
+
+/* Regular news items */
+.badge-news {
+  background: #ecfdf5;
+  color: #047857;
+}
+
+/* Local / document sources */
+.badge-doc {
+  background: #fff7ed;
+  color: #c2410c;
+}
+
+/* Fallback if something unexpected appears */
+.badge-unknown {
+  background: #f3f4f6;
+  color: #374151;
+}
+
+/* Source filter row */
+.srcToggle {
+  transform: translateY(1px);
+}
+
+.badge-curated {
+  background: #000;
+  color: #fff;
+  border-color: #000;
+}
+

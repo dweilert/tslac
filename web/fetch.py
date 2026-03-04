@@ -4,6 +4,9 @@ from dataclasses import dataclass
 
 import requests
 
+from web.ssl_bootstrap import setup_tls_truststore
+setup_tls_truststore()
+
 DEFAULT_HEADERS = {
     "User-Agent": "tslac-newsletter-helper/1.0 (+local)",
     "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",

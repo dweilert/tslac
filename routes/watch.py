@@ -11,11 +11,10 @@ from web.router import Router
 
 
 def register(router: Router) -> None:
-    router.get("/watch", get_watch_page)
     router.get("/watch/status", get_watch_status)
     router.get("/watch/scan", get_watch_scan)
     router.get("/watch/cancel", get_watch_cancel)
-    router.post("/watch/save", post_watch_save)
+    router.get("/watch", get_watch_redirect)
 
 
 def _redir_watch_status(status: str) -> Response:
@@ -47,21 +46,9 @@ def get_watch_cancel(_: Request) -> Response:
         return _redir_watch_status("Cancel failed")
 
 
-def get_watch_page(req: Request) -> Response:
-    status = req.query_first.get("status") or ""
-    try:
-        model = watch_service.load_page_model()
-        body = templates.watch_page_html(
-            sites_text=model.sites_text,
-            topics_text=model.topics_text,
-            status=status,
-            latest=model.latest,
-        )
-        return Response.html(body)
-    except Exception:
-        # This is a server bug; don’t return 400 and don’t leak tracebacks
-        error("Watch page render failed", exc_info=True)
-        return Response.internal_error()
+def get_watch_redirect(_: Request, _params: dict | None = None) -> Response:
+    # Watch configuration is now managed in /config.
+    return Response.redirect("/config")
 
 
 def _parse_post_form(req: Request) -> dict[str, str]:
@@ -119,16 +106,3 @@ def _parse_post_form(req: Request) -> dict[str, str]:
 
     return {}
 
-
-def post_watch_save(req: Request) -> Response:
-    form = _parse_post_form(req)
-
-    sites_text = form.get("sites_text") or form.get("sites") or ""
-    topics_text = form.get("topics_text") or form.get("topics") or ""
-
-    try:
-        watch_service.save_watch_config(sites_text=sites_text, topics_text=topics_text)
-        return _redir_watch_status("Saved")
-    except Exception as e:
-        error("Watch save failed", exc_info=True)
-        return _redir_watch_status(f"Save failed: {e}")

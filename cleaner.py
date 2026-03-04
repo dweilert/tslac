@@ -377,13 +377,16 @@ def _collect_images(container: BeautifulSoup, base_url: str) -> list[dict[str, A
     imgs.sort(key=lambda x: x.get("score", 0), reverse=True)
 
     # Dedupe by src
-    seen = set()
+    # seen = set()
+    # out = []
+    # for it in imgs:
+    #     s = it["src"]
+    #     if s not in seen:
+    #         out.append(it)
+    #         seen.add(s)
     out = []
     for it in imgs:
-        s = it["src"]
-        if s not in seen:
-            out.append(it)
-            seen.add(s)
+        out.append(it)       
     return out
 
 

@@ -7,22 +7,36 @@ from web.response import Response
 from web.router import Router
 
 STATIC_DIR = Path(__file__).resolve().parents[1] / "static"
+IMAGES_DIR = Path(__file__).resolve().parents[1] / "images"
 
 
 def register(router: Router) -> None:
-    # serve /static/... (css, js, images)
+    # serve /static/... (css, js)
     router.route_regex("GET", r"^/static/.*$", get_static)
 
+    # serve /images/... (logo, etc.)
+    router.route_regex("GET", r"^/images/.*$", get_images)
 
-def get_static(req: Request) -> Response:
-    # req.path is like "/static/css/app.css"
+
+def get_static(req: Request, _params: dict | None = None) -> Response:
     rel = req.path[len("/static/") :]  # "css/app.css"
+    return _serve_from(STATIC_DIR, rel)
+
+
+def get_images(req: Request, _params: dict | None = None) -> Response:
+    rel = req.path[len("/images/") :]  # "logo_no_name.png"
+    return _serve_from(IMAGES_DIR, rel)
+
+
+def _serve_from(base_dir: Path, rel: str) -> Response:
     # basic traversal protection
-    if ".." in rel or rel.startswith("/"):
+    if not rel or ".." in rel or rel.startswith("/"):
         return Response.not_found("Not found")
 
-    fpath = (STATIC_DIR / rel).resolve()
-    if not str(fpath).startswith(str(STATIC_DIR.resolve())):
+    base = base_dir.resolve()
+    fpath = (base_dir / rel).resolve()
+
+    if not str(fpath).startswith(str(base)):
         return Response.not_found("Not found")
 
     if not fpath.exists() or not fpath.is_file():
@@ -31,7 +45,6 @@ def get_static(req: Request) -> Response:
     data = fpath.read_bytes()
     ctype = _content_type(fpath.suffix.lower())
 
-    # Cache-busting can come later; keep caching modest for now
     headers = {
         "Content-Type": ctype,
         "Content-Length": str(len(data)),

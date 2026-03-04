@@ -30,7 +30,7 @@ def save_candidates_json(path: Path, candidates: list[Candidate]) -> None:
             "title": c.title,
             "url": c.url,
             "source": c.source,
-            "published": c.published.isoformat() if c.published else None,
+            "published": c.published,
             "summary": c.summary,
         }
         for c in candidates

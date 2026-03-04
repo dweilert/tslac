@@ -173,3 +173,29 @@
 .excontrols {
   gap: 3px;
 }
+
+.img-tile.is-selected {
+  outline: 3px solid #22c55e;
+  border-radius: 10px;
+}
+
+
+
+.badge {
+  display:inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 650;
+  border: 1px solid #cbd5e1;
+  background: #f8fafc;
+  margin-left: 6px;
+}
+
+/* Selected image indicator */
+.img-card.is-selected {
+  outline: 4px solid #22c55e;
+  outline-offset: 2px;
+  border-radius: 10px;
+  padding: 6px;
+}

@@ -4,13 +4,7 @@
     <meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1"/>
     <title>{{ title or "Newsletter Helper" }}</title>
-    <style>
-        /* Keep your existing CSS in templates.py for now.
-        Later we’ll move to static/app.css. */
-    </style>
-
     <link rel="stylesheet" href="/static/css/app.css">
-
     {% if page_css %}
     <link rel="stylesheet" href="{{ page_css }}">
     {% endif %}
@@ -19,6 +13,30 @@
 
 </head>
 <body>
+  <header class="site-header">
+    <div class="site-header__inner">
+
+      <a class="site-header__brand" href="/" style="display:flex; align-items:center; gap:10px;">
+        <img class="site-header__logo" src="/images/logo_no_name.png" alt="TSL" />
+        <span class="site-header__title">TSLAC Foundation Newsletter Helper</span>
+      </a>
+
+      <div class="header-actions">
+        <!-- Gear -->
+        <a class="iconbtn" href="/config" title="Config" aria-label="Config">⚙</a>
+
+        <!-- Quit -->
+        <form method="post" action="/quit" style="display:inline; margin:0;">
+          <button class="iconbtn"
+                  title="Quit"
+                  aria-label="Quit"
+                  onclick="return confirm('Stop the newsletter helper?');">⏻</button>
+        </form>
+      </div>
+
+    </div>
+  </header>
+
   <div class=""wrap">
     {% if status %}
         <div style="margin: 10px 0; padding: 8px 10px; background: #fff3cd; border: 1px solid #ffeeba;">

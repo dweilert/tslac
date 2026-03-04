@@ -1,0 +1,35 @@
+tsl:
+  base_url: https://www.tsl.texas.gov
+  news_path: /info
+server:
+  host: 127.0.0.1
+  port: 8000
+http:
+  user_agent: newsletter-bot/1.0 (local script)
+defaults:
+  subject: "Monthly Update \u2014 New from the Texas State Library"
+  intro: "Hello everyone\u2014here are highlights and resources recently published\
+    \ by the Texas State Library and Archives Commission."
+filtering:
+  exact_exclude_paths:
+  - /contact
+  - /visit
+  - /about
+  - /tslac-statutesandrules
+  - /libsearch
+  - /arc
+  - /tbp
+  - /slrm
+  exclude_texts:
+  - see more news and events
+  - view our calendar
+  - subscribe to events
+  last_3_months_days: 90
+watch:
+  sites:
+  - home https://statearchivists.org/
+  - crawl https://texashistory.unt.edu/
+  keywords:
+  - austin
+  - annual
+  - hotdog

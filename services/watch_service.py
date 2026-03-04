@@ -3,8 +3,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
-import watch_store
 import watcher
+import config_runtime
 
 
 @dataclass(frozen=True)
@@ -29,21 +29,25 @@ def cancel_scan() -> None:
 
 
 def load_page_model() -> WatchPageModel:
-    cfg = watch_store.load_watch()
     latest = watcher.load_latest_results()
-    sites_text = "\n".join(getattr(cfg, "sites", None) or [])
-    topics_text = "\n".join(getattr(cfg, "topics", None) or [])
+
+    sites = config_runtime.get_watch_sites()
+    topics = config_runtime.get_watch_keywords()
+
+    sites_text = "\n".join(sites)
+    topics_text = "\n".join(topics)
+
+    # settings were previously stored in watch.yaml; we’re not using them now.
+    # Keep field for template compatibility.
     return WatchPageModel(
         sites_text=sites_text,
         topics_text=topics_text,
         latest=latest,
-        settings=getattr(cfg, "settings", None),
+        settings=None,
     )
 
 
 def save_watch_config(*, sites_text: str, topics_text: str) -> None:
-    # preserve settings unless you also post settings fields
-    cfg = watch_store.load_watch()
-    watch_store.save_watch_from_lines(
-        sites_text, topics_text, settings=getattr(cfg, "settings", None)
-    )
+    # Watch config is now managed in /config (config.yaml).
+    # Keep a clear error so callers/UI can show the right status message.
+    raise RuntimeError("Watch settings are now managed in /config (config.yaml).")

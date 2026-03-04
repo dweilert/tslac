@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="toolbar">
+  <a class="btn" href="/">← Back to list</a>
+</div>
+
+<div class="actions">
+  <button class="btn primary" type="submit">Save</button>
+</div>
+
+<h1>Configuration</h1>
+
+<form method="POST" action="/config" class="config-form">
+
+  <h2>Secrets (.env)</h2>
+
+  <div class="field">
+    <div class="field-label">OPENAI_API_KEY (current)</div>
+    <div class="field-muted">{{ openai_key_masked }}</div>
+    <input class="input" type="password" name="openai_api_key" placeholder="Leave blank to keep existing" />
+  </div>
+
+  <div class="field">
+    <div class="field-label">TINYMCE_API_KEY (current)</div>
+    <div class="field-muted">{{ tinymce_key_masked }}</div>
+    <input class="input" type="password" name="tinymce_api_key" placeholder="Leave blank to keep existing" />
+  </div>
+
+  <h2>TSL</h2>
+  <div class="field">
+    <div class="field-label">Base URL</div>
+    <input class="input" type="text" name="base_url" value="{{ base_url }}" />
+  </div>
+
+  <div class="field">
+    <div class="field-label">News path</div>
+    <div class="field-muted">Used for the /info page (example: <code>/info</code>)</div>
+    <input class="input" type="text" name="news_path" value="{{ news_path }}" />
+  </div>
+
+  <h2>Server</h2>
+  <div class="field">
+    <div class="field-label">Host</div>
+    <input class="input" type="text" name="host" value="{{ host }}" />
+  </div>
+
+  <div class="field">
+    <div class="field-label">Port</div>
+    <input class="input" type="text" name="port" value="{{ port }}" />
+  </div>
+
+  <h2>HTTP</h2>
+  <div class="field">
+    <div class="field-label">User-Agent</div>
+    <input class="input" type="text" name="user_agent" value="{{ user_agent }}" />
+  </div>
+
+  <h2>Defaults</h2>
+  <div class="field">
+    <div class="field-label">Default subject</div>
+    <input class="input" type="text" name="default_subject" value="{{ default_subject }}" />
+  </div>
+
+  <div class="field">
+    <div class="field-label">Default intro</div>
+    <textarea class="textarea" name="default_intro" rows="4">{{ default_intro }}</textarea>
+  </div>
+
+  <h2>Filtering</h2>
+  <div class="field">
+    <div class="field-label">Exact exclude paths (one per line)</div>
+    <textarea class="textarea" name="exact_exclude_paths" rows="8">{{ exact_exclude_paths_text }}</textarea>
+  </div>
+
+  <div class="field">
+    <div class="field-label">Exclude texts (one per line)</div>
+    <textarea class="textarea" name="exclude_texts" rows="6">{{ exclude_texts_text }}</textarea>
+  </div>
+
+  <div class="field">
+    <div class="field-label">Last 3 months days</div>
+    <input class="input" type="text" name="last_3_months_days" value="{{ last_3_months_days }}" />
+  </div>
+
+  <h2>Watch (config.yaml)</h2>
+  <div class="field">
+    <div class="field-label">Watch sites (one per line)</div>
+    <div class="field-muted">Keep your prefixes like <code>home:</code> and <code>crawl:</code>.</div>
+    <textarea class="textarea" name="watch_sites" rows="8">{{ watch_sites_text }}</textarea>
+  </div>
+
+  <div class="field">
+    <div class="field-label">Watch keywords (one per line)</div>
+    <textarea class="textarea" name="watch_keywords" rows="8">{{ watch_keywords_text }}</textarea>
+  </div>
+
+  <h2>Paths (read-only)</h2>
+  <div class="paths">
+    <div><b>APP_DIR:</b> <code>{{ paths.app_dir }}</code></div>
+    <div><b>OUT_DIR:</b> <code>{{ paths.out_dir }}</code></div>
+    <div><b>STATE_DIR:</b> <code>{{ paths.state_dir }}</code></div>
+    <div><b>SEEN_FILE:</b> <code>{{ paths.seen_file }}</code></div>
+    <div><b>CANDIDATES_FILE:</b> <code>{{ paths.candidates_file }}</code></div>
+    <div><b>SELECTED_FILE:</b> <code>{{ paths.selected_file }}</code></div>
+    <div><b>CURATION_FILE:</b> <code>{{ paths.curation_file }}</code></div>
+    <div><b>WATCH_FILE:</b> <code>{{ paths.watch_file }}</code></div>
+    <div><b>WATCH_RESULTS_FILE:</b> <code>{{ paths.watch_results_file }}</code></div>
+  </div>
+
+  <div class="actions">
+    <button class="btn primary" type="submit">Save</button>
+  </div>
+</form>
+
+{% endblock %}

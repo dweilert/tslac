@@ -21,7 +21,11 @@ def html_page(
     status,
     has_blurb_by_url,
     has_blurb_by_docid,
+    has_image_by_url=None,
+    has_image_by_docid=None,
 ) -> bytes:
+    has_image_by_url = has_image_by_url or {}
+    has_image_by_docid = has_image_by_docid or {}
 
     html = render(
         "candidates.html",
@@ -41,6 +45,8 @@ def html_page(
         curation_path="curation.yaml",
         selected_count=len(prechecked),
         show_export_zip=True,
+        has_image_by_url=has_image_by_url,
+        has_image_by_docid=has_image_by_docid,
     )
 
     return html.encode("utf-8")

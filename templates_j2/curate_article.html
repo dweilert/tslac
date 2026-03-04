@@ -135,26 +135,48 @@
 
   <!-- Detected Images (as a card) -->
   <div class="card" id="card-images">
+    <a id="detected-images"></a>
     <div class="title">Detected images</div>
+
     <div class="card-body">
+
+      {# Selected image summary + clear button #}
+
+      {% if selected_image %}
+        <div class="small" style="margin: 0 0 10px 0;">
+          <span class="badge">Selected</span>
+          <code class="breakall">{{ selected_image }}</code>
+          <button class="btn" type="button" style="margin-left:8px;" onclick="clearSelectedImage()">
+            Clear selected image
+          </button>
+        </div>
+      {% endif %}
+
       {% if images and images|length > 0 %}
         <div class="img-grid">
           {% for im in images %}
             {% set src = im.src if im is mapping and im.src is defined else (im["src"] if im is mapping and "src" in im else im) %}
-            <div class="img-card">
+            {% set is_sel = (selected_image and (src == selected_image)) %}
+            <div class="img-card {% if is_sel %}is-selected{% endif %}">
               <a href="{{ src }}" target="_blank" rel="noopener">
                 <img src="{{ src }}" alt="{{ im.alt if im is mapping and im.alt is defined else '' }}">
               </a>
 
               <div class="img-actions">
                 <button class="btn" type="button"
-                        onclick="selectImage('{{ src|e }}')">Select</button>
+                        onclick="selectImage('{{ src|e }}')">
+                  {% if is_sel %}Selected{% else %}Select{% endif %}
+                </button>
 
                 <button class="btn" type="button"
                         onclick="openCrop('{{ src|e }}', '{{ url|e }}')">Crop</button>
 
                 {% if crops and (src in crops) %}
                   <span class="small muted">Crop saved</span>
+                {% endif %}
+
+                {% if is_sel %}
+                  <span class="badge">Selected</span>
                 {% endif %}
               </div>
 
@@ -168,6 +190,8 @@
         <div class="small muted">No images detected.</div>
       {% endif %}
     </div>
+
+
   </div>
 
 </div>
@@ -211,9 +235,10 @@ function selectImage(src) {
 }
 
 function clearSelectedImage() {
-  postForm("/curate/clear_selected_image", {
+  postForm("/curate/select_image", {
     index: INDEX,
-    url: URL
+    url: URL,
+    img_src: ""   // blank means "clear"
   });
 }
 

@@ -1,8 +1,6 @@
 {% extends "base.html" %}
 {% block content %}
 
-<h1>TSL Candidate Review</h1>
-
 <div class="meta">
   Candidates file: <code>{{ candidates_path }}</code><br/>
   Selection file: <code>{{ selected_path }}</code><br/>
@@ -11,13 +9,7 @@
 
 <div class="toolbar">
 
-
-  <a class="btn" id="refreshBtn" href="/refresh">Refresh candidates</a>
-
-  <label class="small muted" style="display:inline-flex; align-items:center; gap:6px; margin-left:8px;">
-    <input type="checkbox" id="ignoreSeenToggle" />
-    Ignore seen URLs (next refresh)
-  </label>
+  <a class="btn" id="refreshBtn" href="/refresh">Refresh article list</a>
 
   <form method="post" action="/seen/reset" style="display:inline; margin-left:8px;">
     <input type="hidden" name="confirm" value="1" />
@@ -27,68 +19,62 @@
     </button>
   </form>
 
-  <a class="btn" href="/preview">Preview newsletter</a>
-  <a class="btn" href="/watch">Watch sites</a>
-
   <button class="btn" type="button" onclick="selectAll(true)">Select all</button>
   <button class="btn" type="button" onclick="selectAll(false)">Select none</button>
-
-  <form method="post" action="/quit" style="display:inline;">
-    <button class="btn" type="submit"
-            onclick="return confirm('Stop the newsletter helper?');">
-        Quit
-    </button>
-  </form>
+  <a class="btn" href="/preview">Preview newsletter</a>
 
   {% if show_export_zip %}
     <a class="btn" href="/export/constant-contact.zip">Export Constant Contact ZIP</a>
   {% endif %}
 </div>
 
-<div class="toolbar">
-  <input id="search" class="field" type="text" placeholder="Search titles / sources..." oninput="filterCards()">
-  <button class="btn" type="button" onclick="filterCards()">Filter</button>
-</div>
 
 <form method="post" action="/save">
-
-  <div style="margin-top: 12px;">
-    <div class="small muted">Subject</div>
-    <input class="field" type="text" name="subject" value="{{ subject }}"/>
-  </div>
-
-  <div style="margin-top: 12px;">
-    <div class="small muted">Intro</div>
-    <textarea class="field" name="intro" rows="5">{{ intro }}</textarea>
-  </div>
 
   <div class="toolbar">
     <button class="btn" type="submit">Save Selection</button>
     <div class="small muted">Selected: <span id="selCount">{{ selected_count }}</span></div>
   </div>
 
+  <div class="toolbar" style="align-items:center; gap:12px; flex-wrap:wrap; margin-top: 6px;">
+    <span class="small muted" style="font-weight:600;">Show/Hide source:</span>
+
+    <!-- Checked = HIDE that source -->
+    <label class="small" style="display:inline-flex; align-items:center; gap:6px;">
+      <input type="checkbox" class="srcToggle" data-src="carousel" />
+      <span class="badge badge-carousel">Carousel</span>
+    </label>
+
+    <label class="small" style="display:inline-flex; align-items:center; gap:6px;">
+      <input type="checkbox" class="srcToggle" data-src="featured" />
+      <span class="badge badge-featured">Featured</span>
+    </label>
+
+    <label class="small" style="display:inline-flex; align-items:center; gap:6px;">
+      <input type="checkbox" class="srcToggle" data-src="news" />
+      <span class="badge badge-news">News</span>
+    </label>
+
+    <label class="small" style="display:inline-flex; align-items:center; gap:6px;">
+      <input type="checkbox" class="srcToggle" data-src="watch" />
+      <span class="badge badge-watch">Watch</span>
+    </label>
+
+    <label class="small" style="display:inline-flex; align-items:center; gap:6px;">
+      <input type="checkbox" class="srcToggle" data-src="doc" />
+      <span class="badge badge-doc">Doc</span>
+    </label>
+
+    <label class="small" style="display:inline-flex; align-items:center; gap:6px;">
+      <input type="checkbox" class="srcToggle" data-src="unknown" />
+      <span class="badge badge-unknown">Unknown</span>
+    </label>
+  </div>
+
+
   <div class="toolbar" style="align-items:center; justify-content:space-between; margin-top: 8px;">
   <h2 style="margin:0;">Article Candidates</h2>
 
-  <div style="display:flex; gap:10px; align-items:center;">
-    <!-- Ignore seen (safe) -->
-    <label class="small muted" style="display:flex; gap:6px; align-items:center; margin:0;">
-      <input type="checkbox" id="ignoreSeenToggle" />
-      Ignore seen URLs (next refresh)
-    </label>
-
-    <!-- Refresh (uses ignoreSeenToggle to add query param) -->
-    <a class="btn" id="refreshBtn" href="/refresh">Refresh</a>
-
-    <!-- Reset seen (destructive) -->
-    <form method="post" action="/seen/reset" style="display:inline; margin:0;">
-      <input type="hidden" name="confirm" value="1" />
-      <button class="btn" type="submit"
-              onclick="return confirm('Reset seen URLs? This wipes seen_urls.json so refresh will rediscover previously seen links.');">
-        Reset seen URLs
-      </button>
-    </form>
-  </div>
 </div>
 
   <div class="cards" id="webCards">
@@ -107,19 +93,28 @@
             <div class="title">
               {{ c.title }}
               {% if has_blurb_by_url.get(c.url) %}
-                <span class="badge">curated</span>
+                <span class="badge badge-curated">curated</span>
               {% endif %}
             </div>
 
             <div class="small">
-              Source: {{ c.source or "" }}
+              Source:
+              {% set src = (c.source or 'Unknown') %}
+              <span class="badge badge-{{ src|lower }}">{{ src }}</span>
             </div>
+
 
             <div class="small">
               <a href="{{ c.url }}" target="_blank" rel="noreferrer">Open article</a>
               &nbsp;•&nbsp;
-              <a href="/curate/{{ loop.index0 }}">Curate</a>
+              
+              {% set has_img = has_image_by_url.get(c.url) %}
+              <span class="statusdot">
+                <span class="dot {% if has_img %}ok{% else %}bad{% endif %}"></span>
+                {% if has_img %}Image{% else %}No image{% endif %}
+              </span>
             </div>
+
 
             <div class="small muted"><code>{{ c.url }}</code></div>
           </div>
@@ -153,16 +148,34 @@
             <div style="flex:1;">
               <div class="title">
                 {{ d.get("title") or did }}
+
                 {% if has_blurb_by_docid.get(did) %}
-                  <span class="badge">curated</span>
+                  <span class="badge badge-curated">curated</span>
                 {% endif %}
+
+              </div>
+
+              <!-- <div class="small">
+                Source: <span class="badge">doc</span>
+              </div> -->
+
+              <div class="small">
+                Source:
+                <span class="badge badge-doc">Doc</span>
               </div>
 
               <div class="small">
                 <a href="{{ d.get('url') or '#' }}" target="_blank" rel="noreferrer">Open doc</a>
                 &nbsp;•&nbsp;
                 <a href="/curate_doc?doc_id={{ did|urlencode }}">Curate Doc</a>
+
+                {% set has_img = has_image_by_docid.get(did) %}
+                <span class="statusdot">
+                  <span class="dot {% if has_img %}ok{% else %}bad{% endif %}"></span>
+                  {% if has_img %}Image{% else %}No image{% endif %}
+                </span>
               </div>
+
 
               <div class="small muted"><code>{{ did }}</code></div>
             </div>
@@ -179,6 +192,74 @@
 </form>
 
 <script>
+
+const SRC_FILTER_KEY = "tslac_hidden_sources_v1";
+
+function _loadHiddenSources() {
+  try {
+    const raw = localStorage.getItem(SRC_FILTER_KEY);
+    if (!raw) return new Set();
+    const arr = JSON.parse(raw);
+    if (!Array.isArray(arr)) return new Set();
+    return new Set(arr.map(x => String(x).toLowerCase()));
+  } catch (_) {
+    return new Set();
+  }
+}
+
+function _saveHiddenSources(hiddenSet) {
+  try {
+    localStorage.setItem(SRC_FILTER_KEY, JSON.stringify(Array.from(hiddenSet)));
+  } catch (_) {
+    // ignore (private mode, quota, etc.)
+  }
+}
+
+function applySourceFilters(hidden) {
+  const hiddenSet = hidden || _loadHiddenSources();
+
+  document.querySelectorAll('.candidate-card').forEach(card => {
+    const src = (card.getAttribute('data-source') || '').toLowerCase() || 'unknown';
+    card.style.display = hiddenSet.has(src) ? 'none' : '';
+  });
+}
+
+function syncTogglesFromStorage() {
+  const hidden = _loadHiddenSources();
+  document.querySelectorAll('.srcToggle').forEach(cb => {
+    const src = (cb.getAttribute('data-src') || '').toLowerCase();
+    cb.checked = hidden.has(src); // checked = hidden
+  });
+  applySourceFilters(hidden);
+}
+
+function wireSourceToggles() {
+  const toggles = document.querySelectorAll('.srcToggle');
+  if (!toggles.length) return;
+
+  // On load: set checkbox states from storage + apply
+  syncTogglesFromStorage();
+
+  // On change: update storage + apply
+  toggles.forEach(cb => {
+    cb.addEventListener('change', () => {
+      const hidden = _loadHiddenSources();
+      const src = (cb.getAttribute('data-src') || '').toLowerCase();
+      if (!src) return;
+
+      if (cb.checked) hidden.add(src);
+      else hidden.delete(src);
+
+      _saveHiddenSources(hidden);
+      applySourceFilters(hidden);
+    });
+  });
+}
+
+(function initSourceFilters() {
+  wireSourceToggles();
+})();
+
 function selectAll(on) {
   document.querySelectorAll('input[type="checkbox"][name="picked"]').forEach(cb => cb.checked = on);
   updateSelectedCount();
@@ -198,37 +279,12 @@ function selectAll(on) {
   setHref();
 })();
 
-
-(function wireIgnoreSeenRefresh() {
-  const toggle = document.getElementById('ignoreSeenToggle');
-  const btn = document.getElementById('refreshBtn');
-  if (!toggle || !btn) return;
-
-  function setHref() {
-    const base = '/refresh';
-    btn.href = toggle.checked ? (base + '?ignore_seen=1') : base;
-  }
-
-  toggle.addEventListener('change', setHref);
-  setHref();
-})();
-
-
 function updateSelectedCount() {
   const n = document.querySelectorAll('input[type="checkbox"][name="picked"]:checked').length;
   const el = document.getElementById('selCount');
   if (el) el.textContent = String(n);
 }
 
-function filterCards() {
-  const q = (document.getElementById('search')?.value || '').toLowerCase().trim();
-  document.querySelectorAll('.candidate-card').forEach(card => {
-    const t = card.getAttribute('data-title') || '';
-    const s = card.getAttribute('data-source') || '';
-    const ok = !q || t.includes(q) || s.includes(q);
-    card.style.display = ok ? '' : 'none';
-  });
-}
 
 updateSelectedCount();
 </script>

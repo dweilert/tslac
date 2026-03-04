@@ -7,6 +7,7 @@ from docsys.store import load_doc_candidates
 from logutil import debug
 from services.candidates_service import load_persisted_candidates, refresh_candidates, save_picks, reset_seen_urls
 from storage.curation_store import get_curated_blurb, load_curation
+import storage.curation_store as curation_store
 from storage.selected_store import load_selected
 from templates import html_page
 
@@ -18,6 +19,10 @@ from storage.collector_store import load_seen
 
 from urllib.parse import parse_qs
 from services.candidates_service import reset_seen_urls
+from services import watch_service
+from typing import Any
+from logutil import info
+
 
 HOMEPAGE_URL = "https://www.tsl.texas.gov/"
 
@@ -49,39 +54,31 @@ def post_seen_reset(req: Request, params: dict[str, Any] | None = None) -> Respo
 
     reset_seen_urls()
     return _redir_status("Reset seen URLs (seen_urls.json cleared)")
-
-def get_refreshOLD(req: Request) -> Response:
-    try:
-        # NEW: read ?ignore_seen=1
-        parsed = urlparse(req.path)
-        qs = parse_qs(parsed.query)
-        ignore_seen = qs.get("ignore_seen", ["0"])[0] == "1"
-
-        # NEW: pass flag through
-        res = refresh_candidates(ignore_seen=ignore_seen)
-
-        err_note = f" (errors:{res.error_count})" if res.error_count else ""
-        note = " (ignored seen URLs)" if ignore_seen else ""
-        return _redir_status(f"Refreshed candidate list (docs:{res.doc_count}){err_note}{note}")
-
-    except Exception as e:
-        return _redir_status(f"Refresh failed: {e}")
-
+ 
 def get_refresh(req: Request) -> Response:
+    #info("DEBUG: /refresh handler called")
     try:
         # Parse query string for ?ignore_seen=1
         parsed = urlparse(req.path)
         qs = parse_qs(parsed.query)
         ignore_seen = qs.get("ignore_seen", ["0"])[0] == "1"
 
-        # Pass flag into refresh logic
+        # 1) Refresh candidates (existing behavior)
         res = refresh_candidates(ignore_seen=ignore_seen)
+
+        # 2) Also start watch scan (non-blocking)
+        watch_note = ""
+        try:
+            started = watch_service.start_scan()
+            watch_note = " + watch scan started" if started else " + watch scan already running"
+        except Exception as e:
+            watch_note = f" + watch scan failed: {e}"
 
         err_note = f" (errors:{res.error_count})" if res.error_count else ""
         note = " (ignored seen URLs)" if ignore_seen else ""
 
         return _redir_status(
-            f"Refreshed candidate list (docs:{res.doc_count}){err_note}{note}"
+            f"Refreshed candidate list (docs:{res.doc_count}){err_note}{note}{watch_note}"
         )
 
     except Exception as e:
@@ -104,14 +101,10 @@ def post_save(req: Request) -> Response:
         return _redir_status(f"Save failed: {e}")
 
 
-def get_main(req: Request) -> Response:
+def get_main(req: Request, params: dict[str, Any] | None = None) -> Response:
     status = req.query_first.get("status") or ""
 
-    # UI reads from persisted candidates
-    # candidates = load_candidates_file(CANDIDATES_FILE)
     candidates = load_persisted_candidates()
-
-    # Avoid passing non-string args to logutil.info()
     debug(f"sources: {[getattr(c, 'source', None) for c in candidates]}")
 
     sel = load_selected()
@@ -122,17 +115,30 @@ def get_main(req: Request) -> Response:
             if isinstance(it, dict) and it.get("url"):
                 prechecked.add(it["url"])
 
-    subject = (
-        sel.get("subject") if isinstance(sel, dict) and sel.get("subject") else DEFAULT_SUBJECT
-    )
+    subject = sel.get("subject") if isinstance(sel, dict) and sel.get("subject") else DEFAULT_SUBJECT
     intro = sel.get("intro") if isinstance(sel, dict) and sel.get("intro") else DEFAULT_INTRO
 
+    # ✅ MUST be defined before any comprehensions use it
+    doc_candidates = load_doc_candidates()
+
     cur = load_curation()
+
     has_blurb_by_url = {c.url: bool(get_curated_blurb(cur, c.url)) for c in candidates}
 
-    doc_candidates = load_doc_candidates()
     has_blurb_by_docid = {
         d["id"]: bool(get_curated_blurb(cur, d["id"]))
+        for d in (doc_candidates or [])
+        if isinstance(d, dict) and d.get("id")
+    }
+
+    has_image_by_url = {
+        c.url: bool(curation_store.get_curated_selected_image(cur, c.url))
+        for c in candidates
+        if getattr(c, "url", None)
+    }
+
+    has_image_by_docid = {
+        d["id"]: bool(curation_store.get_curated_selected_image(cur, d["id"]))
         for d in (doc_candidates or [])
         if isinstance(d, dict) and d.get("id")
     }
@@ -146,5 +152,7 @@ def get_main(req: Request) -> Response:
         status=status,
         has_blurb_by_url=has_blurb_by_url,
         has_blurb_by_docid=has_blurb_by_docid,
+        has_image_by_url=has_image_by_url,
+        has_image_by_docid=has_image_by_docid,
     )
     return Response.html(body)

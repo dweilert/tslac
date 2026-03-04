@@ -1,3 +1,132 @@
+TSLAC Newsletter Helper – Project Context Header
+
+Project Name: TSLAC Newsletter Helper
+Repo: https://github.com/dweilert/tslac
+Repo Branch: refactor/http-router
+
+Runtime: Custom Python web app (custom web/router, not Flask/Django)
+Python Version: 3.12
+Architecture Style: Routes → Services → Storage → Templates
+Rendering: Server-side templates (render() helper)
+Data Storage: YAML + JSON files in local filesystem
+ 
+-- Architecture Overview. --
+
+Routing Layer
+- web/router.py
+- routes/candidates.py
+- routes/curate_article.py
+- routes/curate_doc.py
+- routes/config.py
+- routes/watch.py (being deprecated)
+
+Services Layer
+- services/candidates_service.py
+- services/curate_article_service.py
+- services/curate_doc_service.py (being unified)
+- services/watch_service.py
+- services/api_service.py
+
+Storage Layer
+- storage/collector_store.py
+- storage/curation_store.py
+- storage/selected_store.py
+- watch_store.py
+
+Scraping / Collection
+- collect/collector.py
+- ollect/rules.py
+- watch/scan.py
+- watch/fetch.py
+- watch/parse.py
+- watch/score.py
+
+🎯 Current Long-Term Goals
+
+1. Rewrite TSLAC scraping:
+  - Homepage: Carousel + Featured News
+  - /info page: last 90 days
+
+2. Remove seen URL skipping
+
+3. Fully unify article + doc curation
+
+4. Add title + subtitle fields to curate + preview
+
+5. Integrate TinyMCE editor (CDN, key stored in .env.local)
+
+6. Make Refresh gather:
+  - TSLAC
+  - Watch sites
+  - Local docs
+  - GDrive docs
+
+7. Remove legacy /watch page entirely
+
+⚠️ Known Refactor State
+- Watch results now appear in main candidate list.
+- Image selection unified (set + clear working).
+- Selected image indicator partially integrated on home page.
+- Docs still partially using legacy curate path.
+- Seen URL logic still active but planned for removal.
+
+
+In this chat we are focusing on:
+----------------------------------------------------------------------
+Milestone 1: Rewrite TSLAC Scraper (Homepage + /info 90 Days)
+
+Rewrite collect.collector.collect_candidates to:
+
+Scrape homepage of tsl.texas.gov:
+
+Carousel section is currently implemented 
+
+Featured News section is not be scraped yet.  The information to be scraped in located in the section under this heading in the html: <h2>Featured News</h2> and when this is located the you are at the end of the featured news: 'See More News and Events' 
+
+
+Scrape /info page: is not being scraped yet.  Each new item to be reviewed is started with this html: <time datetime= and the equivalent of the article topic is starts with: <div <a href="/node/????" hreflang=" and the topic is found in the portion that starts with: class="field-content">
+
+Question marks in the /node/ are really a number that changes with each topic.  The date is in the format: “Thursday, February 12, 2026”
+
+Include only articles that have occured in the last 90 days.
+
+
+Normalize candidates with:
+
+title
+url
+source = "tslac"
+published date
+Remove legacy scraping assumptions
+
+Keys Files involved:
+
+collect/collector.py
+collect/rules.py
+services/candidates_service.py
+
+
+
+We are NOT working on other subsystems unless explicitly stated.
+
+I will paste the relevant function(s) as needed.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 # tslac
 
 Good. Let’s turn the pain into a repeatable solution so this never happens again.
@@ -108,4 +237,42 @@ There are two modules that have names that are confusing: `export_preview.py` an
 There has been some confusion in the re-factoring efforts and I'd like to rename the export_preview to something more inline with its   functionality.  I'd like to rename it: preview_generator.py
 
 Please help me accomplish this task.
+
+### ---------------------
+
+
+
+Question 1: Candidate ID strategy 
+Answer: treat as new
+
+Question 2: “Open doc” behavior for Google Drive
+Answer: open in browser
+
+Question 3: Doc text extraction scope
+Answer: I'm OK with okay with “phase 1 = pdf + docx + gdoc, phase 2 = everything else”, implementation is much faster and more reliable.
+
+Question 4: TSL info page filter
+Answer: Articles on the 'info' page start with a date in this format:  Thursday, February 12, 2026 
+
+Additional notes:
+the current process of createing the 'seen' site and skipping those sites on the next refresh can be removed.  Show all candidates articles every time the refresh is run.
+
+In the top portion of the Curate page can you provide a much more robust text editor for creating the final blurb. I'm hoping you can recommend a nice text editor for this feature.  The code to support the editor can be available via a CDN or if necessary downloaded and but in the repository.  I prefer just getting the code from a CDN.
+
+
+Lets use TinyMCE, and plan on having a key.  With that said I'd like to have a new page that will allow me to edit the config.py file to help maintain the key and other needed parameters for the application.  Also move the web sties and key words currently entered in the watch screen to this file.  No need to have that current page.
+
+When the refresh button is pressed it should also scrap the site or sites that are identidied in the 'watch' feature.  This makes the app scrap / search all locations or sources for candidate articles in a single action.  
+
+Yes, use a web page to update information in the config.py is the correct approach.  Also lets keep watch keywords to remain part of scoring/filtering.
+
+Before we get started I want to ask that we tackle one item at a time and not show me a list of 1 to ?? items to change or create.  It is just too hard to ensure the changes get done properly.  If there are logical breaks in the development that can be used as places to test what has been done to that point lets do the testing.  
+
+I expect this to take some time and in the past I've run into the issue of our chats getting very, very, long and slow.  So please let me know if there is a good place to segement our work and keep the chats working without long wait times and you dropping context.
+
+---
+
+I sorry please convert the config.py to a JSON or YAML file and use a web a page to modify that newly created file.
+
+---
 

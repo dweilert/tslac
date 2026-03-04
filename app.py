@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import os
+import config_ui
+
 from http.server import ThreadingHTTPServer
 
 from logutil import info
@@ -22,10 +24,13 @@ from web.handler import RoutedHandler
 from web.router import Router
 
 
+
+
 def build_router(server) -> Router:
     r = Router()
     api.register(r)
     candidates.register(r)
+    config_ui.register(r),
     crop.register(r)
     curate_doc.register(r)
     curate_article.register(r)
@@ -36,6 +41,7 @@ def build_router(server) -> Router:
     quit_route.register(r, server)
     static_files.register(r)
     watch.register(r)
+
     return r
 
 
