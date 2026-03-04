@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from collections import Counter
 from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import date
@@ -99,11 +98,6 @@ def refresh_candidates(
         seen,
     )
 
-    # info(f"DEBUG: collector returned candidates={len(candidates)} errors={len(errors)}")
-
-    sources = sorted({getattr(c, "source", "?") for c in candidates})
-    # info(f"DEBUG: collector sources={sources}")
-
     # ---- Merge watch results into candidates ----
     try:
         wr = load_latest_results()
@@ -145,10 +139,6 @@ def refresh_candidates(
         pass
 
     save_candidates_fn(CANDIDATES_FILE, candidates)
-    # info(f"DEBUG: saving candidates to {CANDIDATES_FILE} count={len(candidates)}")
-
-    src_counts = Counter((getattr(c, "source", None) or "Unknown") for c in candidates)
-    # info(f"REFRESH saved candidates={len(candidates)} sources={dict(src_counts)} errors={len(errors)} ignore_seen={ignore_seen}")
 
     # candidates are expected to have .url
     seen.update(c.url for c in candidates)

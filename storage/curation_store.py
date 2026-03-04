@@ -307,9 +307,9 @@ def upsert_curated_selected_image(url: str, img_src: str) -> None:
     save_curation(cur)
 
 
-def clear_curated_selected_image(url: str) -> None:
-    cur = load_curation()
-    rec = _get_rec(cur, url)
-    rec.pop("selected_image", None)
-    _touch(rec)
-    save_curation(cur)
+# def clear_curated_selected_image(url: str) -> None:
+#     cur = load_curation()
+#     rec = _get_rec(cur, url)
+#     rec.pop("selected_image", None)
+#     _touch(rec)
+#     save_curation(cur)
