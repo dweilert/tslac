@@ -24,7 +24,7 @@ filtering:
   - see more news and events
   - view our calendar
   - subscribe to events
-  last_3_months_days: 90
+  last_3_months_days: 90 
 watch:
   sites:
   - home https://statearchivists.org/

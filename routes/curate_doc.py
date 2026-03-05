@@ -3,12 +3,7 @@ from __future__ import annotations
 from urllib.parse import parse_qs, urlencode
 
 from services.curate_doc_service import (
-    add_excerpt,
     build_view_by_doc_id,
-    clear_excerpts,
-    compose_blurb_from_excerpts,
-    pop_excerpt,
-    save_blurb,
 )
 from templates import curate_doc_page_html
 from web.errors import BadRequestError

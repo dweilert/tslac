@@ -77,11 +77,17 @@
 
 </div>
 
-  <div class="cards" id="webCards">
+ <div class="card">
+  <div class="row" style="align-items:center; justify-content:space-between;">
+    <h2 style="margin:0;">Article Candidates</h2>
+  </div>
+
+  <div class="candidate-list" id="webCards">
     {% for c in candidates %}
-      <div class="card candidate-card"
+      <div class="candidate-row"
            data-title="{{ (c.title or '')|lower }}"
            data-source="{{ (c.source or '')|lower }}">
+
         <div class="row">
           <div>
             <input type="checkbox" name="picked" value="{{ c.url }}"
@@ -103,11 +109,10 @@
               <span class="badge badge-{{ src|lower }}">{{ src }}</span>
             </div>
 
-
             <div class="small">
-              <a href="{{ c.url }}" target="_blank" rel="noreferrer">Open article</a>
+              <a href="{{ c.open_url or '#' }}" target="_blank" rel="noreferrer">Open</a>
               &nbsp;•&nbsp;
-              
+
               {% set has_img = has_image_by_url.get(c.url) %}
               <span class="statusdot">
                 <span class="dot {% if has_img %}ok{% else %}bad{% endif %}"></span>
@@ -115,79 +120,18 @@
               </span>
             </div>
 
-
             <div class="small muted"><code>{{ c.url }}</code></div>
           </div>
 
           <div>
-            <a class="btn" href="/curate/{{ loop.index0 }}">Curate</a>
+            <a class="btn" href="/curate?id={{ c.url|urlencode }}">Curate</a>
           </div>
         </div>
+
       </div>
     {% endfor %}
   </div>
-
-  <h2>Doc candidates ({{ doc_candidates|length }})</h2>
-
-  <div class="cards" id="docCards">
-    {% for d in doc_candidates %}
-      {% if d is mapping and d.get("id") %}
-        {% set did = d.get("id") %}
-        <div class="card candidate-card"
-            data-title="{{ (d.get('title') or did or '')|lower }}"
-            data-source="doc">
-          <div class="row">
-
-            <!-- ✅ Checkbox (same name as web: "picked") -->
-            <div>
-              <input type="checkbox" name="picked" value="{{ did }}"
-                    {% if did in prechecked %}checked{% endif %}
-                    onchange="updateSelectedCount()"/>
-            </div>
-
-            <div style="flex:1;">
-              <div class="title">
-                {{ d.get("title") or did }}
-
-                {% if has_blurb_by_docid.get(did) %}
-                  <span class="badge badge-curated">curated</span>
-                {% endif %}
-
-              </div>
-
-              <!-- <div class="small">
-                Source: <span class="badge">doc</span>
-              </div> -->
-
-              <div class="small">
-                Source:
-                <span class="badge badge-doc">Doc</span>
-              </div>
-
-              <div class="small">
-                <a href="{{ d.get('url') or '#' }}" target="_blank" rel="noreferrer">Open doc</a>
-                &nbsp;•&nbsp;
-                <a href="/curate_doc?doc_id={{ did|urlencode }}">Curate Doc</a>
-
-                {% set has_img = has_image_by_docid.get(did) %}
-                <span class="statusdot">
-                  <span class="dot {% if has_img %}ok{% else %}bad{% endif %}"></span>
-                  {% if has_img %}Image{% else %}No image{% endif %}
-                </span>
-              </div>
-
-
-              <div class="small muted"><code>{{ did }}</code></div>
-            </div>
-
-            <div>
-              <a class="btn" href="/curate_doc?doc_id={{ did|urlencode }}">Curate</a>
-            </div>
-          </div>
-        </div>
-      {% endif %}
-    {% endfor %}
-  </div>
+</div> 
 
 </form>
 
@@ -265,19 +209,6 @@ function selectAll(on) {
   updateSelectedCount();
 }
 
-(function wireIgnoreSeenRefresh() {
-  const toggle = document.getElementById('ignoreSeenToggle');
-  const btn = document.getElementById('refreshBtn');
-  if (!toggle || !btn) return;
-
-  function setHref() {
-    const base = '/refresh';
-    btn.href = toggle.checked ? (base + '?ignore_seen=1') : base;
-  }
-
-  toggle.addEventListener('change', setHref);
-  setHref();
-})();
 
 function updateSelectedCount() {
   const n = document.querySelectorAll('input[type="checkbox"][name="picked"]:checked').length;

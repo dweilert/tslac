@@ -1,3 +1,4 @@
+# storage/curation_store.py
 from __future__ import annotations
 
 from datetime import datetime
@@ -9,6 +10,7 @@ import yaml
 
 from config import CURATION_FILE
 
+print(CURATION_FILE)
 
 # ----------------------------
 # Helpers
@@ -34,23 +36,21 @@ def _atomic_write_text(path: Path, text: str, encoding: str = "utf-8") -> None:
 
             os.fsync(f.fileno())
         except Exception:
+            # fsync may fail on some filesystems; replace is the core safety mechanism
             pass
 
     tmp.replace(path)
 
 
-def norm_url(url: str) -> str:
+def _normalize_http_url(url: str) -> str:
     """
-    Normalize keys used in curation.yaml.
-
-    - For http(s) URLs: strip whitespace AND remove fragment (#...)
-      so that https://x/y#foo and https://x/y map to the same record.
-    - For non-http identifiers (e.g., doc ids): just strip whitespace.
+    Normalize http(s) URLs for stable keys:
+      - strip whitespace
+      - remove fragment (#...)
     """
     u = (url or "").strip()
     if not u:
         return ""
-
     try:
         p = urlparse(u)
         if p.scheme in ("http", "https"):
@@ -58,21 +58,81 @@ def norm_url(url: str) -> str:
             return urlunparse(p)
     except Exception:
         pass
-
     return u
+
+
+def norm_key(key: str) -> str:
+    """
+    Normalize keys used in curation.yaml.
+
+    Supports both:
+      - legacy keys: raw http(s) urls (normalized)
+      - new canonical ids: web:<url>, gdrive:<id>, local:<id>
+
+    Rules:
+      - If key starts with "web:", normalize the URL part and keep the prefix.
+      - If key is a raw http(s) URL, normalize it as legacy.
+      - Otherwise, strip whitespace (for doc ids / local ids).
+    """
+    k = (key or "").strip()
+    if not k:
+        return ""
+
+    if k.startswith("web:"):
+        url_part = k[4:]
+        return "web:" + _normalize_http_url(url_part)
+
+    # Legacy raw URL key (kept for backward compatibility)
+    if "://" in k:
+        return _normalize_http_url(k)
+
+    return k
+
+
+def legacy_key_for(candidate_id: str) -> str:
+    """
+    Backward-compat key lookup for previously saved web curations.
+
+    If candidate_id is web:<url>, return the normalized URL (no prefix)
+    which is what older curations used as the key.
+    """
+    cid = (candidate_id or "").strip()
+    if cid.startswith("web:"):
+        return _normalize_http_url(cid[4:])
+    return ""
 
 
 def _touch(rec: dict[str, Any]) -> None:
     rec["updated_at"] = datetime.now().isoformat(timespec="seconds")
 
 
-def _get_rec(cur: dict[str, Any], url: str) -> dict[str, Any]:
-    k = norm_url(url)
+def _get_rec(cur: dict[str, Any], key: str) -> dict[str, Any]:
+    k = norm_key(key)
     rec = cur.get(k)
     if not isinstance(rec, dict):
         rec = {}
         cur[k] = rec
     return rec
+
+
+def _get_rec_with_fallback(cur: dict[str, Any], key: str) -> dict[str, Any] | None:
+    """
+    Read helper:
+      1) try normalized key
+      2) if key is web:<url>, also try legacy normalized url key
+    """
+    k = norm_key(key)
+    rec = cur.get(k)
+    if isinstance(rec, dict):
+        return rec
+
+    legacy = legacy_key_for(key)
+    if legacy:
+        rec2 = cur.get(legacy)
+        if isinstance(rec2, dict):
+            return rec2
+
+    return None
 
 
 def _is_valid_crop(crop: dict[str, Any]) -> bool:
@@ -117,10 +177,47 @@ def save_curation(cur: dict[str, Any]) -> None:
 
 
 # ----------------------------
+# Title / Subtitle (curation.yaml)  ✅ NEW for Milestone 2
+# ----------------------------
+def get_curated_title(cur: dict[str, Any], key: str) -> str:
+    rec = _get_rec_with_fallback(cur, key)
+    if isinstance(rec, dict):
+        v = rec.get("title")
+        if isinstance(v, str):
+            return v
+    return ""
+
+
+def get_curated_subtitle(cur: dict[str, Any], key: str) -> str:
+    rec = _get_rec_with_fallback(cur, key)
+    if isinstance(rec, dict):
+        v = rec.get("subtitle")
+        if isinstance(v, str):
+            return v
+    return ""
+
+
+def upsert_curated_title(key: str, title: str) -> None:
+    cur = load_curation()
+    rec = _get_rec(cur, key)
+    rec["title"] = (title or "").strip()
+    _touch(rec)
+    save_curation(cur)
+
+
+def upsert_curated_subtitle(key: str, subtitle: str) -> None:
+    cur = load_curation()
+    rec = _get_rec(cur, key)
+    rec["subtitle"] = (subtitle or "").strip()
+    _touch(rec)
+    save_curation(cur)
+
+
+# ----------------------------
 # Blurb + excerpts (curation.yaml)
 # ----------------------------
-def get_curated_blurb(cur: dict[str, Any], url: str) -> str:
-    rec = cur.get(norm_url(url))
+def get_curated_blurb(cur: dict[str, Any], key: str) -> str:
+    rec = _get_rec_with_fallback(cur, key)
     if isinstance(rec, dict):
         v = rec.get("final_blurb")
         if isinstance(v, str):
@@ -128,8 +225,8 @@ def get_curated_blurb(cur: dict[str, Any], url: str) -> str:
     return ""
 
 
-def get_curated_excerpts(cur: dict[str, Any], url: str) -> list[str]:
-    rec = cur.get(norm_url(url))
+def get_curated_excerpts(cur: dict[str, Any], key: str) -> list[str]:
+    rec = _get_rec_with_fallback(cur, key)
     if isinstance(rec, dict):
         xs = rec.get("excerpts")
         if isinstance(xs, list):
@@ -137,21 +234,21 @@ def get_curated_excerpts(cur: dict[str, Any], url: str) -> list[str]:
     return []
 
 
-def upsert_curated_blurb(url: str, final_blurb: str) -> None:
+def upsert_curated_blurb(key: str, final_blurb: str) -> None:
     cur = load_curation()
-    rec = _get_rec(cur, url)
+    rec = _get_rec(cur, key)
     rec["final_blurb"] = (final_blurb or "").strip()
     _touch(rec)
     save_curation(cur)
 
 
-def add_curated_excerpt(url: str, excerpt: str) -> None:
+def add_curated_excerpt(key: str, excerpt: str) -> None:
     excerpt = (excerpt or "").strip()
     if not excerpt:
         return
 
     cur = load_curation()
-    rec = _get_rec(cur, url)
+    rec = _get_rec(cur, key)
 
     xs = rec.get("excerpts")
     if not isinstance(xs, list):
@@ -165,9 +262,9 @@ def add_curated_excerpt(url: str, excerpt: str) -> None:
     save_curation(cur)
 
 
-def pop_curated_excerpt(url: str) -> None:
+def pop_curated_excerpt(key: str) -> None:
     cur = load_curation()
-    rec = cur.get(norm_url(url))
+    rec = _get_rec_with_fallback(cur, key)
     if not isinstance(rec, dict):
         return
 
@@ -178,17 +275,17 @@ def pop_curated_excerpt(url: str) -> None:
         save_curation(cur)
 
 
-def clear_curated_excerpts(url: str) -> None:
+def clear_curated_excerpts(key: str) -> None:
     cur = load_curation()
-    rec = _get_rec(cur, url)
+    rec = _get_rec(cur, key)
     rec["excerpts"] = []
     _touch(rec)
     save_curation(cur)
 
 
-def delete_curated_excerpt(url: str, idx: int) -> None:
+def delete_curated_excerpt(key: str, idx: int) -> None:
     cur = load_curation()
-    rec = cur.get(norm_url(url))
+    rec = _get_rec_with_fallback(cur, key)
     if not isinstance(rec, dict):
         return
 
@@ -209,9 +306,9 @@ def delete_curated_excerpt(url: str, idx: int) -> None:
     save_curation(cur)
 
 
-def move_curated_excerpt(url: str, idx: int, direction: str) -> None:
+def move_curated_excerpt(key: str, idx: int, direction: str) -> None:
     cur = load_curation()
-    rec = cur.get(norm_url(url))
+    rec = _get_rec_with_fallback(cur, key)
     if not isinstance(rec, dict):
         return
 
@@ -240,8 +337,8 @@ def move_curated_excerpt(url: str, idx: int, direction: str) -> None:
 # ----------------------------
 # Image crops (curation.yaml)
 # ----------------------------
-def get_curated_image_crops(cur: dict[str, Any], url: str) -> dict[str, Any]:
-    rec = cur.get(norm_url(url))
+def get_curated_image_crops(cur: dict[str, Any], key: str) -> dict[str, Any]:
+    rec = _get_rec_with_fallback(cur, key)
     if isinstance(rec, dict):
         v = rec.get("image_crops")
         if isinstance(v, dict):
@@ -249,23 +346,23 @@ def get_curated_image_crops(cur: dict[str, Any], url: str) -> dict[str, Any]:
     return {}
 
 
-def upsert_curated_image_crop(url: str, img_src: str, crop: dict[str, Any]) -> None:
+def upsert_curated_image_crop(key: str, img_src: str, crop: dict[str, Any]) -> None:
     if not isinstance(crop, dict) or not _is_valid_crop(crop):
         return
 
-    key = (img_src or "").strip()
-    if not key:
+    img_key = (img_src or "").strip()
+    if not img_key:
         return
 
     cur = load_curation()
-    rec = _get_rec(cur, url)
+    rec = _get_rec(cur, key)
 
     crops = rec.get("image_crops")
     if not isinstance(crops, dict):
         crops = {}
         rec["image_crops"] = crops
 
-    crops[key] = crop
+    crops[img_key] = crop
     _touch(rec)
     save_curation(cur)
 
@@ -273,8 +370,8 @@ def upsert_curated_image_crop(url: str, img_src: str, crop: dict[str, Any]) -> N
 # ----------------------------
 # Selected image (curation.yaml)
 # ----------------------------
-def get_curated_selected_image(cur: dict[str, Any], url: str) -> str:
-    rec = cur.get(norm_url(url))
+def get_curated_selected_image(cur: dict[str, Any], key: str) -> str:
+    rec = _get_rec_with_fallback(cur, key)
     if isinstance(rec, dict):
         v = rec.get("selected_image")
         if isinstance(v, str):
@@ -282,34 +379,97 @@ def get_curated_selected_image(cur: dict[str, Any], url: str) -> str:
     return ""
 
 
-def clear_curated_selected_image(url: str) -> None:
+def clear_curated_selected_image(key: str) -> None:
     """
-    Remove the stored selected image for this url/content_id.
+    Remove the stored selected image for this key/content_id.
     """
     cur = load_curation()
-    rec = _get_rec(cur, url)
+    rec = _get_rec(cur, key)
 
-    # This field name must match what upsert_curated_selected_image uses.
-    # Most likely it's "selected_image" or "img_src".
-    for key in ("selected_image", "img_src", "image", "hero_image"):
-        if key in rec:
-            rec.pop(key, None)
+    for f in ("selected_image", "img_src", "image", "hero_image"):
+        if f in rec:
+            rec.pop(f, None)
 
     _touch(rec)
     save_curation(cur)
 
 
-def upsert_curated_selected_image(url: str, img_src: str) -> None:
+def upsert_curated_selected_image(key: str, img_src: str) -> None:
     cur = load_curation()
-    rec = _get_rec(cur, url)
+    rec = _get_rec(cur, key)
     rec["selected_image"] = (img_src or "").strip()
     _touch(rec)
     save_curation(cur)
 
 
-# def clear_curated_selected_image(url: str) -> None:
-#     cur = load_curation()
-#     rec = _get_rec(cur, url)
-#     rec.pop("selected_image", None)
-#     _touch(rec)
-#     save_curation(cur)
+def norm_url(url: str) -> str:
+    #Backward-compatible alias for older callers.
+    return norm_key(url)
+
+
+def get_curated_title(cur: dict[str, Any], key: str) -> str:
+    rec = cur.get(norm_key(key))
+    if isinstance(rec, dict):
+        v = rec.get("title")
+        if isinstance(v, str):
+            return v.strip()
+    return ""
+
+
+def get_curated_subtitle(cur: dict[str, Any], key: str) -> str:
+    rec = cur.get(norm_key(key))
+    if isinstance(rec, dict):
+        v = rec.get("subtitle")
+        if isinstance(v, str):
+            return v.strip()
+    return ""
+
+
+def upsert_curated_title(key: str, title: str) -> None:
+    cur = load_curation()
+    rec = _get_rec(cur, key)
+    rec["title"] = (title or "").strip()
+    _touch(rec)
+    save_curation(cur)
+
+
+def upsert_curated_subtitle(key: str, subtitle: str) -> None:
+    cur = load_curation()
+    rec = _get_rec(cur, key)
+    rec["subtitle"] = (subtitle or "").strip()
+    _touch(rec)
+    save_curation(cur)
+
+
+def get_curated_title(cur: dict[str, Any], url: str) -> str:
+    rec = cur.get(norm_url(url))
+    if isinstance(rec, dict):
+        v = rec.get("title")
+        if isinstance(v, str):
+            return v
+    return ""
+
+
+def get_curated_subtitle(cur: dict[str, Any], url: str) -> str:
+    rec = cur.get(norm_url(url))
+    if isinstance(rec, dict):
+        v = rec.get("subtitle")
+        if isinstance(v, str):
+            return v
+    return ""
+
+
+def upsert_curated_title(url: str, title: str) -> None:
+    cur = load_curation()
+    rec = _get_rec(cur, url)
+    rec["title"] = (title or "").strip()
+    _touch(rec)
+    save_curation(cur)
+
+
+def upsert_curated_subtitle(url: str, subtitle: str) -> None:
+    cur = load_curation()
+    rec = _get_rec(cur, url)
+    rec["subtitle"] = (subtitle or "").strip()
+    _touch(rec)
+    save_curation(cur)

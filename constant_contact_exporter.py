@@ -13,7 +13,7 @@ from urllib.parse import quote, unquote, urljoin, urlparse
 
 from PIL import Image
 
-from storage.curation_store import load_curation, norm_url
+from storage.curation_store import load_curation, norm_key, norm_url
 from storage.selected_store import load_selected
 
 
@@ -23,6 +23,17 @@ from storage.selected_store import load_selected
 def _esc(s: object) -> str:
     return html.escape("" if s is None else str(s), quote=True)
 
+def _content_id_from_selected_item(it: dict[str, Any]) -> str:
+    """
+    Selected items may be:
+      - {"id": "web:<url>", "url": "<url>"}  (new)
+      - {"url": "<url>"}                    (old)
+    """
+    cid = (it.get("id") or "").strip()
+    if cid:
+        return cid
+    url = (it.get("url") or "").strip()
+    return f"web:{url}" if url else ""
 
 def _safe_url(url: object) -> str:
     """Allow only http(s) (and optionally site-relative). Return '#' if unsafe."""
@@ -231,7 +242,10 @@ def build_constant_contact_zip() -> tuple[bytes, str]:
             # You can add doc exports later.
             continue
 
-        rec = cur.get(norm_url(url)) if isinstance(cur, dict) else None
+        rec = None
+        if isinstance(cur, dict):
+            # Prefer canonical id key first (Milestone 2), then fall back to legacy url key.
+            rec = cur.get(norm_key(f"web:{url}")) or cur.get(norm_url(url))
 
         title = _pick_item_title(url, rec)
         blurb, blurb_source = _pick_item_blurb(rec)

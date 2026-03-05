@@ -78,6 +78,7 @@ class Response:
             h.update(headers)
         return Response(status=status, headers=h, body=b)
 
+
     @staticmethod
     def download(
         data: bytes,
@@ -89,14 +90,24 @@ class Response:
     ) -> Response:
         """
         Convenience wrapper for downloadable attachments.
+        Adds RFC 5987 filename* for better cross-browser behavior.
         """
+        from urllib.parse import quote
+
+        fname = filename or "download"
+        fname_ascii = fname.replace('"', "")  # avoid breaking the header
+        fname_star = quote(fname, safe="")    # UTF-8 percent-encoded
+
         h = {
-            "Content-Disposition": f'attachment; filename="{filename}"',
+            "Content-Disposition": (
+                f'attachment; filename="{fname_ascii}"; filename*=UTF-8\'\'{fname_star}'
+            ),
             "Cache-Control": "no-store",
         }
         if headers:
             h.update(headers)
         return Response.bytes(data, status=status, content_type=content_type, headers=h)
+
 
     # ----------------------------
     # Redirects and errors

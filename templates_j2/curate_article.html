@@ -1,3 +1,4 @@
+<!-- templates_j2/curate_article.html -->
 {% extends "base.html" %}
 
 {% block content %}
@@ -12,7 +13,7 @@
   <a class="btn" href="{{ json_url }}" target="_blank" rel="noopener">View JSON ↗</a>
 </div>
 
-<h1>{{ title }}</h1>
+<!-- <h1>{{ title }}</h1> -->
 
 <style>
   .card { background: #fff; border: 1px solid #ddd; border-radius: 8px; padding: 12px; }
@@ -23,7 +24,6 @@
   .field { width: 100%; }
   .breakall { word-break: break-all; }
 
-  /* Toggle bar above cards */
   .togglebar {
     display:flex;
     gap:8px;
@@ -32,11 +32,9 @@
     margin: 0 0 10px 0;
   }
 
-  /* Collapsible card bodies */
   .card-collapsed .card-body { display: none; }
   .card-body { margin-top: 10px; }
 
-  /* Images grid */
   .img-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
@@ -45,85 +43,106 @@
   .img-card img { max-width: 100%; height: auto; display: block; }
   .img-actions { margin-top: 8px; display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
 
-  /* Source article */
   .article { line-height: 1.35; }
   .article p { margin: 0 0 10px 0; }
 </style>
+
+{# ✅ Canonical id for THIS page (web only for now) #}
+{% set content_id = content_id if content_id is defined and content_id else ("web:" ~ url) %}
 
 <div class="grid">
 
   <!-- Blurb -->
   <div class="card">
-    <div class="title">Final blurb</div>
+    <div class="title">Atricle Information</div>
 
     <form method="POST" action="/curate/save">
       <input type="hidden" name="index" value="{{ index }}"/>
-      <input type="hidden" name="url" value="{{ url }}"/>
+
+      {# ✅ Keep url field for back-compat server handlers, but send canonical key #}
+      <input type="hidden" name="url" value="{{ content_id }}"/>
+
+      {# ✅ Also send content_id explicitly (future-proof; some routes already use it) #}
+      <input type="hidden" name="content_id" value="{{ content_id }}"/>
+
+      <div class="small muted" style="margin: 0 0 6px 0;">Title</div>
+      <input class="field" type="text" name="curated_title"
+             value="{{ curated_title if curated_title is defined and curated_title else title }}"
+             style="margin: 0 0 10px 0;" />
+
+      <div class="small muted" style="margin: 0 0 6px 0;">Subtitle (optional)</div>
+      <input class="field" type="text" name="curated_subtitle"
+             value="{{ curated_subtitle if curated_subtitle is defined and curated_subtitle else '' }}"
+             style="margin: 0 0 10px 0;" />
+
+      <div class="small muted" style="margin: 0 0 6px 0;">Article content</div>
 
       <textarea class="field" name="final_blurb" rows="14">{{ final_blurb }}</textarea>
 
       <div class="toolbar" style="margin-top: 8px;">
-        <button class="btn" type="submit">Save curated blurb</button>
+        <button class="btn" type="submit">Save article content</button>
       </div>
     </form>
   </div>
 
   <!-- Excerpts -->
-  <div class="card">
+  <div class="card" style="margin-top: 10px; margin-bottom: 10px;">
     <div class="title">Excerpts</div>
 
     <div class="small">Select text in the article below, then click Add.</div>
 
     <div class="toolbar" style="margin-top: 8px;">
-      <button id="btnAddExcerpt" class="btn" type="button" onclick="addSelectedText()" disabled>Add Selected Text</button>
+      <button id="btnAddExcerpt" class="btn" type="button"
+              onmousedown="LAST_SELECTION = getSelectionText()"
+              onclick="addSelectedText()" disabled>
+        Add Selected Text
+      </button>
       <button class="btn" type="button" onclick="removeLastExcerpt()">Remove last</button>
       <button class="btn" type="button" onclick="clearExcerpts()">Clear</button>
       <button class="btn" type="button" onclick="composeBlurb()">Combine → Final blurb</button>
     </div>
 
-    <div class="small muted" id="selectionPreview" style="margin-top: 10px;">Nothing selected yet.</div>
-
     <hr style="margin: 12px 0;"/>
 
-<div class="small">Saved excerpts</div>
+    <div class="small">Saved excerpts</div>
 
-{% if excerpts and excerpts|length > 0 %}
-  <div class="exlist">
-    {% for x in excerpts %}
-      <div class="exrow">
-        <div class="excontrols">
-          <button class="btn exbtn" type="button"
-                  onclick="moveExcerpt({{ loop.index0 }}, 'up')"
-                  {% if loop.first %}disabled{% endif %}>▲</button>
+    {% if excerpts and excerpts|length > 0 %}
+      <div class="exlist">
+        {% for x in excerpts %}
+          <div class="exrow">
+            <div class="excontrols">
+              <button class="btn exbtn" type="button"
+                      onclick="moveExcerpt({{ loop.index0 }}, 'up')"
+                      {% if loop.first %}disabled{% endif %}>▲</button>
 
-          <button class="btn exbtn" type="button"
-                  onclick="moveExcerpt({{ loop.index0 }}, 'down')"
-                  {% if loop.last %}disabled{% endif %}>▼</button>
+              <button class="btn exbtn" type="button"
+                      onclick="moveExcerpt({{ loop.index0 }}, 'down')"
+                      {% if loop.last %}disabled{% endif %}>▼</button>
 
-          <button class="btn exbtn danger" type="button"
-                  onclick="deleteExcerpt({{ loop.index0 }})">✕</button>
-        </div>
+              <button class="btn exbtn danger" type="button"
+                      onclick="deleteExcerpt({{ loop.index0 }})">✕</button>
+            </div>
 
-        <div class="extext" id="ex_{{ loop.index0 }}">{{ x }}</div>
+            <div class="extext" id="ex_{{ loop.index0 }}">{{ x }}</div>
+          </div>
+        {% endfor %}
       </div>
-    {% endfor %}
-  </div>
-{% else %}
-  <div class="muted">No excerpts saved yet. Highlight text and click <b>Add Selected Text</b>.</div>
-{% endif %}
+    {% else %}
+      <div class="muted">No excerpts saved yet. Highlight text and click <b>Add Selected Text</b>.</div>
+    {% endif %}
 
   </div>
 
   <!-- Toggle controls ABOVE the cards -->
   <div class="togglebar">
-    <span class="small muted">View:</span>
-    <button class="btn" type="button" onclick="toggleCard('card-content')">Toggle content</button>
-    <button class="btn" type="button" onclick="toggleCard('card-images')">Toggle images</button>
+    <span class="small muted">Show/Hide sections:</span>
+    <button class="btn" type="button" onclick="toggleCard('card-content')">Toggle Source Content</button>
+    <button class="btn" type="button" onclick="toggleCard('card-images')">Toggle Detected Images</button>
     <button class="btn" type="button" onclick="showBoth()">Show both</button>
     <button class="btn" type="button" onclick="hideBoth()">Hide both</button>
   </div>
 
-  <!-- Source Content (as a card) -->
+  <!-- Source Content -->
   <div class="card" id="card-content">
     <div class="title">Source content</div>
     <div class="card-body">
@@ -133,14 +152,12 @@
     </div>
   </div>
 
-  <!-- Detected Images (as a card) -->
+  <!-- Detected Images -->
   <div class="card" id="card-images">
     <a id="detected-images"></a>
     <div class="title">Detected images</div>
 
     <div class="card-body">
-
-      {# Selected image summary + clear button #}
 
       {% if selected_image %}
         <div class="small" style="margin: 0 0 10px 0;">
@@ -168,6 +185,7 @@
                   {% if is_sel %}Selected{% else %}Select{% endif %}
                 </button>
 
+                {# Keep crop's page parameter as the REAL page URL (not content_id) #}
                 <button class="btn" type="button"
                         onclick="openCrop('{{ src|e }}', '{{ url|e }}')">Crop</button>
 
@@ -190,8 +208,6 @@
         <div class="small muted">No images detected.</div>
       {% endif %}
     </div>
-
-
   </div>
 
 </div>
@@ -199,7 +215,8 @@
 <script>
 /* Server state available to JS */
 const INDEX = {{ index }};
-const URL = {{ url | tojson }};
+const PAGE_URL = {{ url | tojson }};
+const CONTENT_ID = {{ content_id | tojson }};
 const CROPS = {{ crops | tojson }};
 
 function postForm(action, fields) {
@@ -221,7 +238,8 @@ function postForm(action, fields) {
 function composeBlurb() {
   postForm("/curate/compose_blurb", {
     index: INDEX,
-    url: URL
+    content_id: CONTENT_ID,
+    url: CONTENT_ID
   });
 }
 
@@ -229,7 +247,8 @@ function composeBlurb() {
 function selectImage(src) {
   postForm("/curate/select_image", {
     index: INDEX,
-    url: URL,
+    content_id: CONTENT_ID,
+    url: CONTENT_ID,
     img_src: src
   });
 }
@@ -237,8 +256,9 @@ function selectImage(src) {
 function clearSelectedImage() {
   postForm("/curate/select_image", {
     index: INDEX,
-    url: URL,
-    img_src: ""   // blank means "clear"
+    content_id: CONTENT_ID,
+    url: CONTENT_ID,
+    img_src: ""
   });
 }
 
@@ -253,27 +273,25 @@ function getSelectionText() {
   return (sel && sel.toString()) ? sel.toString().trim() : "";
 }
 
+
+let LAST_SELECTION = "";
+
 document.addEventListener("selectionchange", () => {
   const txt = getSelectionText();
+  LAST_SELECTION = txt; // keep a copy
   const btn = document.getElementById("btnAddExcerpt");
-  const box = document.getElementById("selectionPreview");
-  if (!btn || !box) return;
-
-  if (!txt) {
-    box.textContent = "Nothing selected yet.";
-    btn.disabled = true;
-    return;
-  }
-  box.textContent = txt.length > 800 ? (txt.slice(0, 800) + "…") : txt;
-  btn.disabled = false;
+  if (!btn) return;
+  btn.disabled = !txt;
 });
 
 function addSelectedText() {
-  const txt = getSelectionText();
+  const txt = getSelectionText() || LAST_SELECTION;
   if (!txt) return;
+
   postForm("/curate/add_excerpt", {
     index: INDEX,
-    url: URL,
+    content_id: CONTENT_ID,
+    url: CONTENT_ID,
     excerpt: txt
   });
 }
@@ -281,7 +299,8 @@ function addSelectedText() {
 function deleteExcerpt(i) {
   postForm("/curate/delete_excerpt", {
     index: INDEX,
-    url: URL,
+    content_id: CONTENT_ID,
+    url: CONTENT_ID,
     excerpt_index: i
   });
 }
@@ -289,7 +308,8 @@ function deleteExcerpt(i) {
 function moveExcerpt(i, direction) {
   postForm("/curate/move_excerpt", {
     index: INDEX,
-    url: URL,
+    content_id: CONTENT_ID,
+    url: CONTENT_ID,
     excerpt_index: i,
     direction: direction
   });
@@ -298,14 +318,16 @@ function moveExcerpt(i, direction) {
 function removeLastExcerpt() {
   postForm("/curate/pop_excerpt", {
     index: INDEX,
-    url: URL
+    content_id: CONTENT_ID,
+    url: CONTENT_ID
   });
 }
 
 function clearExcerpts() {
   postForm("/curate/clear_excerpts", {
     index: INDEX,
-    url: URL
+    content_id: CONTENT_ID,
+    url: CONTENT_ID
   });
 }
 
@@ -331,7 +353,6 @@ function hideBoth() {
   setCardCollapsed("card-images", true);
 }
 
-/* Remember open/closed state for cards */
 function rememberCardState(id) {
   try {
     const el = document.getElementById(id);

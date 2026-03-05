@@ -1,3 +1,4 @@
+# templates.py
 from __future__ import annotations
 
 import html
@@ -14,41 +15,32 @@ def _esc(s: object) -> str:
 
 def html_page(
     candidates,
-    doc_candidates,
     prechecked,
     subject,
     intro,
     status,
     has_blurb_by_url,
-    has_blurb_by_docid,
     has_image_by_url=None,
-    has_image_by_docid=None,
 ) -> bytes:
     has_image_by_url = has_image_by_url or {}
-    has_image_by_docid = has_image_by_docid or {}
 
     html = render(
         "candidates.html",
         title="TSL Candidate Review",
         page_css="/static/css/candidates.css",
         candidates=candidates,
-        doc_candidates=doc_candidates,
         prechecked=prechecked,
         subject=subject,
         intro=intro,
         status=status,
         has_blurb_by_url=has_blurb_by_url,
-        has_blurb_by_docid=has_blurb_by_docid,
-        # NEW (use real values if you have them; otherwise placeholders are fine)
         candidates_path="output/candidates_latest.json",
         selected_path="selected.yaml",
         curation_path="curation.yaml",
         selected_count=len(prechecked),
         show_export_zip=True,
         has_image_by_url=has_image_by_url,
-        has_image_by_docid=has_image_by_docid,
     )
-
     return html.encode("utf-8")
 
 
@@ -60,35 +52,53 @@ def _get_attr(obj, name: str, default=None):
 
 
 def curate_page_html(
-    idx: int,
-    total: int,
-    c,
-    cleaned: dict,
+    index,
+    total,
+    candidate,
+    cleaned,
     *,
-    final_blurb: str = "",
-    excerpts: list[str] | None = None,
-    selected_image: str = "",
-    status: str = "",
-    crops: dict | None = None,
+    candidate_id: str = "",
+    prev_id: str = "",
+    next_id: str = "",
+    final_blurb="",
+    excerpts=None,
+    selected_image="",
+    status="",
+    crops=None,
+    curated_title="",
+    curated_subtitle="",
 ) -> bytes:
+
+    c = candidate
+    idx = index
+    total_count = total
     excerpts = excerpts or []
     crops = crops or {}
 
     # Candidate fields (object or dict)
     if isinstance(c, dict):
-        url = (c.get("url") or c.get("original_url") or "").strip()
-        cand_title = c.get("title") or ""
-        original_url = c.get("original_url") or url
-        json_url = c.get("json_url") or ""
+        raw_url = (c.get("url") or c.get("original_url") or "").strip()
+        cand_title = (c.get("title") or "").strip()
+        original_url = (c.get("original_url") or raw_url).strip()
+        json_url = (c.get("json_url") or "").strip()
     else:
-        url = (str(_get_attr(c, "url", "")) or str(_get_attr(c, "original_url", "")) or "").strip()
-        cand_title = str(_get_attr(c, "title", "") or "")
-        original_url = str(_get_attr(c, "original_url", "") or url)
-        json_url = str(_get_attr(c, "json_url", "") or "")
+        raw_url = (
+            str(_get_attr(c, "url", "")) or str(_get_attr(c, "original_url", "")) or ""
+        ).strip()
+        cand_title = str(_get_attr(c, "title", "") or "").strip()
+        original_url = (str(_get_attr(c, "original_url", "") or raw_url)).strip()
+        json_url = str(_get_attr(c, "json_url", "") or "").strip()
 
-    # Prev/Next
-    prev_url = f"/curate/{idx-1}" if idx > 0 else ""
-    next_url = f"/curate/{idx+1}" if idx < (total - 1) else ""
+    # Canonical key + real page url
+    page_url = raw_url
+    if raw_url.startswith("web:"):
+        page_url = raw_url[len("web:") :].strip()
+
+    content_id = f"web:{page_url}" if page_url else raw_url
+
+    # Prev/Next now use stable ids (not list positions)
+    prev_url = f"/curate?id={quote(prev_id)}" if prev_id else ""
+    next_url = f"/curate?id={quote(next_id)}" if next_id else ""
 
     # Cleaned title/body/images (robust keys)
     title = (
@@ -127,7 +137,8 @@ def curate_page_html(
         page_css="/static/css/curate_article.css",
         index=idx,
         total=total,
-        url=url,
+        url=page_url,          # real URL
+        content_id=content_id, # canonical id
         original_url=original_url,
         json_url=json_url,
         prev_url=prev_url,
@@ -138,6 +149,8 @@ def curate_page_html(
         selected_image=selected_image or "",
         crops=crops,
         cleaned_html=cleaned_html,
+        curated_title=curated_title,
+        curated_subtitle=curated_subtitle,
     )
     return html.encode("utf-8")
 

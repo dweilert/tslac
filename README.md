@@ -276,3 +276,399 @@ I sorry please convert the config.py to a JSON or YAML file and use a web a page
 
 ---
 
+#################
+#################
+
+
+
+TSLAC Newsletter Helper – Project Context Header
+
+Project Name: TSLAC Newsletter Helper
+Repo: https://github.com/dweilert/tslac
+Repo Branch: refactor/http-router
+
+Runtime: Custom Python web app (custom web/router, not Flask/Django)
+Python Version: 3.12
+Architecture Style: Routes → Services → Storage → Templates
+Rendering: Server-side templates (render() helper)
+Data Storage: YAML + JSON files in local filesystem
+ 
+-- Architecture Overview. --
+
+Routing Layer
+- web/router.py
+- routes/candidates.py
+- routes/curate_article.py
+- routes/curate_doc.py
+- routes/config.py
+- routes/watch.py (being deprecated)
+
+Services Layer
+- services/candidates_service.py
+- services/curate_article_service.py
+- services/curate_doc_service.py (being unified)
+- services/watch_service.py
+- services/api_service.py
+
+Storage Layer
+- storage/collector_store.py
+- storage/curation_store.py
+- storage/selected_store.py
+- watch_store.py
+
+Scraping / Collection
+- collect/collector.py
+- collect/rules.py
+- watch/scan.py
+- watch/fetch.py
+- watch/parse.py
+- watch/score.py
+
+
+Milestone 2 Objectives:
+
+Replace/remove the curate_doc process and use the curate_article process instead.  This will provide a single process to curate the candidate article without respect of where the article information was obtained.  
+
+This will require the reading of files found in the g-drive or local directory.  When an item from either the g-drive or local directory will need to be read. The content will need to be shown in the Curate screen, if possible, so portions of the content can be selected to create one or more excerpts.  If the document cannot be shown in the curate display area a second browser window should be opened for viewing if possible.  If neither action can be performed the user should be told how to view the document.  
+
+Once a document is located and it can processed the located text can be shown in the display area if the actual document cannnot be shown.  The displaying of the document text should be performed if possible and override displaying the actual document in the display area.  So simply put, get the document text and show it in the display area if possible, otherwise show the document in the display area, and if unable to display there open a separate browser window and if unable there tell the user how to view the document.
+
+On the curate screen the user will need to be able to enter a title and subtitle along with the final blurb and selected image.
+
+A needed step is to modify the config screen to include the following parameters that need to be move from the .env file and into the config.yaml: 
+
+# input mode
+DOC_INPUT_MODE=gdrive         # gdrive | local
+
+# Drive mode (name lookup first-time; cache IDs)
+GDRIVE_INPUT_FOLDER_NAME=tslac_input
+GDRIVE_ARCHIVE_FOLDER_NAME=tslac_saved
+
+# Local mode
+LOCAL_INPUT_DIR=/Users/bob/tslac_input_docs
+LOCAL_ARCHIVE_DIR=/Users/bob/tslac_saved_docs
+
+# Message level for logging (DEBUG, INFO, WARNING, ERROR)
+LOG_LEVEL=DEBUG
+
+What else do you need to know to move forward?
+
+
+Question 1: What is the canonical ID for a “document candidate”?
+Answer: 
+There is also code in the repository for Document Processing in these locations: 
+- watch/scan.py
+- watch/fetch.py
+- watch/parse.py
+- watch/score.py
+Can yo review this code to aid in answering this question
+
+Question 2: What’s the current shape of doc candidates on disk?
+Answer: the current output from the doc scan is in output/assets/watch_results_latest.json
+
+I'll provide the code once you prompt for the modules.
+
+Question 3: What document types do you expect to support first?
+Answer:
+Pdf, Word, Google Docs, Plain text, Rich text
+
+Question 4: Google Drive auth model
+Answer: The current implementation uses OAuth2.0 with a file named credentials.json in the root
+
+Question 5: “Show text first” rule: how strict is it?
+Answer: It is necessary to create the excerpts and the final blurb.  Without text this will be hand entry of information.  The manual toggle on the curate page would be nice.
+
+Question 6: Curate UI fields and persistence
+Question 6a: Should title/subtitle be stored per-candidate in curation_store (same as blurb), and then exported to Constant Contact?
+Answer 6a:
+Yes for both.
+
+Questin 6b: Do you want subtitle optional? (assume yes)
+Answer:
+Yes
+
+Question 6c: What’s the “selected image” source: URL only, or allow uploading/local? (Most likely URL only right now.)
+Answer: URL web and and for local files support file:// if possible
+
+
+Question 7: Config screen: storage format + validation rules
+Question 7a: Do you want the config screen to edit all these fields directly (radio + text inputs), or keep some hidden/advanced?
+Answer 7a: 
+Direct edit of the fields
+
+Question 7b: For paths: should the app validate that local dirs exist and show a warning if not?
+Answer 7b:
+Yes validate and warn
+
+Question 7c: Should LOG_LEVEL be applied immediately or only on restart?
+Answer 7c: restart only
+
+Question 8: How “unified” should routing be?
+Answer 8: 
+Use Option A. One curate route
+
+Question 9: What should happen after curation?
+Answer 9: There is a 'back to list' button on the curate screen. The user should stay on the curate screen until they are done with all content and then press the 'back to list' button.
+
+
+
+===============================================================================
+
+===============================================================================
+
+===============================================================================
+
+===============================================================================
+
+Below is the **complete Milestone 2 plan**, but structured so we can execute it **one task at a time**. After the plan, I’ll tell you exactly what **Task 1** is (the smallest, safest change that unlocks everything).
+
+---
+
+# Milestone 2 Complete Plan
+
+## Goal
+
+Replace/remove `curate_doc` and use the `curate_article` curation flow for **all** candidates (web + gdrive + local) via **one curate route**:
+
+* `/curate?id=<candidate_id>`
+
+and a single unified `store/candidates.json`.
+
+---
+
+## Data Model Decisions (locked)
+
+### Candidate record (in `store/candidates.json`)
+
+Keep existing fields and add:
+
+* `id` (canonical)
+* `origin` (`web|gdrive|local`)
+* optional `doc` metadata
+
+Source rules:
+
+* web keeps existing `source` (e.g., Carousel)
+* gdrive uses `source="Doc"`
+* local uses `source="Local"`
+
+Canonical IDs:
+
+* `web:<url>`
+* `gdrive:<file_id>`
+* `local:<sha1(abs_path)>` and store `doc.local_path`
+
+### Curation data (in `store/curation*.json` wherever you store it)
+
+Key by `id`. For backward compatibility, when `origin=web`, fall back to `url` if old data exists.
+
+Curation fields to persist:
+
+* `title`
+* `subtitle` (optional)
+* `blurb`
+* `image_url` (supports http(s) and file://)
+
+---
+
+## UX / Curate Screen Behavior (locked)
+
+Text-first workflow:
+
+1. Attempt to extract text
+2. If extracted text exists → show it in curate display area (default)
+3. Offer toggle: “View extracted text” / “View original”
+4. If cannot embed original → provide “Open in new tab” link
+5. If cannot open → show instructions
+
+User stays on curate page until they press “Back to list”.
+
+---
+
+## Config Changes (locked)
+
+Move these into `config.yaml` (editable via config screen):
+
+* `doc_input_mode` (`gdrive|local`)
+* `gdrive_input_folder_name`
+* `gdrive_archive_folder_name`
+* `local_input_dir`
+* `local_archive_dir`
+* `gdrive_credentials_path`
+* `gdrive_token_path`
+* `log_level` (restart required)
+
+Validation:
+
+* gdrive credentials file exists (warn/error)
+* local dirs exist (warn)
+* log_level restart-only
+
+---
+
+# Task List (execute in order, one task at a time)
+
+## Task 1 — Add `id` + `origin` support to candidates storage (safe foundation)
+
+**Files:** `storage/collector_store.py` (+ any candidate model if you have one)
+
+* When loading `candidates.json`, backfill:
+
+  * `id="web:"+url` if missing
+  * `origin="web"` if missing
+* When saving, always include `id` and `origin`
+* Keep old format readable
+
+✅ No UI changes yet
+✅ No route changes yet
+✅ Low risk, easy to test
+
+**Done when:** app runs and loads candidates list unchanged.
+
+---
+
+## Task 2 — Introduce unified candidate lookup by `id`
+
+**Files:** wherever you load candidates for UI routes (likely `routes/candidates.py` and/or service)
+
+* Add helper: `find_candidate_by_id(candidates, id)`
+
+✅ Still no curate changes
+✅ Enables `/curate?id=...` next
+
+---
+
+## Task 3 — Add the unified curate route `/curate`
+
+**Files:** `routes/curate.py` (new) or modify existing `routes/curate_article.py`
+
+* Route: `GET /curate?id=...`
+* Find candidate by id
+* For now, **only handle `origin=web`** and delegate to existing curate_article service/template
+
+✅ Web curate still works
+✅ Doesn’t touch doc processing yet
+✅ Establishes the route contract
+
+---
+
+## Task 4 — Expand curation storage to persist title/subtitle/image_url keyed by `id`
+
+**Files:** `storage/curation_store.py` (or your curation store module), curate service(s)
+
+* Add fields to saved curation record
+* Read-by-id, fallback-to-url for older web records
+* Update the curate page to display/edit these fields
+
+✅ Still works for web
+✅ Prepares doc curation to reuse same storage
+
+---
+
+## Task 5 — Move/refactor gdrive service into services layer + config-driven paths
+
+**Files:** move `gdrive_service.py` → `services/gdrive_client.py`
+
+* `get_drive_service(credentials_path, token_path)`
+* `find_folder_id(service, folder_name)`
+* `list_files_in_folder(service, folder_id)`
+* Add folder-id caching to `state/gdrive_folders.json` (optional in this task)
+
+✅ Prepares for doc candidate ingestion
+✅ No UI impact
+
+---
+
+## Task 6 — Build “doc candidate ingestion” and merge into the single candidates list
+
+**Files:** new `services/doc_candidate_service.py` (or `services/inputs/*`)
+
+* If `doc_input_mode=gdrive`:
+
+  * list files in input folder
+  * convert each into a Candidate record with:
+
+    * `id="gdrive:<file_id>"`
+    * `origin="gdrive"`
+    * `source="Doc"`
+    * `url=webViewLink` (needs extra fields on list call)
+* If `doc_input_mode=local`:
+
+  * scan directory for pdf/docx/rtf/txt
+  * generate local candidates
+* Merge doc candidates into existing web candidates
+* Save unified `store/candidates.json`
+
+✅ UI list now shows docs mixed in
+✅ Curate route still only web until next task
+
+---
+
+## Task 7 — Implement document text extraction pipeline (text-first)
+
+**Files:** new `services/doc_text_service.py`
+
+* Input: Candidate
+* Output:
+
+  * `extracted_text` (string or None)
+  * `viewer_url` (for open-new-tab)
+  * `embed_url` (if possible)
+  * `view_instructions` (fallback)
+
+Support types (in priority order):
+
+* Plain text
+* RTF (via striprtf)
+* DOCX (python-docx)
+* PDF (pypdf or similar)
+* Google Docs export as text
+* (later) Google Drive “download” for PDF/DOCX stored in Drive
+
+✅ Doesn’t require UI changes yet (but will be used next)
+
+---
+
+## Task 8 — Enable curate for `origin=gdrive|local` using same template
+
+**Files:** `services/curate_article_service.py` (or unified curate service), template changes
+
+* When candidate is doc/local:
+
+  * call doc_text_service
+  * show extracted text by default
+  * show toggle + “Open original” link
+
+✅ This is the milestone’s main “unification”
+
+---
+
+## Task 9 — Retire curate_doc routes and unify navigation
+
+**Files:** remove/stop registering `routes/curate_doc.py`, clean up menu links
+
+* Ensure all doc items go through `/curate?id=...`
+* Remove duplicate code paths
+
+✅ curate_doc process removed as requested
+
+---
+
+## Task 10 — Archive behavior for docs
+
+**Files:** gdrive/local services + maybe storage state
+
+* When user presses “Back to list” OR clicks an explicit “Archive” button (your call):
+
+  * if gdrive: move file to archive folder
+  * if local: move file to archive dir
+
+(We can keep this optional if you want a safer first release.)
+
+---
+
+# What we do next (Task 1)
+
+We start with **Task 1: update `storage/collector_store.py` to support `id` + `origin`**.
+
+To keep this one-task-per-response, paste **just** your current `storage/collector_store.py` (or at least the parts with `load_candidates_file()` and `save_candidates_json()`), and I’ll return a drop-in replacement for that file (or a small patch) implementing Task 1 only.

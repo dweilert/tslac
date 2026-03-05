@@ -1,3 +1,4 @@
+# storage/selected_store.py
 from __future__ import annotations
 
 import os
@@ -32,16 +33,18 @@ def _norm_urls(urls: list[str]) -> list[str]:
     return out
 
 
+def _web_id_for_url(url: str) -> str:
+    u = (url or "").strip()
+    return f"web:{u}" if u else ""
+
+
 def _atomic_write_text(path: Path, text: str, *, encoding: str = "utf-8") -> None:
     """
     Atomic file write:
       - write to a sibling temp file
       - flush + fsync
       - Path.replace() into place
-
-    This avoids partial/corrupt YAML if the process is interrupted.
     """
-
     path.parent.mkdir(parents=True, exist_ok=True)
 
     tmp = path.with_name(f"{path.name}.tmp.{os.getpid()}.{int(time.time() * 1000)}")
@@ -67,6 +70,10 @@ def load_selected() -> dict[str, Any]:
 
     Always returns a dict.
     If the file is missing or invalid YAML, returns {}.
+
+    Back-compat:
+      - items may be [{"url": "..."}] (old)
+      - or [{"id": "...", "url": "..."}] (new)
     """
     if not SELECTED_FILE.exists():
         return {}
@@ -76,21 +83,34 @@ def load_selected() -> dict[str, Any]:
     except Exception:
         return {}
 
-    return _as_dict(data)
+    doc = _as_dict(data)
+
+    # Backfill ids for old items (in-memory only; we don’t rewrite automatically)
+    items = doc.get("items")
+    if isinstance(items, list):
+        for it in items:
+            if isinstance(it, dict):
+                if not it.get("id") and isinstance(it.get("url"), str) and it["url"].strip():
+                    it["id"] = _web_id_for_url(it["url"])
+
+    return doc
 
 
 def save_selected(subject: str, intro: str, urls: list[str]) -> None:
     """
     Persist the selected issue metadata and selected items.
 
-    Schema:
+    Schema (new):
       {
         "month": "YYYY-MM",
         "subject": "...",
         "intro": "...",
-        "items": [{"url": "..."}, ...],
+        "items": [{"id": "web:<url>", "url": "<url>"}, ...],
         "updated_at": "YYYY-MM-DDTHH:MM:SS"
       }
+
+    Back-compat:
+      - Function signature still accepts urls list (web items only for now)
     """
     urls2 = _norm_urls(urls)
 
@@ -99,7 +119,7 @@ def save_selected(subject: str, intro: str, urls: list[str]) -> None:
         "month": now.strftime("%Y-%m"),
         "subject": (subject or "").strip() or DEFAULT_SUBJECT,
         "intro": (intro or "").strip() or DEFAULT_INTRO,
-        "items": [{"url": u} for u in urls2],
+        "items": [{"id": _web_id_for_url(u), "url": u} for u in urls2],
         "updated_at": now.isoformat(timespec="seconds"),
     }
 

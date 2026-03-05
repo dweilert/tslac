@@ -1,0 +1,9 @@
+conda deactivate 2>/dev/null || true
+conda env remove -n newsletter -y
+
+conda create -n newsletter python=3.12 -y
+conda activate newsletter
+
+python -m pip install -U pip
+pip install -r requirements.txt
+pip install -r requirements-dev.txt

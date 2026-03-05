@@ -8,8 +8,6 @@ from googleapiclient.discovery import build
 
 from logutil import debug, info
 
-SCOPES = ["https://www.googleapis.com/auth/drive"]
-
 TOKEN_FILE = "token.json"
 CREDENTIALS_FILE = "credentials.json"
 FOLDER_STATE_FILE = "state/gdrive_folders.json"
