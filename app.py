@@ -10,7 +10,6 @@ from routes import (
     candidates,
     crop,
     curate_article,
-    curate_doc,
     export as export_routes,
     health,
     img_proxy,
@@ -29,7 +28,6 @@ def build_router(server) -> Router:
     candidates.register(r)
     config_ui.register(r),
     crop.register(r)
-    curate_doc.register(r)
     curate_article.register(r)
     export_routes.register(r),
     health.register(r)

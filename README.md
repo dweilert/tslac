@@ -16,14 +16,12 @@ Routing Layer
 - web/router.py
 - routes/candidates.py
 - routes/curate_article.py
-- routes/curate_doc.py
 - routes/config.py
 - routes/watch.py (being deprecated)
 
 Services Layer
 - services/candidates_service.py
 - services/curate_article_service.py
-- services/curate_doc_service.py (being unified)
 - services/watch_service.py
 - services/api_service.py
 
@@ -299,14 +297,12 @@ Routing Layer
 - web/router.py
 - routes/candidates.py
 - routes/curate_article.py
-- routes/curate_doc.py
 - routes/config.py
 - routes/watch.py (being deprecated)
 
 Services Layer
 - services/candidates_service.py
 - services/curate_article_service.py
-- services/curate_doc_service.py (being unified)
 - services/watch_service.py
 - services/api_service.py
 

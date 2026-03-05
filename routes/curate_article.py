@@ -26,10 +26,8 @@ from services.curate_article_service import (
     save_title,
     select_image,
 )
-from services.curate_doc_service import (
-    build_view_by_doc_id,
-)
-from templates import curate_doc_page_html, curate_page_html
+
+from templates import curate_page_html
 from web.errors import BadRequestError
 from web.request import Request
 from web.response import Response
@@ -100,66 +98,6 @@ def _redirect_curate_no_anchor(idx: int, status: str) -> Response:
 # ----------------------------
 # GET handlers
 # ----------------------------
-def get_curate_by_idOLD(req: Request, params: dict[str, Any] | None = None) -> Response:
-    """
-    Unified entrypoint: /curate?id=<canonical id>
-
-    - web:*  -> resolve to idx in persisted web list, redirect to /curate/<idx>
-    - gdrive:* -> render doc curate page directly (no /curate_doc URL)
-    """
-    raw_id = (req.query_first.get("id", "") or "").strip()
-    if not raw_id:
-        return Response.redirect("/?" + urlencode({"status": "Missing id for /curate"}, doseq=False))
-
-    # Canonicalize
-    cid = raw_id
-    if cid.startswith("doc:"):
-        cid = "gdrive:" + cid[len("doc:"):].strip()
-    if cid.startswith("http://") or cid.startswith("https://"):
-        cid = "web:" + cid
-
-    status = (req.query_first.get("status", "") or "").strip()
-
-    # ---- DOC: render doc curate page at /curate?id=gdrive:... ----
-    if cid.startswith("gdrive:"):
-        doc_id = cid[len("gdrive:"):].strip()
-        if not doc_id:
-            return Response.redirect("/?" + urlencode({"status": f"Curate failed: bad id={raw_id!r}"}, doseq=False))
-
-        try:
-            view = build_view_by_doc_id(doc_id)
-            body = curate_doc_page_html(view=view, status=status)
-            return Response.html(body)
-        except BadRequestError as e:
-            return Response.bad_request(str(e))
-        except Exception as e:
-            return Response.redirect("/?" + urlencode({"status": f"Doc curate failed: {e}"}, doseq=False))
-
-    # ---- WEB: resolve to index and keep existing /curate/<idx> route ----
-    if not cid.startswith("web:"):
-        cid = "web:" + cid
-
-    candidates = load_persisted_candidates()
-
-    def _cand_web_id(c: Any) -> str:
-        u = (getattr(c, "url", "") or getattr(c, "original_url", "") or "").strip()
-        if not u:
-            return ""
-        return u if u.startswith("web:") else ("web:" + u)
-
-    idx = None
-    for i, c in enumerate(candidates):
-        if _cand_web_id(c) == cid:
-            idx = i
-            break
-
-    if idx is None:
-        return Response.redirect(
-            "/?" + urlencode({"status": f"Curate failed: candidate not found for id={cid}"}, doseq=False)
-        )
-
-    return _redirect_curate_no_anchor(idx, "Opened curate view")
-
 
 def get_curate_by_id(req: Request, params: dict[str, Any] | None = None) -> Response:
     cid = (req.query_first.get("id", "") or "").strip()

@@ -10,9 +10,6 @@
 - GET /img?...                 image proxy returns image bytes
 - POST /curate/save_crop        crop persists and redirects
 
-- GET /curate_doc?doc_id=...   loads doc curate page
-- POST /curate_doc/save        saves doc blurb
-
 - GET /watch                   watch page loads
 - POST /watch/save             saves watch config
 - GET /watch/status            returns JSON
