@@ -3,10 +3,10 @@ web:https://www.tsl.texas.gov/node/70520:
     and Criminal Justice at Indiana University Bloomington and will conduct research
     at TSLAC in support of her project, “Black Women and Convict Leasing in the Jim
     Crow South.” Her research on Black women in Texas prisons at the turn of the twentieth
-    century will shed light on the approach that
-  updated_at: '2026-03-05T08:13:29'
-  title: T234
-  subtitle: SS Number
+    century will shed light on the approach that 99
+  updated_at: '2026-03-05T09:32:11'
+  title: T234 99
+  subtitle: SS Number 99
 web:https://www.tsl.texas.gov/texasamerica250exhibit:
   final_blurb: fds
   updated_at: '2026-03-04T17:09:31'
@@ -24,3 +24,24 @@ web:https://www.tsl.texas.gov/node/70476:
     State Library
   subtitle: abc
   excerpts: []
+web:https://www.tsl.texas.gov/workshops:
+  excerpts:
+  - The Texas Historical Records Advisory Board (THRAB) presents FREE professional
+    development opportunities for archivists, librarians, and other staff members
+    in Texas archival repositories in fulfillment of its initiative to support continuing
+    education and training for those working to preserve and provide access to the
+    historical record of Texas.
+  - "If you would like to be added to our mailing list, visit: Newsletter\r\n\r\n\
+    Funding provided by the National Historical Publications and Records Commission\
+    \ (NHPRC)."
+  updated_at: '2026-03-05T09:33:25'
+  final_blurb: "The Texas Historical Records Advisory Board (THRAB) presents FREE\
+    \ professional development opportunities for archivists, librarians, and other\
+    \ staff members in Texas archival repositories in fulfillment of its initiative\
+    \ to support continuing education and training for those working to preserve and\
+    \ provide access to the historical record of Texas.\r\n\r\nIf you would like to\
+    \ be added to our mailing list, visit: Newsletter\r\n\r\nFunding provided by the\
+    \ National Historical Publications and Records Commission (NHPRC)."
+  title: Texas Historical Records Advisory Board (THRAB) THRAB Professional Development
+    and Workshops | Texas State Library
+  subtitle: Happy

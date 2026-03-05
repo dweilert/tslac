@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import date, datetime
 from typing import Any
 
-from logutil import debug, info
+from logutil import debug
 from models import Candidate
 from web.fetch import FetchError, fetch_html
 
@@ -164,7 +164,6 @@ def collect_candidates(
             today=today,
             days_back=90,
         )
-        debug(f"collector: parsed /info news count={len(news_raw)}")
 
     except FetchError as e:
         debug(f"collector: /info fetch FAILED: {e}")
@@ -174,45 +173,18 @@ def collect_candidates(
         debug(f"collector: /info parse FAILED: {e}")
         errors.append(f"Parse failure for {info_url}: {e}")
 
-    # ---------------------------
-    # Combine + seen filter
-    # ---------------------------
-    #info(f"SCRAPE home counts={_count_by_source(home_raw)} total={len(home_raw)}")
-    #info(f"SCRAPE info counts={_count_by_source(news_raw)} total={len(news_raw)}")
-
-    raw = list(home_raw) + list(news_raw)
-
-    before = len(raw)
-    raw = [c for c in raw if c.url not in seen_urls]
-    removed = before - len(raw)
-
-    #info(f"SCRAPE after_seen counts={_count_by_source(raw)} total={len(raw)} removed={removed}")
 
     # ---------------------------
     # Apply rules + finalize
     # ---------------------------
     results: list[Candidate] = []
-    # ... build results ...
 
-    #info(
-    #    f"SCRAPE final counts={_count_by_source(results)} total={len(results)} errors={len(errors)}"
-    #)
 
     # ---------------------------
     # Combine + seen filter
     # ---------------------------
     raw = list(home_raw) + list(news_raw)
-    #info(f"SCRAPE collector: raw combined count={len(raw)}")
-    #info(
-    #    f"SCRAPE collector: raw sources before seen={sorted({getattr(c, 'source', '?') for c in raw})}"
-    #)
-
-    before = len(raw)
     raw = [c for c in raw if c.url not in seen_urls]
-    #info(f"SCRAPE collector: seen filter removed={before - len(raw)} remaining={len(raw)}")
-    #info(
-    #    f"SCRAPE collector: raw sources after seen={sorted({getattr(c, 'source', '?') for c in raw})}"
-    #)
 
     # ---------------------------
     # Apply rules + finalize

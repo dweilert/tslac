@@ -5,7 +5,6 @@ import html
 from typing import Any
 from urllib.parse import quote
 
-from docsys.store import load_doc_candidates
 from render import render
 
 
@@ -71,7 +70,6 @@ def curate_page_html(
 
     c = candidate
     idx = index
-    total_count = total
     excerpts = excerpts or []
     crops = crops or {}
 

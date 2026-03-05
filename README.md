@@ -668,3 +668,642 @@ Support types (in priority order):
 We start with **Task 1: update `storage/collector_store.py` to support `id` + `origin`**.
 
 To keep this one-task-per-response, paste **just** your current `storage/collector_store.py` (or at least the parts with `load_candidates_file()` and `save_candidates_json()`), and I’ll return a drop-in replacement for that file (or a small patch) implementing Task 1 only.
+
+
+
+=======================
+=======================
+=======================
+
+Good time to pause and take stock. You’ve already done the **hard architectural shift**: moving from two parallel pipelines (web + doc) to a **single canonical candidate model**. That was the risky part. Now the remaining work is mostly **cleanup, consolidation, and a few functional gaps**.
+
+Below is a clear checklist of what remains from the milestone we started.
+
+---
+
+# Milestone: Unified Candidate + Unified Curate Pipeline
+
+Goal:
+**One candidate list → one curate UI → one curation store → canonical IDs**
+
+---
+
+# ✅ Completed
+
+These pieces are already working based on your last messages.
+
+### 1. Canonical content IDs
+
+You now use:
+
+```
+web:https://...
+gdrive:<docid>
+```
+
+Used by:
+
+* candidates list
+* curate route
+* curation.yaml
+
+This eliminates the old `doc_id` vs `url` split.
+
+---
+
+### 2. Unified candidate list
+
+Your UI now shows **web + doc candidates together**.
+
+This required:
+
+```
+_ui_from_web_candidate()
+_ui_from_doc_candidate()
+```
+
+Both produce:
+
+```
+UICandidate(
+    url=content_id
+    open_url=...
+    title=...
+    source=...
+)
+```
+
+Correct.
+
+---
+
+### 3. Curate entry point unified
+
+You now use:
+
+```
+/curate?id=<content_id>
+```
+
+instead of
+
+```
+/curate/<idx>
+/curate_doc?doc_id=
+```
+
+This was the biggest routing change.
+
+---
+
+### 4. Canonical keys in curation.yaml
+
+You confirmed entries like:
+
+```
+web:https://www.tsl.texas.gov/node/70520:
+  final_blurb: ...
+```
+
+That’s exactly the correct direction.
+
+---
+
+### 5. UI cleanup
+
+You fixed the layout so:
+
+* One **Article Candidates card**
+* Rows for each candidate
+
+---
+
+# ⚠️ Remaining Functional Work
+
+These are the things still left to fully complete the milestone.
+
+---
+
+# 1. Finish `build_view_by_content_id()`
+
+This service must fully replace:
+
+```
+build_view_by_index()
+build_view_by_doc_id()
+```
+
+It should handle:
+
+```
+web:
+   fetch + clean article
+   build CurateView
+
+gdrive:
+   load doc candidate
+   construct cleaned dict
+   build CurateView
+```
+
+Right now this is partially implemented.
+
+---
+
+# 2. Remove `/curate/<idx>` route
+
+If it still exists anywhere:
+
+```
+router.get("/curate/<idx>")
+```
+
+Remove it.
+
+You want **only**:
+
+```
+/curate?id=<content_id>
+```
+
+---
+
+# 3. Delete doc-curate pipeline
+
+Once docs open successfully in the unified curate screen, delete:
+
+```
+routes/curate_doc.py
+services/curate_doc_service.py
+templates/curate_doc.html
+```
+
+and remove route registrations.
+
+You already started this discussion.
+
+---
+
+# 4. Remove watcher shim
+
+You asked about this earlier.
+
+Delete:
+
+```
+watcher.py
+```
+
+and update imports to:
+
+```
+watch.runtime
+watch.scan
+```
+
+---
+
+# 5. Simplify `templates.html_page()`
+
+Right now you temporarily added compatibility parameters.
+
+Eventually remove:
+
+```
+doc_candidates
+has_blurb_by_docid
+has_image_by_docid
+```
+
+so it becomes:
+
+```
+html_page(
+    candidates,
+    prechecked,
+    subject,
+    intro,
+    status,
+    has_blurb_by_url,
+    has_image_by_url,
+    candidate_ids,
+)
+```
+
+---
+
+# 6. Normalize doc candidate IDs
+
+You already hit this error:
+
+```
+Doc not found: 174V1bg...
+```
+
+The fix is to ensure:
+
+```
+docsys.store.load_doc_candidates()
+```
+
+returns **raw IDs only**, and canonicalization happens only in the UI/service layer.
+
+---
+
+# 7. Remove legacy candidate persistence
+
+You earlier had two candidate files:
+
+```
+candidates.json
+doc_candidates.json
+```
+
+Now you only want:
+
+```
+candidates_latest.json
+```
+
+Confirm that:
+
+```
+routes/candidates.py
+services
+collect
+```
+
+no longer reference doc candidates separately.
+
+---
+
+# 8. Clean up import graph
+
+You started doing this.
+
+Check for dead modules:
+
+```
+rg -n "curate_doc"
+rg -n "doc_candidates"
+rg -n "watcher"
+```
+
+Then remove them.
+
+---
+
+# 9. Verify POST actions work for docs
+
+These routes must work for **both web and gdrive** IDs:
+
+```
+post_curate_add_excerpt
+post_curate_pop_excerpt
+post_curate_clear_excerpts
+post_curate_compose_blurb
+post_curate_save
+```
+
+All should store under:
+
+```
+content_id
+```
+
+not `doc_id`.
+
+---
+
+# 10. Remove index dependence in CurateView
+
+Right now CurateView includes:
+
+```
+idx
+total
+```
+
+Eventually navigation should be based on **content_id ordering**, not index.
+
+This is optional for this milestone.
+
+---
+
+# Optional Improvements (recommended but not required)
+
+These will simplify your codebase further.
+
+### A. Move canonical ID helpers into dedicated module
+
+```
+services/content_ids.py
+```
+
+Functions:
+
+```
+canonical_content_id()
+real_web_url()
+is_web_id()
+is_doc_id()
+```
+
+---
+
+### B. Split candidates logic
+
+Right now `routes/candidates.py` is getting big again.
+
+Consider:
+
+```
+services/candidate_service.py
+```
+
+for:
+
+```
+load_persisted_candidates()
+normalize_candidates()
+merge_doc_candidates()
+```
+
+---
+
+### C. Add type for candidates
+
+Instead of `dict[str,Any]` everywhere.
+
+```
+@dataclass
+class Candidate
+```
+
+---
+
+# Rough Completion Estimate
+
+| Area                          | Status |
+| ----------------------------- | ------ |
+| Canonical IDs                 | ✅      |
+| Unified candidate list        | ✅      |
+| Unified curate route          | ⚠️ 90% |
+| Doc pipeline removal          | ⚠️     |
+| Watcher shim removal          | ⚠️     |
+| Legacy candidate code cleanup | ⚠️     |
+| Import graph cleanup          | ⚠️     |
+
+You're **about 80–85% through the milestone**.
+
+---
+
+# If you'd like, I can also show you
+
+A **very effective next step** for this repo:
+
+> **A 5-file cleanup that will remove ~600–900 lines of dead code immediately.**
+
+It’s the fastest way to make the codebase dramatically easier to navigate before we move to the next milestone (watch scanning + scoring improvements).
+
+
+==================
+==================
+
+TSLAC Newsletter Helper – Project Context Header
+
+Project Name: TSLAC Newsletter Helper
+Repo: https://github.com/dweilert/tslac
+Repo Branch: refactor/http-router
+
+Runtime: Custom Python web app (custom web/router, not Flask/Django)
+Python Version: 3.12
+Architecture Style: Routes → Services → Storage → Templates
+Rendering: Server-side templates (render() helper)
+Data Storage: YAML + JSON files in local filesystem
+ 
+-- Architecture Overview. --
+
+Routing Layer
+- web/router.py
+- routes/candidates.py
+- routes/curate_article.py
+- routes/config.py
+- routes/watch.py (being deprecated)
+
+Services Layer
+- services/candidates_service.py
+- services/curate_article_service.py
+- services/watch_service.py
+- services/api_service.py
+
+Storage Layer
+- storage/collector_store.py
+- storage/curation_store.py
+- storage/selected_store.py
+- watch_store.py
+
+Scraping / Collection
+- collect/collector.py
+- collect/rules.py
+- watch/scan.py
+- watch/fetch.py
+- watch/parse.py
+- watch/score.py
+
+
+Milestone 2 Objectives:
+
+
+These are the things still left to fully complete the milestone.
+
+1. Finish build_view_by_content_id()
+
+This service must fully replace:
+
+build_view_by_index()
+build_view_by_doc_id()
+
+It should handle:
+
+web:
+   fetch + clean article
+   build CurateView
+
+gdrive:
+   load doc candidate
+   construct cleaned dict
+   build CurateView
+
+Right now this is partially implemented.
+
+2. Remove /curate/<idx> route
+
+If it still exists anywhere:
+
+router.get("/curate/<idx>")
+
+Remove it.
+
+You want only:
+
+/curate?id=<content_id>
+3. Delete doc-curate pipeline
+
+Once docs open successfully in the unified curate screen, delete:
+
+routes/curate_doc.py
+services/curate_doc_service.py
+templates/curate_doc.html
+
+and remove route registrations.
+
+You already started this discussion.
+
+4. Remove watcher shim
+
+You asked about this earlier.
+
+Delete:
+
+watcher.py
+
+and update imports to:
+
+watch.runtime
+watch.scan
+5. Simplify templates.html_page()
+
+Right now you temporarily added compatibility parameters.
+
+Eventually remove:
+
+doc_candidates
+has_blurb_by_docid
+has_image_by_docid
+
+so it becomes:
+
+html_page(
+    candidates,
+    prechecked,
+    subject,
+    intro,
+    status,
+    has_blurb_by_url,
+    has_image_by_url,
+    candidate_ids,
+)
+6. Normalize doc candidate IDs
+
+You already hit this error:
+
+Doc not found: 174V1bg...
+
+The fix is to ensure:
+
+docsys.store.load_doc_candidates()
+
+returns raw IDs only, and canonicalization happens only in the UI/service layer.
+
+7. Remove legacy candidate persistence
+
+You earlier had two candidate files:
+
+candidates.json
+doc_candidates.json
+
+Now you only want:
+
+candidates_latest.json
+
+Confirm that:
+
+routes/candidates.py
+services
+collect
+
+no longer reference doc candidates separately.
+
+8. Clean up import graph
+
+You started doing this.
+
+Check for dead modules:
+
+rg -n "curate_doc"
+rg -n "doc_candidates"
+rg -n "watcher"
+
+Then remove them.
+
+9. Verify POST actions work for docs
+
+These routes must work for both web and gdrive IDs:
+
+post_curate_add_excerpt
+post_curate_pop_excerpt
+post_curate_clear_excerpts
+post_curate_compose_blurb
+post_curate_save
+
+All should store under:
+
+content_id
+
+not doc_id.
+
+10. Remove index dependence in CurateView
+
+Right now CurateView includes:
+
+idx
+total
+
+Eventually navigation should be based on content_id ordering, not index.
+
+This is optional for this milestone.
+
+Optional Improvements (recommended but not required)
+
+These will simplify your codebase further.
+
+A. Move canonical ID helpers into dedicated module
+services/content_ids.py
+
+Functions:
+
+canonical_content_id()
+real_web_url()
+is_web_id()
+is_doc_id()
+B. Split candidates logic
+
+Right now routes/candidates.py is getting big again.
+
+Consider:
+
+services/candidate_service.py
+
+for:
+
+load_persisted_candidates()
+normalize_candidates()
+merge_doc_candidates()
+C. Add type for candidates
+
+Instead of dict[str,Any] everywhere.
+
+@dataclass
+class Candidate
+Rough Completion Estimate
+Area	Status
+Canonical IDs	✅
+Unified candidate list	✅
+Unified curate route	⚠️ 90%
+Doc pipeline removal	⚠️
+Watcher shim removal	⚠️
+Legacy candidate code cleanup	⚠️
+Import graph cleanup	⚠️
+
+You're about 80–85% through the milestone.

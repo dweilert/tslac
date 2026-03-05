@@ -227,66 +227,66 @@ def _canon_doc_id(did: str) -> str:
     return did
 
 
-def unify_candidates(web_candidates: list[Any]) -> list[dict[str, Any]]:
-    """
-    Return ONE list of candidate dicts for the UI: web + doc.
-    Each dict has keys: title, url, source, open_url (optional), json_url (optional).
-    """
-    out: list[dict[str, Any]] = []
+# def unify_candidates(web_candidates: list[Any]) -> list[dict[str, Any]]:
+#     """
+#     Return ONE list of candidate dicts for the UI: web + doc.
+#     Each dict has keys: title, url, source, open_url (optional), json_url (optional).
+#     """
+#     out: list[dict[str, Any]] = []
 
-    # ---- web candidates ----
-    for c in web_candidates or []:
-        # support object or dict
-        if isinstance(c, dict):
-            url = (c.get("url") or "").strip()
-            title = (c.get("title") or "").strip()
-            src = (c.get("source") or "web").strip() or "web"
-            json_url = (c.get("json_url") or "").strip()
-            open_url = url
-        else:
-            url = _as_str(getattr(c, "url", "")).strip()
-            title = _as_str(getattr(c, "title", "")).strip()
-            src = _as_str(getattr(c, "source", "web")).strip() or "web"
-            json_url = _as_str(getattr(c, "json_url", "")).strip()
-            open_url = url
+#     # ---- web candidates ----
+#     for c in web_candidates or []:
+#         # support object or dict
+#         if isinstance(c, dict):
+#             url = (c.get("url") or "").strip()
+#             title = (c.get("title") or "").strip()
+#             src = (c.get("source") or "web").strip() or "web"
+#             json_url = (c.get("json_url") or "").strip()
+#             open_url = url
+#         else:
+#             url = _as_str(getattr(c, "url", "")).strip()
+#             title = _as_str(getattr(c, "title", "")).strip()
+#             src = _as_str(getattr(c, "source", "web")).strip() or "web"
+#             json_url = _as_str(getattr(c, "json_url", "")).strip()
+#             open_url = url
 
-        if not url:
-            continue
+#         if not url:
+#             continue
 
-        out.append(
-            {
-                "title": title or url,
-                "url": url,              # web raw url (or web:..., if that’s your current standard)
-                "source": src,
-                "open_url": open_url,    # for template Open link
-                "json_url": json_url,
-            }
-        )
+#         out.append(
+#             {
+#                 "title": title or url,
+#                 "url": url,              # web raw url (or web:..., if that’s your current standard)
+#                 "source": src,
+#                 "open_url": open_url,    # for template Open link
+#                 "json_url": json_url,
+#             }
+#         )
 
-    # ---- doc candidates ----
-    docs = load_doc_candidates() or []
-    for d in docs:
-        if not isinstance(d, dict):
-            continue
+#     # ---- doc candidates ----
+#     docs = load_doc_candidates() or []
+#     for d in docs:
+#         if not isinstance(d, dict):
+#             continue
 
-        did = _canon_doc_id((d.get("id") or "").strip())
-        if not did:
-            continue
+#         did = _canon_doc_id((d.get("id") or "").strip())
+#         if not did:
+#             continue
 
-        title = (d.get("title") or did).strip()
-        open_url = (d.get("url") or "").strip()  # if you have one
+#         title = (d.get("title") or did).strip()
+#         open_url = (d.get("url") or "").strip()  # if you have one
 
-        out.append(
-            {
-                "title": title,
-                "url": did,              # IMPORTANT: checkbox value + identity = gdrive:...
-                "source": "doc",
-                "open_url": open_url or "#",
-                "json_url": "",
-            }
-        )
+#         out.append(
+#             {
+#                 "title": title,
+#                 "url": did,              # IMPORTANT: checkbox value + identity = gdrive:...
+#                 "source": "doc",
+#                 "open_url": open_url or "#",
+#                 "json_url": "",
+#             }
+#         )
 
-    return out
+#     return out
 
 
 def _as_str(x: Any) -> str:

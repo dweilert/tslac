@@ -162,10 +162,10 @@
     "summary": null
   },
   {
-    "id": "web:https://texashistory.unt.edu/explore/partners/UNTA/",
+    "id": "web:https://texashistory.unt.edu/explore/collections/DWUR/",
     "origin": "web",
-    "title": "UNT Libraries Special Collections - The Portal to Texas History",
-    "url": "https://texashistory.unt.edu/explore/partners/UNTA/",
+    "title": "Dallas Water Utilities Records, 1882-1990 - Photographic Materials Series - The Portal to Texas History",
+    "url": "https://texashistory.unt.edu/explore/collections/DWUR/",
     "source": "watch",
     "published": "",
     "summary": "Skip to main content Menu The Portal to Texas History Home Tour About Overview History Collaboration Endowment Technology Policies Harmful Content Statement Help Accessibility Contact Us News Statistics API Explore Overview Collections Part"
@@ -220,6 +220,15 @@
     "origin": "web",
     "title": "Subjects - The Portal to Texas History",
     "url": "https://texashistory.unt.edu/explore/subjects/",
+    "source": "watch",
+    "published": "",
+    "summary": "Skip to main content Menu The Portal to Texas History Home Tour About Overview History Collaboration Endowment Technology Policies Harmful Content Statement Help Accessibility Contact Us News Statistics API Explore Overview Collections Part"
+  },
+  {
+    "id": "web:https://texashistory.unt.edu/explore/partners/UNTOHP/",
+    "origin": "web",
+    "title": "UNT Oral History Program - The Portal to Texas History",
+    "url": "https://texashistory.unt.edu/explore/partners/UNTOHP/",
     "source": "watch",
     "published": "",
     "summary": "Skip to main content Menu The Portal to Texas History Home Tour About Overview History Collaboration Endowment Technology Policies Harmful Content Statement Help Accessibility Contact Us News Statistics API Explore Overview Collections Part"

@@ -15,10 +15,6 @@ from services.candidates_service import get_candidate_id
 from storage.content_id import canonical_content_id, real_web_url
 from web.errors import BadRequestError
 
-# from services.content_ids import canonical_content_id, real_web_url
-# from services import api_service
-# from .models import CurateView  # wherever CurateView lives
-
 
 @dataclass(frozen=True)
 class CurateView:
@@ -68,11 +64,12 @@ def _web_key(u: str) -> str:
     return u if u.startswith("web:") else f"web:{u}"
 
 
-def real_web_url(content_id: str) -> str:
-    s = (content_id or "").strip()
-    if s.startswith("web:"):
-        s = s[4:]
-    return s
+# def real_web_url(content_id: str) -> str:
+#     s = (content_id or "").strip()
+#     if s.startswith("web:"):
+#         s = s[4:]
+#     return s
+
 
 
 def _cand_url(c: Any) -> str:

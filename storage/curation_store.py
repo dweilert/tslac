@@ -176,41 +176,6 @@ def save_curation(cur: dict[str, Any]) -> None:
     _atomic_write_text(CURATION_FILE, text, encoding="utf-8")
 
 
-# ----------------------------
-# Title / Subtitle (curation.yaml)  ✅ NEW for Milestone 2
-# ----------------------------
-def get_curated_title(cur: dict[str, Any], key: str) -> str:
-    rec = _get_rec_with_fallback(cur, key)
-    if isinstance(rec, dict):
-        v = rec.get("title")
-        if isinstance(v, str):
-            return v
-    return ""
-
-
-def get_curated_subtitle(cur: dict[str, Any], key: str) -> str:
-    rec = _get_rec_with_fallback(cur, key)
-    if isinstance(rec, dict):
-        v = rec.get("subtitle")
-        if isinstance(v, str):
-            return v
-    return ""
-
-
-def upsert_curated_title(key: str, title: str) -> None:
-    cur = load_curation()
-    rec = _get_rec(cur, key)
-    rec["title"] = (title or "").strip()
-    _touch(rec)
-    save_curation(cur)
-
-
-def upsert_curated_subtitle(key: str, subtitle: str) -> None:
-    cur = load_curation()
-    rec = _get_rec(cur, key)
-    rec["subtitle"] = (subtitle or "").strip()
-    _touch(rec)
-    save_curation(cur)
 
 
 # ----------------------------
@@ -407,39 +372,10 @@ def norm_url(url: str) -> str:
     return norm_key(url)
 
 
-def get_curated_title(cur: dict[str, Any], key: str) -> str:
-    rec = cur.get(norm_key(key))
-    if isinstance(rec, dict):
-        v = rec.get("title")
-        if isinstance(v, str):
-            return v.strip()
-    return ""
 
-
-def get_curated_subtitle(cur: dict[str, Any], key: str) -> str:
-    rec = cur.get(norm_key(key))
-    if isinstance(rec, dict):
-        v = rec.get("subtitle")
-        if isinstance(v, str):
-            return v.strip()
-    return ""
-
-
-def upsert_curated_title(key: str, title: str) -> None:
-    cur = load_curation()
-    rec = _get_rec(cur, key)
-    rec["title"] = (title or "").strip()
-    _touch(rec)
-    save_curation(cur)
-
-
-def upsert_curated_subtitle(key: str, subtitle: str) -> None:
-    cur = load_curation()
-    rec = _get_rec(cur, key)
-    rec["subtitle"] = (subtitle or "").strip()
-    _touch(rec)
-    save_curation(cur)
-
+# ----------------------------
+# Title / Subtitle (curation.yaml)
+# ----------------------------
 
 def get_curated_title(cur: dict[str, Any], url: str) -> str:
     rec = cur.get(norm_url(url))

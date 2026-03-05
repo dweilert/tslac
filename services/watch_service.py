@@ -4,9 +4,9 @@ from dataclasses import dataclass
 from typing import Any
 
 import config_runtime
-
 from watch.runtime import cancel_watch_scan, get_watch_status, start_watch_scan_async
-from watch.scan import load_latest_results, run_watch_scan
+from watch.scan import load_latest_results
+
 
 @dataclass(frozen=True)
 class WatchPageModel:
