@@ -41,7 +41,18 @@ def test_refresh_candidates_di(monkeypatch):
     )
 
     assert res.doc_count == 2
-    assert res.candidate_count == 1
+    assert res.candidate_count == 3  # 1 web + 2 docs
     assert res.error_count == 1
-    assert {c.url for c in saved_candidates["cands"]} == {"https://new.example/1"}
-    assert saved_seen["seen"] == {"https://old.example/a", "https://new.example/1"}
+
+    assert {c.url for c in saved_candidates["cands"]} == {
+        "https://new.example/1",
+        "gdrive:d1",
+        "gdrive:d2",
+    }
+
+    assert saved_seen["seen"] == {
+        "https://old.example/a",
+        "https://new.example/1",
+        "gdrive:d1",
+        "gdrive:d2",
+    }

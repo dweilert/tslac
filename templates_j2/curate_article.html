@@ -47,8 +47,25 @@
   .article p { margin: 0 0 10px 0; }
 </style>
 
-{# ✅ Canonical id for THIS page (web only for now) #}
-{% set content_id = content_id if content_id is defined and content_id else ("web:" ~ url) %}
+
+{# ✅ Canonical id for THIS page (robust: trims + repairs accidental web:gdrive:) #}
+{% set cid0 = (content_id if content_id is defined else "") | string | trim %}
+{% set url0 = (url if url is defined else "") | string | trim %}
+
+{% if cid0 %}
+  {% set content_id = cid0 %}
+{% elif url0.startswith("web:") or url0.startswith("gdrive:") or url0.startswith("local:") %}
+  {% set content_id = url0 %}
+{% else %}
+  {% set content_id = "web:" ~ url0 %}
+{% endif %}
+
+{# Repair bad prefixing if it ever happens #}
+{% if content_id.startswith("web:gdrive:") %}
+  {% set content_id = content_id[4:] %}
+{% elif content_id.startswith("web:local:") %}
+  {% set content_id = content_id[4:] %}
+{% endif %}
 
 <div class="grid">
 
@@ -187,8 +204,7 @@
 
                 {# Keep crop's page parameter as the REAL page URL (not content_id) #}
                 <button class="btn" type="button"
-                        onclick="openCrop('{{ src|e }}', '{{ url|e }}')">Crop</button>
-
+                        onclick="openCrop('{{ src|e }}', '{{ original_url|e }}')">Crop</button>
                 {% if crops and (src in crops) %}
                   <span class="small muted">Crop saved</span>
                 {% endif %}

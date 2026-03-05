@@ -25,54 +25,75 @@ def save_seen(path: Path, seen: set[str]) -> None:
     path.write_text(json.dumps(sorted(seen), indent=2), encoding="utf-8")
 
 
-def _compute_web_id(url: str) -> str:
-    # Canonical web candidate id format for Milestone 2
-    return f"web:{url}"
+def _split_content_id(u: str) -> tuple[str, str, str]:
+    """
+    Returns (content_id, origin, open_url)
+    content_id: "web:<url>" or "gdrive:<id>"
+    origin: "web" | "gdrive"
+    open_url: actual openable URL
+    """
+    s = (u or "").strip()
+    if not s:
+        return ("", "web", "")
+
+    if s.startswith("web:"):
+        raw = s[len("web:") :].strip()
+        return (f"web:{raw}", "web", raw)
+
+    if s.startswith("gdrive:"):
+        doc_id = s[len("gdrive:") :].strip()
+        open_url = f"https://docs.google.com/document/d/{doc_id}/edit" if doc_id else ""
+        return (f"gdrive:{doc_id}", "gdrive", open_url)
+
+    # Back-compat: raw http(s) treated as web
+    if s.startswith("http://") or s.startswith("https://"):
+        return (f"web:{s}", "web", s)
+
+    # Back-compat: bare doc id treated as gdrive
+    doc_id = s
+    open_url = f"https://docs.google.com/document/d/{doc_id}/edit" if doc_id else ""
+    return (f"gdrive:{doc_id}", "gdrive", open_url)
 
 
 def _normalize_candidate_record(r: dict[str, Any]) -> dict[str, Any]:
-    """
-    Backfill fields for older candidates.json records.
-    Keeps existing fields intact and only adds missing ones.
-    """
     url = r.get("url")
-    if isinstance(url, str) and url:
-        r.setdefault("origin", "web")
-        r.setdefault("id", _compute_web_id(url))
+    if isinstance(url, str) and url.strip():
+        cid, origin, open_url = _split_content_id(url)
+        if cid:
+            r.setdefault("id", cid)
+            r.setdefault("origin", origin)
+            r.setdefault("open_url", open_url)
+            # Normalize url to canonical id if it was raw
+            r["url"] = cid
+        else:
+            r.setdefault("origin", "web")
     else:
-        # If a record is malformed/missing url, don't invent ids.
         r.setdefault("origin", "web")
     return r
 
 
 def save_candidates_json(path: Path, candidates: list[Candidate]) -> None:
-    """
-    Writes candidates.json including new Milestone 2 fields:
-      - id
-      - origin
-    while preserving existing schema fields used by current UI.
-    """
     path.parent.mkdir(parents=True, exist_ok=True)
 
     payload: list[dict[str, Any]] = []
     for c in candidates:
-        url = c.url
-        published = c.published.isoformat() if isinstance(c.published, date) else c.published
+        cid, origin, open_url = _split_content_id(c.url)
 
+        published = c.published.isoformat() if isinstance(c.published, date) else None
         payload.append(
             {
-                "id": _compute_web_id(url),
-                "origin": "web",
+                "id": cid,
+                "origin": origin,
                 "title": c.title,
-                "url": url,
-                "source": c.source,
+                "url": cid,          # canonical id stored everywhere
+                "open_url": open_url,  # convenience for UI/preview
+                "source": str(c.source),
                 "published": published,
-                "summary": c.summary,
+                "summary": c.summary or "",
             }
         )
 
     path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
-
 
 def load_candidates_file(path: str | Path | None = None) -> list[Candidate]:
     p = Path(path) if path is not None else CANDIDATES_FILE

@@ -257,7 +257,6 @@ def get_main(req: Request, params: dict[str, Any] | None = None) -> Response:
         if ui:
             candidates.append(ui)
 
-    debug(f"candidate sources: {[c.source for c in candidates]}")
 
     # 2) Selection state (selected.yaml uses canonical ids)
     sel = load_selected()

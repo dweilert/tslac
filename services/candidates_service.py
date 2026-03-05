@@ -19,6 +19,9 @@ from storage.collector_store import (
 from storage.selected_store import save_selected
 from watch.scan import load_latest_results
 
+from collect.models import Candidate
+from collect.rules import CollectRules
+
 HOMEPAGE_URL = "https://www.tsl.texas.gov/"
 
 
@@ -86,9 +89,52 @@ def refresh_candidates(
         seen,
     )
 
-    # We still count docs (for status message), but we do not merge them yet.
-    # Merging docs will be reintroduced once we have ONE unified candidate model and persistence schema.
+    # ---- Merge doc candidates (from doc index) into candidates ----
+    # doc_candidates.json is allowed to remain as a temporary doc index,
+    # but docs must appear in the unified UI list by being merged here.
     docs = load_docs_fn() or []
+    doc_candidates: list[Any] = []
+
+    for d in docs:
+        if not isinstance(d, dict):
+            continue
+
+        raw_id = str(d.get("id") or "").strip()
+        if not raw_id:
+            continue
+
+        title = str(d.get("title") or d.get("name") or d.get("subject") or "").strip()
+        if not title:
+            title = f"Doc {raw_id}"
+
+        raw_id = str(d.get("id") or "").strip()
+        if not raw_id:
+            continue
+
+        # doc_candidates.json already stores canonical ids like "gdrive:<id>".
+        # Normalize only if needed (supports legacy "doc:<id>" or bare ids).
+        if raw_id.startswith("gdrive:"):
+            cid = raw_id
+        elif raw_id.startswith("doc:"):
+            cid = "gdrive:" + raw_id[len("doc:") :].strip()
+        else:
+            cid = "gdrive:" + raw_id
+
+        title = str(d.get("title") or d.get("name") or d.get("subject") or "").strip()
+        if not title:
+            title = f"Doc {cid}"
+
+        doc_candidates.append(
+            Candidate(
+                title=title,
+                url=cid,                # <-- use canonical id directly
+                source="gdrive",
+                published=None,
+                summary=str(d.get("summary") or "").strip(),
+            )
+        )
+
+    candidates = list(candidates) + doc_candidates
 
     # ---- Merge watch results into candidates ----
     try:

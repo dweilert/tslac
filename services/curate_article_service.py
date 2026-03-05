@@ -44,33 +44,28 @@ def _canon_content_id(s: str) -> str:
     s = (s or "").strip()
     if not s:
         return ""
-    # already canonical
+    if s.startswith("doc:"):
+        return "gdrive:" + s[len("doc:") :].strip()
     if s.startswith(("web:", "gdrive:", "local:")):
         return s
-    # plain web URL → canonical
     if s.startswith(("http://", "https://")):
         return f"web:{s}"
-    return s
+    # If it's a bare doc id, treat as gdrive (best-effort)
+    return "gdrive:" + s
 
 def _web_key(u: str) -> str:
     """
-    Canonical key for web articles in curation.yaml.
-    Always returns 'web:<real_url>' for http(s) pages.
-    If passed 'web:https://..' it returns it unchanged.
+    Only for raw http(s) URLs. If you already have a canonical content_id
+    (web:/gdrive:/local:), do NOT wrap it.
     """
     u = (u or "").strip()
     if not u:
         return ""
-    return u if u.startswith("web:") else f"web:{u}"
-
-
-# def real_web_url(content_id: str) -> str:
-#     s = (content_id or "").strip()
-#     if s.startswith("web:"):
-#         s = s[4:]
-#     return s
-
-
+    if u.startswith(("web:", "gdrive:", "local:")):
+        return u
+    if u.startswith(("http://", "https://")):
+        return f"web:{u}"
+    return u
 
 def _cand_url(c: Any) -> str:
     if c is None:
@@ -189,9 +184,9 @@ def build_view_by_index(
         idx=idx,
         total=len(cands),
         candidate=c,
-        candidate_id=candidate_id,   # ✅
-        content_id=content_id,       # ✅
-        cleaned=cleaned,             # (keep as dict)
+        candidate_id=candidate_id,   
+        content_id=content_id,       
+        cleaned=cleaned,             
         final_blurb=final_blurb,
         excerpts=excerpts,
         selected_image=selected_image,
@@ -200,18 +195,6 @@ def build_view_by_index(
         curated_subtitle=curated_subtitle,
     )
 
-
-
-# def save_title(*, url: str, title: str) -> None:
-#     key = _canon_content_id(url)  # if you added canonicalizer; otherwise just url.strip()
-#     if key:
-#         curation_store.upsert_curated_title(key, (title or "").strip())
-
-
-# def save_subtitle(*, url: str, subtitle: str) -> None:
-#     key = _canon_content_id(url)  # if you added canonicalizer; otherwise just url.strip()
-#     if key:
-#         curation_store.upsert_curated_subtitle(key, (subtitle or "").strip())
 
 def save_title(*, url: str, title: str) -> None:
     key = (url or "").strip()
@@ -332,8 +315,6 @@ def clear_selected_image(*, url: str) -> None:
 
 
 
-
-
 def build_view_by_content_id(
     content_id: str,
     *,
@@ -405,20 +386,53 @@ def build_view_by_content_id(
         if not docs:
             raise BadRequestError("No doc candidates available. Refresh first.")
 
-        wanted = cid[len("gdrive:"):]
+        # wanted = cid[len("gdrive:"):]
+        # idx = None
+        # d = None
+        # for i, rec in enumerate(docs):
+        #     if not isinstance(rec, dict):
+        #         continue
+        #     did = (rec.get("id") or "").strip()
+        #     if did == wanted:
+        #         idx = i
+        #         d = rec
+        #         break
+
+        # if idx is None or d is None:
+        #     raise BadRequestError(f"Doc not found: {wanted}")
+
+
+        # doc_candidates.json stores rec["id"] as canonical ("gdrive:<id>") in your current data.
+        # Normalize both sides and match robustly.
+        wanted_cid = cid if cid.startswith("gdrive:") else canonical_content_id(source="doc", raw=cid)
+        wanted_raw = wanted_cid[len("gdrive:") :]
+
         idx = None
         d = None
         for i, rec in enumerate(docs):
             if not isinstance(rec, dict):
                 continue
-            did = (rec.get("id") or "").strip()
-            if did == wanted:
+
+            rid = str(rec.get("id") or "").strip()
+            if not rid:
+                continue
+
+            # Normalize record id to canonical gdrive:<id>
+            if rid.startswith("gdrive:"):
+                rec_cid = rid
+            elif rid.startswith("doc:"):
+                rec_cid = "gdrive:" + rid[len("doc:") :].strip()
+            else:
+                rec_cid = "gdrive:" + rid
+
+            if rec_cid == wanted_cid:
                 idx = i
                 d = rec
                 break
 
         if idx is None or d is None:
-            raise BadRequestError(f"Doc not found: {wanted}")
+            raise BadRequestError(f"Doc not found: {wanted_raw}")
+
 
         # Build a "cleaned" dict compatible with curate_article.html
         # Minimal version: title + html + images list
@@ -454,3 +468,4 @@ def build_view_by_content_id(
         )
 
     raise BadRequestError(f"Unsupported id: {cid}")
+

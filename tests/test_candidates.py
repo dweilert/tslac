@@ -45,7 +45,7 @@ def test_refresh_candidates_persists_candidates_and_seen(monkeypatch):
     res = svc.refresh_candidates()
 
     assert res.doc_count == 1
-    assert res.candidate_count == 1
+    assert res.candidate_count == 2  # 1 web + 1 doc
     assert res.error_count == 0
 
 
