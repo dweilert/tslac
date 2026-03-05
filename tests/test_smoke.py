@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import re
+
 import pytest
 import requests
 
@@ -31,13 +33,32 @@ def test_watch_status(server_base_url: str) -> None:
 
 
 @pytest.mark.integration
-def test_curate0(server_base_url: str) -> None:
+def test_curate_by_id(server_base_url: str) -> None:
     """
     Integration test: may depend on external fetching / candidate availability.
     Excluded by default (see pytest.ini).
+
+    Strategy:
+      - trigger /refresh (redirect expected)
+      - load /
+      - extract first /curate?id=... link
+      - fetch that curate page
     """
-    r = requests.get(server_base_url + "/curate/0", timeout=60)
-    assert r.status_code == 200
+    # Refresh so candidates are likely present.
+    r = requests.get(server_base_url + "/refresh", timeout=60, allow_redirects=False)
+    assert r.status_code in (301, 302, 303)
+
+    main = requests.get(server_base_url + "/", timeout=30)
+    assert main.status_code == 200
+    html = main.text
+
+    m = re.search(r'href="/curate\?id=([^"&]+)', html)
+    assert m, "Did not find any /curate?id=... link on main page after refresh"
+
+    cid = m.group(1)
+    curate = requests.get(server_base_url + f"/curate?id={cid}", timeout=60)
+    assert curate.status_code == 200
+    assert "<html" in curate.text.lower()
 
 
 def test_refresh_redirect(server_base_url: str) -> None:

@@ -323,7 +323,7 @@ Scraping / Collection
 
 Milestone 2 Objectives:
 
-Replace/remove the curate_doc process and use the curate_article process instead.  This will provide a single process to curate the candidate article without respect of where the article information was obtained.  
+Replace/remove the curate doc process and use the curate_article process instead.  This will provide a single process to curate the candidate article without respect of where the article information was obtained.  
 
 This will require the reading of files found in the g-drive or local directory.  When an item from either the g-drive or local directory will need to be read. The content will need to be shown in the Curate screen, if possible, so portions of the content can be selected to create one or more excerpts.  If the document cannot be shown in the curate display area a second browser window should be opened for viewing if possible.  If neither action can be performed the user should be told how to view the document.  
 
@@ -718,8 +718,8 @@ Your UI now shows **web + doc candidates together**.
 This required:
 
 ```
-_ui_from_web_candidate()
-_ui_from_doc_candidate()
+ui_from_web_candidate()
+ui_from_doc_candidate()
 ```
 
 Both produce:

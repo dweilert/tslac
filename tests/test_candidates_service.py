@@ -8,7 +8,10 @@ class _Cand:
     url: str
 
 
-def test_refresh_candidates_di():
+def test_refresh_candidates_di(monkeypatch):
+    # NEW: deterministic – disable watch merge
+    monkeypatch.setattr(svc, "load_latest_results", lambda: {"results": []})
+
     def load_seen_fn(_path):
         return {"https://old.example/a"}
 

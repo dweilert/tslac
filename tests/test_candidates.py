@@ -33,6 +33,9 @@ def test_refresh_candidates_persists_candidates_and_seen(monkeypatch):
     def fake_load_doc_candidates():
         return [{"id": "doc1"}]
 
+    # NEW: make watch merge deterministic (no extra candidates)
+    monkeypatch.setattr(svc, "load_latest_results", lambda: {"results": []})
+
     monkeypatch.setattr(svc, "load_seen", fake_load_seen)
     monkeypatch.setattr(svc, "save_seen", fake_save_seen)
     monkeypatch.setattr(svc, "save_candidates_json", fake_save_candidates_json)
@@ -46,7 +49,6 @@ def test_refresh_candidates_persists_candidates_and_seen(monkeypatch):
     assert res.error_count == 0
 
 
-# ✅ Optional nice test goes HERE
 def test_save_picks_calls_save_selected(monkeypatch):
     called = {}
 

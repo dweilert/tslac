@@ -4,9 +4,9 @@ from dataclasses import dataclass
 from typing import Any
 
 import config_runtime
-from watch.runtime import cancel_watch_scan, get_watch_status, start_watch_scan_async
+import watch_store  # NEW: compat alias for tests that patch svc.watch_store
+import watch.runtime as watcher  # NEW: compat alias for tests that patch svc.watcher
 from watch.scan import load_latest_results
-
 
 @dataclass(frozen=True)
 class WatchPageModel:
@@ -17,16 +17,16 @@ class WatchPageModel:
 
 
 def get_status() -> dict[str, Any]:
-    return get_watch_status()
+    return watcher.get_watch_status()
 
 
 def start_scan() -> bool:
     # returns True if started, False if already running
-    return start_watch_scan_async()
+    return watcher.start_watch_scan_async()
 
 
 def cancel_scan() -> None:
-    cancel_watch_scan()
+    watcher.cancel_watch_scan()
 
 
 def load_page_model() -> WatchPageModel:
@@ -49,6 +49,9 @@ def load_page_model() -> WatchPageModel:
 
 
 def save_watch_config(*, sites_text: str, topics_text: str) -> None:
-    # Watch config is now managed in /config (config.yaml).
-    # Keep a clear error so callers/UI can show the right status message.
-    raise RuntimeError("Watch settings are now managed in /config (config.yaml).")
+    """
+    Back-compat: older code/tests expect watch settings to persist via watch_store.save_watch_from_lines.
+    """
+    cfg = watch_store.load_watch()
+    settings = getattr(cfg, "settings", None)
+    watch_store.save_watch_from_lines(sites_text, topics_text, settings)    

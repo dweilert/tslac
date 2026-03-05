@@ -308,8 +308,9 @@ def move_excerpt(*, url: str, excerpt_index: int, direction: str) -> None:
     curation_store.move_curated_excerpt(key, i, direction)
 
 
-def select_image(*, content_id: str, img_src: str) -> None:
-    key = _canon_content_id(content_id)
+def select_image(*, content_id: str | None = None, url: str | None = None, img_src: str) -> None:
+    # Back-compat: older code/tests pass url=
+    key = _canon_content_id((content_id or url or "").strip())
     img_src = (img_src or "").strip()
     if not key:
         return

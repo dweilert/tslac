@@ -4,7 +4,7 @@ import html
 from typing import Any
 from urllib.parse import quote, unquote
 
-from docsys.store import load_doc_candidates
+#from docsys.store import load_doc_candidates
 from storage.curation_store import get_curated_blurb, load_curation
 from storage.selected_store import load_selected
 
@@ -81,14 +81,14 @@ def build_preview_html() -> bytes:
     if not isinstance(items, list):
         items = []
 
-    # Build doc lookup (id -> doc dict)
-    doc_candidates = load_doc_candidates()
-    doc_by_id: dict[str, dict[str, Any]] = {}
-    for d in doc_candidates or []:
-        if isinstance(d, dict):
-            did = (d.get("id") or "").strip()
-            if did:
-                doc_by_id[did] = d
+    # # Build doc lookup (id -> doc dict)
+    # doc_candidates = load_doc_candidates()
+    # doc_by_id: dict[str, dict[str, Any]] = {}
+    # for d in doc_candidates or []:
+    #     if isinstance(d, dict):
+    #         did = (d.get("id") or "").strip()
+    #         if did:
+    #             doc_by_id[did] = d
 
     blocks: list[str] = []
     for it in items:

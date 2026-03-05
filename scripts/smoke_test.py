@@ -2,11 +2,11 @@
 from __future__ import annotations
 
 import os
+import re
 import signal
 import subprocess
 import sys
 import time
-from urllib.parse import quote
 
 import requests
 
@@ -17,7 +17,7 @@ PY = sys.executable
 
 def wait_for_health(base: str, timeout_s: float = 10.0) -> None:
     t0 = time.time()
-    last_err = None
+    last_err: Exception | None = None
     while time.time() - t0 < timeout_s:
         try:
             r = requests.get(base + "/healthz", timeout=1.5)
@@ -29,19 +29,18 @@ def wait_for_health(base: str, timeout_s: float = 10.0) -> None:
     raise RuntimeError(f"Server did not become healthy at {base}/healthz. Last error: {last_err}")
 
 
-def get_doc_id_sample() -> str | None:
-    # Best-effort: try importing your doc_store and reading one id
-    try:
-        sys.path.insert(0, REPO)
-        from docsys.store import load_doc_candidates  # type: ignore
-
-        docs = load_doc_candidates()
-        for d in docs or []:
-            if isinstance(d, dict) and d.get("id"):
-                return str(d["id"])
-    except Exception:
+def find_first_curate_id(base: str) -> str | None:
+    """
+    Fetch / and scrape the first /curate?id=... link.
+    This keeps smoke tests aligned with the unified curate route.
+    """
+    r = requests.get(base + "/", timeout=20)
+    if r.status_code != 200:
         return None
-    return None
+    m = re.search(r'href="/curate\?id=([^"&]+)', r.text)
+    if not m:
+        return None
+    return m.group(1)
 
 
 def main() -> int:
@@ -65,18 +64,19 @@ def main() -> int:
             ("/watch/status", 200, None),
         ]
 
-        # Optional doc curate check (only if we can find a doc_id)
-        doc_id = get_doc_id_sample()
-        if doc_id:
-            checks.append(("/curate_doc?doc_id=" + quote(doc_id, safe=""), 200, None))
+        # Trigger refresh so candidates exist.
+        r = requests.get(base + "/refresh", timeout=60, allow_redirects=False)
+        if r.status_code not in (301, 302, 303):
+            raise AssertionError(f"/refresh: expected redirect, got {r.status_code}")
 
-        # Optional curate index check: only if candidates file exists and idx 0 works in your environment.
-        # This can fail if HTTPS is blocked on your network, so we keep it optional.
-        if os.environ.get("SMOKE_TRY_CURATE", "0") == "1":
-            checks.append(("/curate/0", 200, None))
+        cid = find_first_curate_id(base)
+        if cid:
+            checks.append((f"/curate?id={cid}", 200, None))
+        else:
+            print("SMOKE: NOTE: no /curate?id=... link found on /; skipping curate check")
 
         for path, want_status, must_contain in checks:
-            r = requests.get(base + path, timeout=15)
+            r = requests.get(base + path, timeout=30)
             if r.status_code != want_status:
                 raise AssertionError(
                     f"{path}: expected {want_status}, got {r.status_code}\nBody: {r.text[:300]}"

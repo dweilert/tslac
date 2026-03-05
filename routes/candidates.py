@@ -7,7 +7,6 @@ from urllib.parse import parse_qs, urlencode, urlparse
 
 import storage.curation_store as curation_store
 from constants import DEFAULT_INTRO, DEFAULT_SUBJECT
-from docsys.store import load_doc_candidates
 from logutil import debug
 from services import watch_service
 from services.candidates_service import (
@@ -41,15 +40,19 @@ def _strip(s: Any) -> str:
     return ("" if s is None else str(s)).strip()
 
 
+def _get_field(obj: Any, name: str) -> str:
+    if isinstance(obj, dict):
+        return _strip(obj.get(name))
+    return _strip(getattr(obj, name, ""))
+
+
 def _as_web_id(raw_url: str) -> str:
     u = _strip(raw_url)
     if not u:
         return ""
     if u.startswith("web:"):
-        # normalize: web:<no fragment>
         base = u[len("web:") :].split("#", 1)[0].strip()
         return f"web:{base}" if base else ""
-    # raw web url => canonical
     base = u.split("#", 1)[0].strip()
     return f"web:{base}" if base else ""
 
@@ -73,40 +76,68 @@ def _as_gdrive_id(raw_id: str) -> str:
     return "gdrive:" + r
 
 
-def _ui_from_web_candidate(c: Any) -> UICandidate | None:
-    raw_url = _strip(getattr(c, "url", "") or getattr(c, "original_url", ""))
-    cid = _as_web_id(raw_url)
-    if not cid:
-        return None
-
-    title = _strip(getattr(c, "title", "")) or _web_open_url(cid)
-    source = _strip(getattr(c, "source", "")) or "web"
-
-    return UICandidate(
-        url=cid,
-        open_url=_web_open_url(cid),
-        title=title,
-        source=source,
-    )
+def _gdrive_open_url(content_id: str) -> str:
+    """
+    Convert gdrive:<id> to a clickable doc URL.
+    Note: this assumes Google Docs. If you store other Drive file types, you can adapt.
+    """
+    s = _strip(content_id)
+    if s.startswith("gdrive:"):
+        doc_id = _strip(s[len("gdrive:") :])
+        if doc_id:
+            return f"https://docs.google.com/document/d/{doc_id}/edit"
+    return s
 
 
-def _ui_from_doc_candidate(d: dict[str, Any]) -> UICandidate | None:
-    if not isinstance(d, dict):
-        return None
+def _ui_from_candidate(c: Any) -> UICandidate | None:
+    """
+    Accepts either:
+      - object candidates (with attributes)
+      - dict candidates (e.g. merged doc candidates)
+    """
+    raw_url = _get_field(c, "url") or _get_field(c, "original_url")
+    # raw_url = (
+    #     _get_field(c, "url")
+    #     or _get_field(c, "original_url")
+    #     or _get_field(c, "link")
+    #     or _get_field(c, "href")
+    #     or _get_field(c, "page_url")
+    # )
+    raw_title = _get_field(c, "title")
+    raw_source = _get_field(c, "source")
 
-    did = _as_gdrive_id(d.get("id") or "")
-    if not did:
-        return None
+    # Heuristic:
+    # - explicit prefixes win (web:/doc:/gdrive:)
+    # - http(s) => web
+    # - otherwise treat as doc id => gdrive
+    if raw_url.startswith(("web:", "http://", "https://")):
+        cid = _as_web_id(raw_url)
+        if not cid:
+            return None
+        open_url = _web_open_url(cid)
+        title = raw_title or open_url
+        source = raw_source or "web"
+        return UICandidate(url=cid, open_url=open_url, title=title, source=source)
 
-    title = _strip(d.get("title") or did)
-    open_url = _strip(d.get("url") or "") or "#"
+    if raw_url.startswith(("gdrive:", "doc:")):
+        cid = _as_gdrive_id(raw_url)
+        if not cid:
+            return None
+        open_url = _gdrive_open_url(cid)
+        title = raw_title or open_url
+        source = raw_source or "gdrive"
+        return UICandidate(url=cid, open_url=open_url, title=title, source=source)
 
-    return UICandidate(
-        url=did,
-        open_url=open_url,
-        title=title,
-        source="doc",
-    )
+    # If it's not a URL and not prefixed, assume it is a bare doc id.
+    # (This supports older doc lists that stored just the raw id.)
+    cid = _as_gdrive_id(raw_url)
+    if cid:
+        open_url = _gdrive_open_url(cid)
+        title = raw_title or open_url
+        source = raw_source or "gdrive"
+        return UICandidate(url=cid, open_url=open_url, title=title, source=source)
+
+    return None
 
 
 # ----------------------------
@@ -190,7 +221,6 @@ def _is_curated(cur: dict[str, Any], key: str) -> bool:
 
     rec = cur.get(key)
     if not rec:
-        # fallback if older file normalized differently
         rec = cur.get(curation_store.norm_url(key))
 
     if not isinstance(rec, dict):
@@ -218,24 +248,18 @@ def _is_curated(cur: dict[str, Any], key: str) -> bool:
 def get_main(req: Request, params: dict[str, Any] | None = None) -> Response:
     status = req.query_first.get("status") or ""
 
-    # 1) Build ONE unified list (web + doc) for the UI
-    web_raw = load_persisted_candidates()
-    doc_raw = load_doc_candidates() or []
+    # 1) Build ONE unified list for the UI (web + doc + watch if persisted)
+    raw = load_persisted_candidates()
 
     candidates: list[UICandidate] = []
-    for c in web_raw:
-        ui = _ui_from_web_candidate(c)
-        if ui:
-            candidates.append(ui)
-
-    for d in doc_raw:
-        ui = _ui_from_doc_candidate(d)
+    for c in raw:
+        ui = _ui_from_candidate(c)
         if ui:
             candidates.append(ui)
 
     debug(f"candidate sources: {[c.source for c in candidates]}")
 
-    # 2) Selection state (selected.yaml uses the same canonical ids now)
+    # 2) Selection state (selected.yaml uses canonical ids)
     sel = load_selected()
     prechecked: set[str] = set()
     if isinstance(sel, dict):

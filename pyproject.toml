@@ -38,6 +38,7 @@ select = ["F", "I", "UP", "B", "SIM", "E", "W"]
 ignore = [
   "E501",    # line length: let Black handle formatting
   "SIM102",  # optional: sometimes suggests combining nested if/with; can reduce clarity
+  "SIM103",  # ignore
   # Keep SIM105 enabled (contextlib.suppress), but we’ll handle it carefully (see below).
 ]
 
@@ -51,4 +52,5 @@ combine-as-imports = true
 [tool.ruff.lint.per-file-ignores]
 # Tests often intentionally do "unused" imports/fixtures
 "tests/**/*.py" = ["F401"]
+
 

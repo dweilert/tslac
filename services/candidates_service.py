@@ -62,9 +62,6 @@ def refresh_candidates(
     save_candidates_fn: SaveCandidatesFn | None = None,
     load_docs_fn: LoadDocsFn | None = None,
 ) -> RefreshResult:
-
-    # info(f"DEBUG: inside services.refresh_candidates(ignore_seen={ignore_seen})")
-
     def _default_collect(homepage: str, rules: CollectRules, day: date, seen_urls: set[str]):
         return collect_candidates(homepage, rules=rules, today=day, seen_urls=seen_urls)
 
@@ -82,8 +79,6 @@ def refresh_candidates(
         exclude_title_substrings=(),
     )
 
-    # info("DEBUG: calling collect_candidates()")
-
     candidates, errors = collect_fn(
         HOMEPAGE_URL,
         rules,
@@ -91,19 +86,20 @@ def refresh_candidates(
         seen,
     )
 
+    # We still count docs (for status message), but we do not merge them yet.
+    # Merging docs will be reintroduced once we have ONE unified candidate model and persistence schema.
+    docs = load_docs_fn() or []
+
     # ---- Merge watch results into candidates ----
     try:
         wr = load_latest_results()
         w_results = wr.get("results") or []
-        # info(f"DEBUG: watch results loaded={len(w_results)}")
         watch_candidates: list[Any] = []
-        # info(f"DEBUG: watch candidates added={len(watch_candidates)}")
 
         for r in w_results:
             if not isinstance(r, dict):
                 continue
 
-            # Try hard to find a URL field; fall back to site
             url = r.get("url") or r.get("page_url") or r.get("link") or r.get("href") or ""
             url = str(url).strip() or str(r.get("site") or "").strip()
             if not url:
@@ -115,35 +111,31 @@ def refresh_candidates(
                 WatchCandidate(
                     url=url,
                     title=title,
-                    summary=str(
-                        r.get("excerpt") or r.get("snippet") or r.get("summary") or ""
-                    ).strip(),
+                    summary=str(r.get("excerpt") or r.get("snippet") or r.get("summary") or "").strip(),
                     site=str(r.get("site") or "").strip(),
                     score=r.get("score") or 0,
                     best_topic=str(r.get("best_topic") or r.get("topic") or "").strip(),
                 )
             )
 
-        # Append watch items after TSL scrape items
         candidates = list(candidates) + watch_candidates
-        # info(f"DEBUG: total candidates after watch merge={len(candidates)}")
     except Exception:
-        # Watch is best-effort; do not fail refresh if watch results can’t load
         pass
 
     save_candidates_fn(CANDIDATES_FILE, candidates)
 
-    # candidates are expected to have .url
-    seen.update(c.url for c in candidates)
+    def _cand_url(c: Any) -> str:
+        if hasattr(c, "url"):
+            return str(getattr(c, "url") or "").strip()
+        if isinstance(c, dict):
+            return str(c.get("url") or "").strip()
+        return ""
 
-    # info(f"DEBUG: updating seen URLs with {len(candidates)} candidates")
+    seen.update(u for u in (_cand_url(c) for c in candidates) if u)
     save_seen_fn(SEEN_URLS_FILE, seen)
 
-    doc_cnt = len(load_docs_fn())
-
-    # info(f"DEBUG: refresh complete doc_count={doc_cnt} candidate_count={len(candidates)} error_count={len(errors)}")
     return RefreshResult(
-        doc_count=doc_cnt,
+        doc_count=len(docs),
         candidate_count=len(candidates),
         error_count=len(errors),
     )
@@ -225,68 +217,6 @@ def _canon_doc_id(did: str) -> str:
     if did.startswith("doc:"):
         return "gdrive:" + did[len("doc:"):].strip()
     return did
-
-
-# def unify_candidates(web_candidates: list[Any]) -> list[dict[str, Any]]:
-#     """
-#     Return ONE list of candidate dicts for the UI: web + doc.
-#     Each dict has keys: title, url, source, open_url (optional), json_url (optional).
-#     """
-#     out: list[dict[str, Any]] = []
-
-#     # ---- web candidates ----
-#     for c in web_candidates or []:
-#         # support object or dict
-#         if isinstance(c, dict):
-#             url = (c.get("url") or "").strip()
-#             title = (c.get("title") or "").strip()
-#             src = (c.get("source") or "web").strip() or "web"
-#             json_url = (c.get("json_url") or "").strip()
-#             open_url = url
-#         else:
-#             url = _as_str(getattr(c, "url", "")).strip()
-#             title = _as_str(getattr(c, "title", "")).strip()
-#             src = _as_str(getattr(c, "source", "web")).strip() or "web"
-#             json_url = _as_str(getattr(c, "json_url", "")).strip()
-#             open_url = url
-
-#         if not url:
-#             continue
-
-#         out.append(
-#             {
-#                 "title": title or url,
-#                 "url": url,              # web raw url (or web:..., if that’s your current standard)
-#                 "source": src,
-#                 "open_url": open_url,    # for template Open link
-#                 "json_url": json_url,
-#             }
-#         )
-
-#     # ---- doc candidates ----
-#     docs = load_doc_candidates() or []
-#     for d in docs:
-#         if not isinstance(d, dict):
-#             continue
-
-#         did = _canon_doc_id((d.get("id") or "").strip())
-#         if not did:
-#             continue
-
-#         title = (d.get("title") or did).strip()
-#         open_url = (d.get("url") or "").strip()  # if you have one
-
-#         out.append(
-#             {
-#                 "title": title,
-#                 "url": did,              # IMPORTANT: checkbox value + identity = gdrive:...
-#                 "source": "doc",
-#                 "open_url": open_url or "#",
-#                 "json_url": "",
-#             }
-#         )
-
-#     return out
 
 
 def _as_str(x: Any) -> str:

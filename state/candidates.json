@@ -162,15 +162,6 @@
     "summary": null
   },
   {
-    "id": "web:https://texashistory.unt.edu/explore/collections/DWUR/",
-    "origin": "web",
-    "title": "Dallas Water Utilities Records, 1882-1990 - Photographic Materials Series - The Portal to Texas History",
-    "url": "https://texashistory.unt.edu/explore/collections/DWUR/",
-    "source": "watch",
-    "published": "",
-    "summary": "Skip to main content Menu The Portal to Texas History Home Tour About Overview History Collaboration Endowment Technology Policies Harmful Content Statement Help Accessibility Contact Us News Statistics API Explore Overview Collections Part"
-  },
-  {
     "id": "web:https://texashistory.unt.edu/explore/partners/feed/",
     "origin": "web",
     "title": "Latest partners added for The Portal to Texas History Private Collection of Levi H. Davis Kaufman County Library Private Collection of Dr. Teresa Marrero Private Collection of the Luis and Iris A. Dovalina Family Weston Heritage Guild Private Collection of the Whitehead Family Private Collection of Sharon Smith Scottish Rite Hospital for Children Center for Big Bend Studies County Line Magazine Farmersville Historical Society Private Collection of Brenda Lincke Fisseler The Sam Houston Regional Library and Research Center Grayson College Foundation Sam Bell Maxey House State Historic Site Heritage Society at Sam Houston Park African American Museum of Dallas Private Collection of the Hardin Family Nanticoke Historic Preservation Alliance Plano Public Library Alpha Delta Pi of Gamma Upsilon Rainbow Garden Club of North Texas Tomball Museum Center Clear Lake Shores Civic Club History Committee Library of Congress Manuscript Division Madison County Library Private Collection of the Donnell Family Panhandle Archaeological Society of Texas Private Collection of Dr. George E. Keaton, Jr. National Juneteenth Museum Private Collection of David Lindsey Riesel Historical Society Texarkana Museum System Apple Corps of Dallas Private Collection of C.K. and Marjorie Burns Private Collection of Jamie Powell Sheppard Midland Historical Society Private Collection of the Wensowitch Family Private Collection of Priscilla Goin Private Collection of M M Davis Remembering Black Dallas Lunar and Planetary Institute Library Journal of Texas Archeology and History Badge of Pride, LLC Garland Heritage Crossing Landmark Museum Sam Houston High School Reber Memorial Library Cozby Library and Community Commons Albert and Shirley Small Special Collections Library McWhiney History Education Group",
@@ -225,15 +216,6 @@
     "summary": "Skip to main content Menu The Portal to Texas History Home Tour About Overview History Collaboration Endowment Technology Policies Harmful Content Statement Help Accessibility Contact Us News Statistics API Explore Overview Collections Part"
   },
   {
-    "id": "web:https://texashistory.unt.edu/explore/partners/UNTOHP/",
-    "origin": "web",
-    "title": "UNT Oral History Program - The Portal to Texas History",
-    "url": "https://texashistory.unt.edu/explore/partners/UNTOHP/",
-    "source": "watch",
-    "published": "",
-    "summary": "Skip to main content Menu The Portal to Texas History Home Tour About Overview History Collaboration Endowment Technology Policies Harmful Content Statement Help Accessibility Contact Us News Statistics API Explore Overview Collections Part"
-  },
-  {
     "id": "web:https://texashistory.unt.edu/explore/locations/",
     "origin": "web",
     "title": "Locations - The Portal to Texas History",
@@ -243,10 +225,28 @@
     "summary": "Skip to main content Menu The Portal to Texas History Home Tour About Overview History Collaboration Endowment Technology Policies Harmful Content Statement Help Accessibility Contact Us News Statistics API Explore Overview Collections Part"
   },
   {
+    "id": "web:https://texashistory.unt.edu/explore/partners/WTM/",
+    "origin": "web",
+    "title": "The Witte Museum - The Portal to Texas History",
+    "url": "https://texashistory.unt.edu/explore/partners/WTM/",
+    "source": "watch",
+    "published": "",
+    "summary": "Skip to main content Menu The Portal to Texas History Home Tour About Overview History Collaboration Endowment Technology Policies Harmful Content Statement Help Accessibility Contact Us News Statistics API Explore Overview Collections Part"
+  },
+  {
     "id": "web:https://texashistory.unt.edu/explore/collections/TBWP/",
     "origin": "web",
     "title": "T. B. Willis Collection - The Portal to Texas History",
     "url": "https://texashistory.unt.edu/explore/collections/TBWP/",
+    "source": "watch",
+    "published": "",
+    "summary": "Skip to main content Menu The Portal to Texas History Home Tour About Overview History Collaboration Endowment Technology Policies Harmful Content Statement Help Accessibility Contact Us News Statistics API Explore Overview Collections Part"
+  },
+  {
+    "id": "web:https://texashistory.unt.edu/explore/collections/UNTWWI/",
+    "origin": "web",
+    "title": "Historical Collection WWI Materials, 1917-1919 - The Portal to Texas History",
+    "url": "https://texashistory.unt.edu/explore/collections/UNTWWI/",
     "source": "watch",
     "published": "",
     "summary": "Skip to main content Menu The Portal to Texas History Home Tour About Overview History Collaboration Endowment Technology Policies Harmful Content Statement Help Accessibility Contact Us News Statistics API Explore Overview Collections Part"

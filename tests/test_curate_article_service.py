@@ -41,4 +41,4 @@ def test_select_image_rejects_non_http(monkeypatch):
     assert "args" not in called  # should not write
 
     svc.select_image(url="https://x", img_src="https://img.example/a.jpg")
-    assert called["args"] == ("https://x", "https://img.example/a.jpg")
+    assert called["args"] == ("web:https://x", "https://img.example/a.jpg")
