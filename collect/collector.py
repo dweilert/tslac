@@ -173,12 +173,10 @@ def collect_candidates(
         debug(f"collector: /info parse FAILED: {e}")
         errors.append(f"Parse failure for {info_url}: {e}")
 
-
     # ---------------------------
     # Apply rules + finalize
     # ---------------------------
     results: list[Candidate] = []
-
 
     # ---------------------------
     # Combine + seen filter

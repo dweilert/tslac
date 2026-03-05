@@ -55,6 +55,7 @@ EXTRA_ROOT_GLOBS = [
 # Helpers
 # ------------------------------
 
+
 def iter_py_files(root: Path) -> list[Path]:
     out: list[Path] = []
     for p in root.rglob("*.py"):
@@ -147,6 +148,7 @@ def is_stdlib(name: str) -> bool:
 
     try:
         import importlib.util
+
         spec = importlib.util.find_spec(name)
         if spec is None or spec.origin is None:
             return False
@@ -185,6 +187,7 @@ def entrypoint_paths() -> list[Path]:
 # ------------------------------
 # Unused files (import reachability)
 # ------------------------------
+
 
 @dataclass(frozen=True)
 class UnusedFilesReport:
@@ -256,6 +259,7 @@ def find_unused_files() -> UnusedFilesReport:
 # Circular imports (cycle detection)
 # ------------------------------
 
+
 @dataclass(frozen=True)
 class CyclesReport:
     cycles: list[list[str]]  # list of strongly connected components (size >= 2)
@@ -321,6 +325,7 @@ def find_cycles() -> CyclesReport:
 # Dead imports (Ruff wrapper)
 # ------------------------------
 
+
 def run_dead_imports() -> int:
     """
     Dead imports are best handled by Ruff:
@@ -343,6 +348,7 @@ def run_dead_imports() -> int:
 # ------------------------------
 # CLI
 # ------------------------------
+
 
 def cmd_unused_files(write_rm: Path | None) -> int:
     rep = find_unused_files()
@@ -393,12 +399,16 @@ def main() -> int:
     sub.add_parser("dead-imports")
 
     p_unused = sub.add_parser("unused-files")
-    p_unused.add_argument("--write-rm", type=str, default=None, help="Write git-rm script to this path")
+    p_unused.add_argument(
+        "--write-rm", type=str, default=None, help="Write git-rm script to this path"
+    )
 
     sub.add_parser("cycles")
 
     p_all = sub.add_parser("all")
-    p_all.add_argument("--write-rm", type=str, default=None, help="Write git-rm script to this path")
+    p_all.add_argument(
+        "--write-rm", type=str, default=None, help="Write git-rm script to this path"
+    )
 
     args = ap.parse_args()
 

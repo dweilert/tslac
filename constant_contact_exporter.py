@@ -23,6 +23,7 @@ from storage.selected_store import load_selected
 def _esc(s: object) -> str:
     return html.escape("" if s is None else str(s), quote=True)
 
+
 def _content_id_from_selected_item(it: dict[str, Any]) -> str:
     """
     Selected items may be:
@@ -34,6 +35,7 @@ def _content_id_from_selected_item(it: dict[str, Any]) -> str:
         return cid
     url = (it.get("url") or "").strip()
     return f"web:{url}" if url else ""
+
 
 def _safe_url(url: object) -> str:
     """Allow only http(s) (and optionally site-relative). Return '#' if unsafe."""

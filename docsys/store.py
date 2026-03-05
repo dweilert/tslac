@@ -16,7 +16,9 @@ def save_doc_candidates(doc_candidates: list[dict[str, Any]]) -> None:
     and persisted via the normal candidates store.
     Kept temporarily for compatibility, but should not be used by new code.
     """
-    warn("Docs: save_doc_candidates() is deprecated; docs should be merged into unified candidates.")
+    warn(
+        "Docs: save_doc_candidates() is deprecated; docs should be merged into unified candidates."
+    )
     DOC_CANDIDATES_FILE.parent.mkdir(parents=True, exist_ok=True)
     DOC_CANDIDATES_FILE.write_text(
         json.dumps(doc_candidates, ensure_ascii=False, indent=2), encoding="utf-8"

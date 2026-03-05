@@ -135,8 +135,8 @@ def curate_page_html(
         page_css="/static/css/curate_article.css",
         index=idx,
         total=total,
-        url=page_url,          # real URL
-        content_id=content_id, # canonical id
+        url=page_url,  # real URL
+        content_id=content_id,  # canonical id
         original_url=original_url,
         json_url=json_url,
         prev_url=prev_url,
@@ -175,4 +175,3 @@ def watch_page_html(
         latest_error=str(latest_error) if latest_error else "",
     )
     return html.encode("utf-8")
-

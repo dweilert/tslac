@@ -7,7 +7,6 @@ from urllib.parse import parse_qs, urlencode, urlparse
 
 import storage.curation_store as curation_store
 from constants import DEFAULT_INTRO, DEFAULT_SUBJECT
-from logutil import debug
 from services import watch_service
 from services.candidates_service import (
     load_persisted_candidates,
@@ -188,7 +187,9 @@ def get_refresh(req: Request) -> Response:
         note = " (ignored seen URLs)" if ignore_seen else ""
 
         doc_count = getattr(res, "doc_count", 0)
-        return _redir_status(f"Refreshed candidate list (docs:{doc_count}){err_note}{note}{watch_note}")
+        return _redir_status(
+            f"Refreshed candidate list (docs:{doc_count}){err_note}{note}{watch_note}"
+        )
 
     except Exception as e:
         return _redir_status(f"Refresh failed: {e}")
@@ -256,7 +257,6 @@ def get_main(req: Request, params: dict[str, Any] | None = None) -> Response:
         ui = _ui_from_candidate(c)
         if ui:
             candidates.append(ui)
-
 
     # 2) Selection state (selected.yaml uses canonical ids)
     sel = load_selected()

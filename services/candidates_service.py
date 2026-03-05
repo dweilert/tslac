@@ -6,6 +6,7 @@ from datetime import date
 from typing import Any
 
 from collect.collector import collect_candidates
+from collect.models import Candidate
 from collect.rules import CollectRules
 from docsys.store import load_doc_candidates
 from storage.collector_store import (
@@ -18,9 +19,6 @@ from storage.collector_store import (
 )
 from storage.selected_store import save_selected
 from watch.scan import load_latest_results
-
-from collect.models import Candidate
-from collect.rules import CollectRules
 
 HOMEPAGE_URL = "https://www.tsl.texas.gov/"
 
@@ -127,7 +125,7 @@ def refresh_candidates(
         doc_candidates.append(
             Candidate(
                 title=title,
-                url=cid,                # <-- use canonical id directly
+                url=cid,  # <-- use canonical id directly
                 source="gdrive",
                 published=None,
                 summary=str(d.get("summary") or "").strip(),
@@ -157,7 +155,9 @@ def refresh_candidates(
                 WatchCandidate(
                     url=url,
                     title=title,
-                    summary=str(r.get("excerpt") or r.get("snippet") or r.get("summary") or "").strip(),
+                    summary=str(
+                        r.get("excerpt") or r.get("snippet") or r.get("summary") or ""
+                    ).strip(),
                     site=str(r.get("site") or "").strip(),
                     score=r.get("score") or 0,
                     best_topic=str(r.get("best_topic") or r.get("topic") or "").strip(),
@@ -172,7 +172,7 @@ def refresh_candidates(
 
     def _cand_url(c: Any) -> str:
         if hasattr(c, "url"):
-            return str(getattr(c, "url") or "").strip()
+            return str(c.url or "").strip()
         if isinstance(c, dict):
             return str(c.get("url") or "").strip()
         return ""
@@ -261,7 +261,7 @@ def _canon_doc_id(did: str) -> str:
     if not did:
         return ""
     if did.startswith("doc:"):
-        return "gdrive:" + did[len("doc:"):].strip()
+        return "gdrive:" + did[len("doc:") :].strip()
     return did
 
 
@@ -274,7 +274,7 @@ def _canon_doc_id(did: str) -> str:
     if not did:
         return ""
     if did.startswith("doc:"):
-        return "gdrive:" + did[len("doc:"):].strip()
+        return "gdrive:" + did[len("doc:") :].strip()
     return did
 
 
@@ -312,7 +312,7 @@ def unify_candidates(web_candidates: list[Any]) -> list[dict[str, Any]]:
         out.append(
             {
                 "title": title or open_url,
-                "url": cid,          # ✅ canonical content id
+                "url": cid,  # ✅ canonical content id
                 "source": source,
                 "open_url": open_url,
             }
@@ -334,7 +334,7 @@ def unify_candidates(web_candidates: list[Any]) -> list[dict[str, Any]]:
         out.append(
             {
                 "title": title,
-                "url": did,          # ✅ gdrive:...
+                "url": did,  # ✅ gdrive:...
                 "source": "doc",
                 "open_url": open_url,
             }

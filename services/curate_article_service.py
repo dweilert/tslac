@@ -31,6 +31,7 @@ class CurateView:
     curated_title: str = ""
     curated_subtitle: str = ""
 
+
 # ----------------------------
 # Helpers
 # ----------------------------
@@ -39,6 +40,7 @@ def _get_attr(obj: Any, name: str, default: Any = "") -> Any:
         return getattr(obj, name)
     except Exception:
         return default
+
 
 def _canon_content_id(s: str) -> str:
     s = (s or "").strip()
@@ -53,6 +55,7 @@ def _canon_content_id(s: str) -> str:
     # If it's a bare doc id, treat as gdrive (best-effort)
     return "gdrive:" + s
 
+
 def _web_key(u: str) -> str:
     """
     Only for raw http(s) URLs. If you already have a canonical content_id
@@ -66,6 +69,7 @@ def _web_key(u: str) -> str:
     if u.startswith(("http://", "https://")):
         return f"web:{u}"
     return u
+
 
 def _cand_url(c: Any) -> str:
     if c is None:
@@ -184,9 +188,9 @@ def build_view_by_index(
         idx=idx,
         total=len(cands),
         candidate=c,
-        candidate_id=candidate_id,   
-        content_id=content_id,       
-        cleaned=cleaned,             
+        candidate_id=candidate_id,
+        content_id=content_id,
+        cleaned=cleaned,
         final_blurb=final_blurb,
         excerpts=excerpts,
         selected_image=selected_image,
@@ -200,6 +204,7 @@ def save_title(*, url: str, title: str) -> None:
     key = (url or "").strip()
     if key:
         curation_store.upsert_curated_title(key, (title or "").strip())
+
 
 def save_subtitle(*, url: str, subtitle: str) -> None:
     key = (url or "").strip()
@@ -236,7 +241,6 @@ def save_crop(*, url: str, img_src: str, crop_json: str) -> None:
 
     if url and img_src and isinstance(crop, dict) and crop:
         curation_store.upsert_curated_image_crop(url, img_src, crop)
-
 
 
 # Back-compat wrapper (optional, but avoids touching other callers yet)
@@ -314,7 +318,6 @@ def clear_selected_image(*, url: str) -> None:
         curation_store.clear_curated_selected_image(key)
 
 
-
 def build_view_by_content_id(
     content_id: str,
     *,
@@ -366,7 +369,7 @@ def build_view_by_content_id(
             idx=idx,
             total=len(cands),
             candidate=cand,
-            candidate_id=cid,   # for now treat same; you can refine later
+            candidate_id=cid,  # for now treat same; you can refine later
             content_id=cid,
             cleaned=cleaned,
             final_blurb=curation_store.get_curated_blurb(cur, cid),
@@ -401,10 +404,11 @@ def build_view_by_content_id(
         # if idx is None or d is None:
         #     raise BadRequestError(f"Doc not found: {wanted}")
 
-
         # doc_candidates.json stores rec["id"] as canonical ("gdrive:<id>") in your current data.
         # Normalize both sides and match robustly.
-        wanted_cid = cid if cid.startswith("gdrive:") else canonical_content_id(source="doc", raw=cid)
+        wanted_cid = (
+            cid if cid.startswith("gdrive:") else canonical_content_id(source="doc", raw=cid)
+        )
         wanted_raw = wanted_cid[len("gdrive:") :]
 
         idx = None
@@ -433,7 +437,6 @@ def build_view_by_content_id(
         if idx is None or d is None:
             raise BadRequestError(f"Doc not found: {wanted_raw}")
 
-
         # Build a "cleaned" dict compatible with curate_article.html
         # Minimal version: title + html + images list
         cleaned = {
@@ -445,7 +448,7 @@ def build_view_by_content_id(
 
         # Candidate for doc can just be the dict; template supports dict candidate
         candidate = {
-            "url": cid,                 # canonical id (important!)
+            "url": cid,  # canonical id (important!)
             "original_url": d.get("url") or "",
             "title": d.get("title") or "",
             "json_url": "",
@@ -468,4 +471,3 @@ def build_view_by_content_id(
         )
 
     raise BadRequestError(f"Unsupported id: {cid}")
-

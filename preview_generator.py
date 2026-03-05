@@ -4,7 +4,7 @@ import html
 from typing import Any
 from urllib.parse import quote, unquote
 
-#from docsys.store import load_doc_candidates
+# from docsys.store import load_doc_candidates
 from storage.curation_store import get_curated_blurb, load_curation
 from storage.selected_store import load_selected
 

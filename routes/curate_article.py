@@ -76,7 +76,9 @@ def _form_content_id(form: dict[str, str]) -> str:
 
 def _redirect_curate_by_id(content_id: str, status: str) -> Response:
     if not content_id:
-        return Response.redirect("/?" + urlencode({"status": status or "Missing content_id"}, doseq=False))
+        return Response.redirect(
+            "/?" + urlencode({"status": status or "Missing content_id"}, doseq=False)
+        )
     qs = urlencode({"id": content_id, "status": status}, doseq=False)
     return Response.redirect("/curate?" + qs)
 
@@ -87,7 +89,9 @@ def _redirect_curate_by_id(content_id: str, status: str) -> Response:
 def get_curate_by_id(req: Request, params: dict[str, Any] | None = None) -> Response:
     cid = (req.query_first.get("id", "") or "").strip()
     if not cid:
-        return Response.redirect("/?" + urlencode({"status": "Missing id for /curate"}, doseq=False))
+        return Response.redirect(
+            "/?" + urlencode({"status": "Missing id for /curate"}, doseq=False)
+        )
 
     try:
         view = build_view_by_content_id(cid)
@@ -201,7 +205,9 @@ def post_curate_select_image(req: Request, params: dict[str, Any] | None = None)
     return _redirect_curate_by_id(cid, "Selected image")
 
 
-def post_curate_clear_selected_image(req: Request, params: dict[str, Any] | None = None) -> Response:
+def post_curate_clear_selected_image(
+    req: Request, params: dict[str, Any] | None = None
+) -> Response:
     form = _parse_post_form(req)
     cid = _form_content_id(form)
 

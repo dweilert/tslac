@@ -12,6 +12,7 @@ from config import CURATION_FILE
 
 print(CURATION_FILE)
 
+
 # ----------------------------
 # Helpers
 # ----------------------------
@@ -174,8 +175,6 @@ def save_curation(cur: dict[str, Any]) -> None:
     """
     text = yaml.safe_dump(cur, sort_keys=False, allow_unicode=True)
     _atomic_write_text(CURATION_FILE, text, encoding="utf-8")
-
-
 
 
 # ----------------------------
@@ -368,14 +367,14 @@ def upsert_curated_selected_image(key: str, img_src: str) -> None:
 
 
 def norm_url(url: str) -> str:
-    #Backward-compatible alias for older callers.
+    # Backward-compatible alias for older callers.
     return norm_key(url)
-
 
 
 # ----------------------------
 # Title / Subtitle (curation.yaml)
 # ----------------------------
+
 
 def get_curated_title(cur: dict[str, Any], url: str) -> str:
     rec = cur.get(norm_url(url))

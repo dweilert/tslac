@@ -78,7 +78,6 @@ class Response:
             h.update(headers)
         return Response(status=status, headers=h, body=b)
 
-
     @staticmethod
     def download(
         data: bytes,
@@ -96,18 +95,17 @@ class Response:
 
         fname = filename or "download"
         fname_ascii = fname.replace('"', "")  # avoid breaking the header
-        fname_star = quote(fname, safe="")    # UTF-8 percent-encoded
+        fname_star = quote(fname, safe="")  # UTF-8 percent-encoded
 
         h = {
             "Content-Disposition": (
-                f'attachment; filename="{fname_ascii}"; filename*=UTF-8\'\'{fname_star}'
+                f"attachment; filename=\"{fname_ascii}\"; filename*=UTF-8''{fname_star}"
             ),
             "Cache-Control": "no-store",
         }
         if headers:
             h.update(headers)
         return Response.bytes(data, status=status, content_type=content_type, headers=h)
-
 
     # ----------------------------
     # Redirects and errors

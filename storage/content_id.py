@@ -40,14 +40,14 @@ def canonical_content_id(*, source: str, raw: str) -> str:
 
     # Already canonical?
     if r.startswith(WEB_PREFIX):
-        return WEB_PREFIX + _strip_fragment(r[len(WEB_PREFIX):])
+        return WEB_PREFIX + _strip_fragment(r[len(WEB_PREFIX) :])
     if r.startswith(GDRIVE_PREFIX) or r.startswith("doc:"):
         # Accept "doc:" as an alias, store as gdrive:
         if r.startswith("doc:"):
-            return GDRIVE_PREFIX + _strip(r[len("doc:"):])
-        return GDRIVE_PREFIX + _strip(r[len(GDRIVE_PREFIX):])
+            return GDRIVE_PREFIX + _strip(r[len("doc:") :])
+        return GDRIVE_PREFIX + _strip(r[len(GDRIVE_PREFIX) :])
     if r.startswith(LOCAL_PREFIX):
-        return LOCAL_PREFIX + _strip(r[len(LOCAL_PREFIX):])
+        return LOCAL_PREFIX + _strip(r[len(LOCAL_PREFIX) :])
 
     # Not prefixed yet: decide by source
     if s in ("doc", "gdrive"):
@@ -62,7 +62,7 @@ def canonical_content_id(*, source: str, raw: str) -> str:
 def real_web_url(raw: str) -> str:
     r = _strip(raw)
     if r.startswith(WEB_PREFIX):
-        return _strip_fragment(r[len(WEB_PREFIX):])
+        return _strip_fragment(r[len(WEB_PREFIX) :])
     return r
 
 

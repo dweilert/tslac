@@ -85,7 +85,7 @@ def save_candidates_json(path: Path, candidates: list[Candidate]) -> None:
                 "id": cid,
                 "origin": origin,
                 "title": c.title,
-                "url": cid,          # canonical id stored everywhere
+                "url": cid,  # canonical id stored everywhere
                 "open_url": open_url,  # convenience for UI/preview
                 "source": str(c.source),
                 "published": published,
@@ -94,6 +94,7 @@ def save_candidates_json(path: Path, candidates: list[Candidate]) -> None:
         )
 
     path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
+
 
 def load_candidates_file(path: str | Path | None = None) -> list[Candidate]:
     p = Path(path) if path is not None else CANDIDATES_FILE
@@ -114,7 +115,11 @@ def load_candidates_file(path: str | Path | None = None) -> list[Candidate]:
         r = _normalize_candidate_record(raw)
 
         published_raw = r.get("published")
-        published = date.fromisoformat(published_raw) if isinstance(published_raw, str) and published_raw else None
+        published = (
+            date.fromisoformat(published_raw)
+            if isinstance(published_raw, str) and published_raw
+            else None
+        )
 
         out.append(
             Candidate(

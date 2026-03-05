@@ -77,6 +77,7 @@ IMPORT_TO_PACKAGE = {
 
 IGNORE_IMPORTS = {"importlib_metadata"}  # not needed on py3.12
 
+
 @dataclass(frozen=True)
 class ScanResult:
     runtime_packages: set[str]
@@ -87,6 +88,7 @@ class ScanResult:
 # ------------------------------
 # Helpers
 # ------------------------------
+
 
 def iter_py_files(root: Path) -> list[Path]:
     out: list[Path] = []
@@ -142,8 +144,6 @@ LOCAL_NAMES = build_local_module_names(PROJECT_ROOT)
 
 def is_local_module(name: str) -> bool:
     return name in LOCAL_NAMES or name in LOCAL_IMPORT_PREFIXES
-
-
 
 
 def is_stdlib(name: str) -> bool:
@@ -245,10 +245,17 @@ def scan_repo(check: bool) -> ScanResult:
 # CLI
 # ------------------------------
 
+
 def main() -> int:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--pin", action="store_true", help="Pin versions based on installed packages in this env")
-    ap.add_argument("--check", action="store_true", help="Report packages that appear in code but aren't installed")
+    ap.add_argument(
+        "--pin", action="store_true", help="Pin versions based on installed packages in this env"
+    )
+    ap.add_argument(
+        "--check",
+        action="store_true",
+        help="Report packages that appear in code but aren't installed",
+    )
     args = ap.parse_args()
 
     res = scan_repo(check=args.check)
@@ -285,7 +292,9 @@ def main() -> int:
                 print("\nCould not determine versions for:")
                 for u in all_unknown:
                     print(f"  - {u}")
-                print("\nThese were left unpinned. This is normal if the distribution name differs.")
+                print(
+                    "\nThese were left unpinned. This is normal if the distribution name differs."
+                )
 
     return 0
 

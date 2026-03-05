@@ -4,9 +4,10 @@ from dataclasses import dataclass
 from typing import Any
 
 import config_runtime
-import watch_store  # NEW: compat alias for tests that patch svc.watch_store
 import watch.runtime as watcher  # NEW: compat alias for tests that patch svc.watcher
+import watch_store  # NEW: compat alias for tests that patch svc.watch_store
 from watch.scan import load_latest_results
+
 
 @dataclass(frozen=True)
 class WatchPageModel:
@@ -54,4 +55,4 @@ def save_watch_config(*, sites_text: str, topics_text: str) -> None:
     """
     cfg = watch_store.load_watch()
     settings = getattr(cfg, "settings", None)
-    watch_store.save_watch_from_lines(sites_text, topics_text, settings)    
+    watch_store.save_watch_from_lines(sites_text, topics_text, settings)
