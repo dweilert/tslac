@@ -177,8 +177,8 @@ def collect_candidates(
     # ---------------------------
     # Combine + seen filter
     # ---------------------------
-    info(f"SCRAPE home counts={_count_by_source(home_raw)} total={len(home_raw)}")
-    info(f"SCRAPE info counts={_count_by_source(news_raw)} total={len(news_raw)}")
+    #info(f"SCRAPE home counts={_count_by_source(home_raw)} total={len(home_raw)}")
+    #info(f"SCRAPE info counts={_count_by_source(news_raw)} total={len(news_raw)}")
 
     raw = list(home_raw) + list(news_raw)
 
@@ -186,7 +186,7 @@ def collect_candidates(
     raw = [c for c in raw if c.url not in seen_urls]
     removed = before - len(raw)
 
-    info(f"SCRAPE after_seen counts={_count_by_source(raw)} total={len(raw)} removed={removed}")
+    #info(f"SCRAPE after_seen counts={_count_by_source(raw)} total={len(raw)} removed={removed}")
 
     # ---------------------------
     # Apply rules + finalize
@@ -194,25 +194,25 @@ def collect_candidates(
     results: list[Candidate] = []
     # ... build results ...
 
-    info(
-        f"SCRAPE final counts={_count_by_source(results)} total={len(results)} errors={len(errors)}"
-    )
+    #info(
+    #    f"SCRAPE final counts={_count_by_source(results)} total={len(results)} errors={len(errors)}"
+    #)
 
     # ---------------------------
     # Combine + seen filter
     # ---------------------------
     raw = list(home_raw) + list(news_raw)
-    info(f"SCRAPE collector: raw combined count={len(raw)}")
-    info(
-        f"SCRAPE collector: raw sources before seen={sorted({getattr(c, 'source', '?') for c in raw})}"
-    )
+    #info(f"SCRAPE collector: raw combined count={len(raw)}")
+    #info(
+    #    f"SCRAPE collector: raw sources before seen={sorted({getattr(c, 'source', '?') for c in raw})}"
+    #)
 
     before = len(raw)
     raw = [c for c in raw if c.url not in seen_urls]
-    info(f"SCRAPE collector: seen filter removed={before - len(raw)} remaining={len(raw)}")
-    info(
-        f"SCRAPE collector: raw sources after seen={sorted({getattr(c, 'source', '?') for c in raw})}"
-    )
+    #info(f"SCRAPE collector: seen filter removed={before - len(raw)} remaining={len(raw)}")
+    #info(
+    #    f"SCRAPE collector: raw sources after seen={sorted({getattr(c, 'source', '?') for c in raw})}"
+    #)
 
     # ---------------------------
     # Apply rules + finalize

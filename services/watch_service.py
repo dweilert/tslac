@@ -4,8 +4,9 @@ from dataclasses import dataclass
 from typing import Any
 
 import config_runtime
-import watcher
 
+from watch.runtime import cancel_watch_scan, get_watch_status, start_watch_scan_async
+from watch.scan import load_latest_results, run_watch_scan
 
 @dataclass(frozen=True)
 class WatchPageModel:
@@ -16,20 +17,20 @@ class WatchPageModel:
 
 
 def get_status() -> dict[str, Any]:
-    return watcher.get_watch_status()
+    return get_watch_status()
 
 
 def start_scan() -> bool:
     # returns True if started, False if already running
-    return watcher.start_watch_scan_async()
+    return start_watch_scan_async()
 
 
 def cancel_scan() -> None:
-    watcher.cancel_watch_scan()
+    cancel_watch_scan()
 
 
 def load_page_model() -> WatchPageModel:
-    latest = watcher.load_latest_results()
+    latest = load_latest_results()
 
     sites = config_runtime.get_watch_sites()
     topics = config_runtime.get_watch_keywords()
