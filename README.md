@@ -1307,3 +1307,76 @@ Legacy candidate code cleanup	⚠️
 Import graph cleanup	⚠️
 
 You're about 80–85% through the milestone.
+
+
+===============================
+===============================
+
+
+TSLAC Newsletter Helper – Project Context Header
+
+Project Name: TSLAC Newsletter Helper
+Repo: https://github.com/dweilert/tslac
+Repo Branch: refactor/http-router
+
+Runtime: Custom Python web app (custom web/router, not Flask/Django)
+Python Version: 3.12
+Architecture Style: Routes → Services → Storage → Templates
+Rendering: Server-side templates (render() helper)
+Data Storage: YAML + JSON files in local filesystem
+ 
+-- Architecture Overview. --
+
+Routing Layer
+- web/router.py
+- routes/candidates.py
+- routes/curate_article.py
+- routes/config.py
+- routes/watch.py (being deprecated)
+
+Services Layer
+- services/candidates_service.py
+- services/curate_article_service.py
+- services/watch_service.py
+- services/api_service.py
+
+Storage Layer
+- storage/collector_store.py
+- storage/curation_store.py
+- storage/selected_store.py
+- watch_store.py
+
+Scraping / Collection
+- collect/collector.py
+- collect/rules.py
+- watch/scan.py
+- watch/fetch.py
+- watch/parse.py
+- watch/score.py
+
+Milestone 3:
+
+Ensure that when the Refresh button in the Main page is pressed the application is accessing the defined g-drive and updating any locally stored information.  This process would compare the application stored information with the latest information in the defined g-drive.  If new information is located the local storage should be updated with the latest information.
+
+One of the main goals for this project is to improve the user interface focus on implementing enhancements and changes in the UI. 
+Changes to include:
+
+Main/Home page
+
+- Separate each source category into separate cards that provides a visual grouping or box for each category.
+
+- Add Source Category labels to each card.
+
+- Replace DOC badge with GDRIVE and LOCAL badges as appropriate.
+
+- Repair hide/show of source cateagories when the associated checkbox is toggled.
+
+Curate page
+
+- Replace existing Article content area with TinyMCE editor
+
+- Add a review button that will show the content and the selected image, if selected.  Use of a modal for this would be a preferred method to display the preview.  If this is significant change, please consider opening a new tab for the preview.
+
+- If the source of selected candidate article being curated is from gdrive or local the content from the document should be shown in the curate 'Source content' area.  Images located should be shown in the 'Detected images' section
+ 
+
