@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import Any
 from urllib.parse import parse_qs, quote
 
-from setup.secrets_env import *
+from setup import secrets_env 
 from core.render import render
 from web.request import Request
 from web.response import Response

@@ -1,6 +1,6 @@
 month: 2026-03
-subject: '...'
-intro: '...'
+subject: ''
+intro: ''
 items:
 - id: web:web:https://www.tsl.texas.gov/podcasts
   url: web:https://www.tsl.texas.gov/podcasts

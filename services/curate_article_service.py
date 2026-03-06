@@ -7,7 +7,6 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Any
 
-import docsys.store as doc_store
 import services.api_service as api_service
 import storage.collector_store as collector_store
 import storage.curation_store as curation_store

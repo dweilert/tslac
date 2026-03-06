@@ -7,8 +7,9 @@ server:
 http:
   user_agent: newsletter-bot/1.0 (local script)
 defaults:
-  subject: ""
-  intro: ""
+  subject: "Monthly Update \u2014 New from the Texas State Library"
+  intro: "Hello everyone\u2014here are highlights and resources recently published\
+    \ by the Texas State Library and Archives Commission."
 filtering:
   exact_exclude_paths:
   - /contact
@@ -23,12 +24,7 @@ filtering:
   - see more news and events
   - view our calendar
   - subscribe to events
-  last_3_months_days: 90 
+  last_3_months_days: 92
 watch:
-  sites:
-  - home https://statearchivists.org/
-  - crawl https://texashistory.unt.edu/
-  keywords:
-  - austin
-  - annual
-  - hotdog
+  sites: []
+  keywords: []
