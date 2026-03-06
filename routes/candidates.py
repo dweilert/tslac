@@ -6,7 +6,6 @@ from typing import Any
 from urllib.parse import parse_qs, urlencode, urlparse
 
 import storage.curation_store as curation_store
-from constants import DEFAULT_INTRO, DEFAULT_SUBJECT
 from services import watch_service
 from services.candidates_service import (
     load_persisted_candidates,
@@ -205,8 +204,9 @@ def post_save(req: Request) -> Response:
         form = _parse_post_form(req)
 
         picked = form.get("picked", [])
-        subject = (form.get("subject", [DEFAULT_SUBJECT])[0] or DEFAULT_SUBJECT).strip()
-        intro = (form.get("intro", [DEFAULT_INTRO])[0] or DEFAULT_INTRO).strip()
+
+        subject = ""
+        intro = ""
 
         n = save_picks(subject=subject, intro=intro, picked_urls=picked)
         return _redir_status(f"Saved {n} item(s) to selected.yaml")
@@ -274,9 +274,9 @@ def get_main(req: Request, params: dict[str, Any] | None = None) -> Response:
     subject = _strip(sel.get("subject")) if isinstance(sel, dict) else ""
     intro = _strip(sel.get("intro")) if isinstance(sel, dict) else ""
     if not subject:
-        subject = DEFAULT_SUBJECT
+        subject = ""
     if not intro:
-        intro = DEFAULT_INTRO
+        intro = ""
 
     # 3) Curation indicators keyed by canonical id
     cur = load_curation()

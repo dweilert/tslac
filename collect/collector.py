@@ -4,7 +4,7 @@ from datetime import date, datetime
 from typing import Any
 
 from util.logutil import debug
-from models import Candidate
+from core.models import Candidate
 from web.fetch import FetchError, fetch_html
 
 from .parse_homepage import parse_homepage_candidates
