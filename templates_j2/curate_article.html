@@ -94,13 +94,44 @@
 
       <div class="small muted" style="margin: 0 0 6px 0;">Article content</div>
 
-      <textarea class="field" name="final_blurb" rows="14">{{ final_blurb }}</textarea>
+      <textarea id="final_blurb" class="field" name="final_blurb" rows="14">{{ final_blurb | safe }}</textarea> 
 
-      <div class="toolbar" style="margin-top: 8px;">
+      <div style="margin-top:10px; display:flex; gap:8px; flex-wrap:wrap;">
         <button class="btn" type="submit">Save article content</button>
+        <button class="btn" type="button" id="reviewBtn">Review article</button>
       </div>
+
     </form>
   </div>
+
+
+<!-- TinyMCE (CDN) -->
+<script src="https://cdn.tiny.cloud/1/{{ tinymce_api_key }}/tinymce/6/tinymce.min.js" referrerpolicy="origin"></script>
+<script>
+(function initTinyMCE() {
+  if (!window.tinymce) return;
+
+  tinymce.init({
+    selector: "textarea[name='final_blurb']",
+    menubar: false,
+    branding: false,
+    promotion: false,
+    height: 420,
+    plugins: "lists link autoresize code",
+    toolbar:
+      "undo redo | blocks | bold italic | bullist numlist | link | removeformat | code",
+    content_style: "body { font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; font-size: 14px; }",
+  });
+
+  // Make sure TinyMCE updates the underlying textarea before submit
+  const form = document.querySelector("form[action='/curate/save']");
+  if (form) {
+    form.addEventListener("submit", () => {
+      try { tinymce.triggerSave(); } catch (e) {}
+    });
+  }
+})();
+</script>
 
   <!-- Excerpts -->
   <div class="card" style="margin-top: 10px; margin-bottom: 10px;">
@@ -229,6 +260,38 @@
 </div>
 
 <script>
+
+(function wireReviewButton() {
+  const reviewBtn = document.getElementById("reviewBtn");
+  const saveForm = document.querySelector("form[action='/curate/save']");
+  if (!reviewBtn || !saveForm) return;
+
+  reviewBtn.addEventListener("click", () => {
+    try { tinymce.triggerSave(); } catch (e) {}
+
+    const reviewForm = document.createElement("form");
+    reviewForm.method = "POST";
+    reviewForm.action = "/curate/review";
+    reviewForm.target = "_blank";
+
+    for (const el of saveForm.elements) {
+      if (!el.name) continue;
+      if ((el.type === "checkbox" || el.type === "radio") && !el.checked) continue;
+
+      const input = document.createElement("input");
+      input.type = "hidden";
+      input.name = el.name;
+      input.value = el.value;
+      reviewForm.appendChild(input);
+    }
+
+    document.body.appendChild(reviewForm);
+    reviewForm.submit();
+    reviewForm.remove();
+  });
+})();
+
+
 /* Server state available to JS */
 const INDEX = {{ index }};
 const PAGE_URL = {{ url | tojson }};

@@ -18,24 +18,6 @@ CREDENTIALS_PATH = ROOT / "credentials.json"
 TOKEN_PATH = ROOT / "token.json"
 
 
-# def get_drive_service():
-#     creds = None
-#     info("GDrive: initializing service")
-#     ...
-#     if os.path.exists(TOKEN_FILE):
-#         debug("GDrive: found token.json, loading credentials")
-#     ...
-#     if not creds or not creds.valid:
-#         info("GDrive: credentials missing/invalid; starting refresh/login flow")
-#         ...
-#         info("GDrive: credentials obtained; token.json updated")
-#     else:
-#         debug("GDrive: credentials valid")
-
-#     info("GDrive: service ready")
-#     return build("drive", "v3", credentials=creds)
-
-
 def get_drive_service():
     """
     Uses OAuth installed-app flow:

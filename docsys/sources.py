@@ -223,3 +223,27 @@ class GDriveSource(DocumentSource):
 
         debug(f"GDrive: archived {count} file(s)")
         return count
+
+
+
+
+def from_env() -> DocumentSource:
+    """
+    Build the appropriate DocumentSource based on environment configuration.
+
+    DOC_INPUT_MODE:
+        gdrive  -> Google Drive folder
+        local   -> Local filesystem directory
+    """
+
+    mode = os.getenv("DOC_INPUT_MODE", "gdrive").strip().lower()
+
+    if mode == "local":
+        root = os.getenv("DOC_LOCAL_PATH", "./docs")
+        return LocalDirSource(root)
+
+    # ---- Google Drive mode ----
+    folder_name = os.getenv("GDRIVE_INPUT_FOLDER_NAME", "tslac_input")
+    archive_folder_name = os.getenv("GDRIVE_ARCHIVE_FOLDER_NAME", "tslac_saved")
+
+    return GDriveSource(folder_name, archive_folder_name)

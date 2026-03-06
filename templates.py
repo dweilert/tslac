@@ -1,6 +1,6 @@
 # templates.py
 from __future__ import annotations
-
+import os
 import html
 from typing import Any
 from urllib.parse import quote
@@ -66,6 +66,7 @@ def curate_page_html(
     crops=None,
     curated_title="",
     curated_subtitle="",
+    tinymce_api_key: str = "",
 ) -> bytes:
 
     c = candidate
@@ -149,6 +150,7 @@ def curate_page_html(
         cleaned_html=cleaned_html,
         curated_title=curated_title,
         curated_subtitle=curated_subtitle,
+        tinymce_api_key=tinymce_api_key or "",
     )
     return html.encode("utf-8")
 

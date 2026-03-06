@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="toolbar">
+  <button class="btn" type="button" onclick="window.close()">Close tab</button>
+</div>
+
+<div class="card">
+  <div class="title">{{ curated_title or "Article Review" }}</div>
+
+  {% if curated_subtitle %}
+    <div class="small muted" style="margin-top:6px;">{{ curated_subtitle }}</div>
+  {% endif %}
+
+  {% if selected_image %}
+    <div style="margin-top:16px;">
+      <img src="{{ selected_image }}" alt="" style="max-width:100%; height:auto; border:1px solid #ddd; border-radius:8px;" />
+    </div>
+  {% endif %}
+
+  <div style="margin-top:18px;">
+    {{ final_blurb | safe }}
+  </div>
+</div>
+
+{% endblock %}

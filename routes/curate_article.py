@@ -1,6 +1,8 @@
 # routes/curate_article.py
 from __future__ import annotations
 
+import os
+
 from typing import Any
 from urllib.parse import parse_qs, urlencode
 
@@ -25,6 +27,8 @@ from web.request import Request
 from web.response import Response
 from web.router import Router
 
+from render import render
+
 
 def register(router: Router) -> None:
     # Unified curate route only:
@@ -39,6 +43,7 @@ def register(router: Router) -> None:
     router.post("/curate/move_excerpt", post_curate_move_excerpt)
     router.post("/curate/clear_excerpts", post_curate_clear_excerpts)
     router.post("/curate/compose_blurb", post_curate_compose_blurb)
+    router.post("/curate/review", post_curate_review)
 
     # Images
     router.post("/curate/save_crop", post_curate_save_crop)
@@ -99,6 +104,7 @@ def get_curate_by_id(req: Request, params: dict[str, Any] | None = None) -> Resp
         return Response.redirect("/?" + urlencode({"status": f"Curate failed: {e}"}, doseq=False))
 
     status = req.query_first.get("status", "") or ""
+    tinymce_api_key=os.getenv("TINYMCE_API_KEY", ""),
 
     body = curate_page_html(
         view.idx,
@@ -115,6 +121,7 @@ def get_curate_by_id(req: Request, params: dict[str, Any] | None = None) -> Resp
         crops=view.crops,
         curated_title=view.curated_title,
         curated_subtitle=view.curated_subtitle,
+        tinymce_api_key=tinymce_api_key,
     )
     return Response.html(body)
 
@@ -213,3 +220,31 @@ def post_curate_clear_selected_image(
 
     clear_selected_image(url=cid)
     return _redirect_curate_by_id(cid, "Cleared selected image")
+
+
+def post_curate_review(req: Request) -> Response:
+    form = _parse_post_form(req)
+
+    
+    def _first(name: str) -> str:
+        vals = form.get(name)
+        if vals is None:
+            return ""
+        if isinstance(vals, list):
+            return vals[0] if vals else ""
+        return str(vals)
+
+    title = _first("curated_title").strip()
+    subtitle = _first("curated_subtitle").strip()
+    final_blurb = _first("final_blurb")
+    selected_image = _first("selected_image").strip()
+
+    body = render(
+        "curate_review.html",
+        title=title or "Article Review",
+        curated_title=title,
+        curated_subtitle=subtitle,
+        final_blurb=final_blurb,
+        selected_image=selected_image,
+    )
+    return Response.html(body)

@@ -8,7 +8,6 @@
 </div>
 
 <div class="toolbar">
-
   <a class="btn" id="refreshBtn" href="/refresh">Refresh article list</a>
 
   <form method="post" action="/seen/reset" style="display:inline; margin-left:8px;">
@@ -27,7 +26,6 @@
     <a class="btn" href="/export/constant-contact.zip">Export Constant Contact ZIP</a>
   {% endif %}
 </div>
-
 
 <form method="post" action="/save">
 
@@ -61,8 +59,13 @@
     </label>
 
     <label class="small" style="display:inline-flex; align-items:center; gap:6px;">
-      <input type="checkbox" class="srcToggle" data-src="doc" />
-      <span class="badge badge-doc">Doc</span>
+      <input type="checkbox" class="srcToggle" data-src="gdrive" />
+      <span class="badge badge-gdrive">GDrive</span>
+    </label>
+
+    <label class="small" style="display:inline-flex; align-items:center; gap:6px;">
+      <input type="checkbox" class="srcToggle" data-src="local" />
+      <span class="badge badge-local">Local</span>
     </label>
 
     <label class="small" style="display:inline-flex; align-items:center; gap:6px;">
@@ -71,72 +74,106 @@
     </label>
   </div>
 
-
   <div class="toolbar" style="align-items:center; justify-content:space-between; margin-top: 8px;">
-  <h2 style="margin:0;">Article Candidates</h2>
-
-</div>
-
- <div class="card">
-  <div class="row" style="align-items:center; justify-content:space-between;">
     <h2 style="margin:0;">Article Candidates</h2>
   </div>
 
-  <div class="candidate-list" id="webCards">
-    {% for c in candidates %}
-      <div class="candidate-row"
-           data-title="{{ (c.title or '')|lower }}"
-           data-source="{{ (c.source or '')|lower }}">
+  {# Source ordering for grouped cards #}
+  {% set source_order = ["carousel", "featured", "news", "watch", "gdrive", "local", "unknown"] %}
 
-        <div class="row">
-          <div>
-            <input type="checkbox" name="picked" value="{{ c.url }}"
-                   {% if c.url in prechecked %}checked{% endif %}
-                   onchange="updateSelectedCount()"/>
+  <div class="cards">
+
+    {% for group_src in source_order %}
+      {# Build list of items for this group (derive src from c.source; fallback by url prefix) #}
+      {% set items = [] %}
+      {% for c in candidates %}
+        {% set s0 = (c.source or "")|lower %}
+        {% set u0 = (c.url or "")|lower %}
+        {% if not s0 %}
+          {% if u0.startswith("gdrive:") %}
+            {% set s0 = "gdrive" %}
+          {% elif u0.startswith("local:") %}
+            {% set s0 = "local" %}
+          {% else %}
+            {% set s0 = "unknown" %}
+          {% endif %}
+        {% endif %}
+
+        {% if s0 == group_src %}
+          {% set _ = items.append(c) %}
+        {% endif %}
+      {% endfor %}
+
+      {% if items|length > 0 %}
+        <div class="card source-card" data-source="{{ group_src }}">
+          <div class="card-header">
+            <div class="row" style="align-items:center; justify-content:space-between;">
+              <div>
+                <span class="badge badge-{{ group_src }}">{{ group_src }}</span>
+                <span class="small muted" style="margin-left:8px;">
+                  {{ items|length }} item{% if items|length != 1 %}s{% endif %}
+                </span>
+              </div>
+            </div>
           </div>
 
-          <div style="flex:1;">
-            <div class="title">
-              {{ c.title }}
-              {% if has_blurb_by_url.get(c.url) %}
-                <span class="badge badge-curated">curated</span>
-              {% endif %}
-            </div>
+          <div class="candidate-list">
+            {% for c in items %}
+              <div class="candidate-row"
+                   data-title="{{ (c.title or '')|lower }}"
+                   data-source="{{ group_src }}">
 
-            <div class="small">
-              Source:
-              {% set src = (c.source or 'Unknown') %}
-              <span class="badge badge-{{ src|lower }}">{{ src }}</span>
-            </div>
+                <div class="row">
+                  <div>
+                    <input type="checkbox" name="picked" value="{{ c.url }}"
+                           {% if c.url in prechecked %}checked{% endif %}
+                           onchange="updateSelectedCount()"/>
+                  </div>
 
-            <div class="small">
-              <a href="{{ c.open_url or '#' }}" target="_blank" rel="noreferrer">Open</a>
-              &nbsp;•&nbsp;
+                  <div style="flex:1;">
+                    <div class="title">
+                      {{ c.title }}
+                      {% if has_blurb_by_url.get(c.url) %}
+                        <span class="badge badge-curated">curated</span>
+                      {% endif %}
+                    </div>
 
-              {% set has_img = has_image_by_url.get(c.url) %}
-              <span class="statusdot">
-                <span class="dot {% if has_img %}ok{% else %}bad{% endif %}"></span>
-                {% if has_img %}Image{% else %}No image{% endif %}
-              </span>
-            </div>
+                    <div class="small">
+                      Source:
+                      <span class="badge badge-{{ group_src }}">{{ group_src }}</span>
+                    </div>
 
-            <div class="small muted"><code>{{ c.url }}</code></div>
-          </div>
+                    <div class="small">
+                      <a href="{{ c.open_url or '#' }}" target="_blank" rel="noreferrer">Open</a>
+                      &nbsp;•&nbsp;
 
-          <div>
-            <a class="btn" href="/curate?id={{ c.url|urlencode }}">Curate</a>
+                      {% set has_img = has_image_by_url.get(c.url) %}
+                      <span class="statusdot">
+                        <span class="dot {% if has_img %}ok{% else %}bad{% endif %}"></span>
+                        {% if has_img %}Image{% else %}No image{% endif %}
+                      </span>
+                    </div>
+
+                    <div class="small muted"><code>{{ c.url }}</code></div>
+                  </div>
+
+                  <div>
+                    <a class="btn" href="/curate?id={{ c.url|urlencode }}">Curate</a>
+                  </div>
+                </div>
+
+              </div>
+            {% endfor %}
           </div>
         </div>
-
-      </div>
+      {% endif %}
     {% endfor %}
+
   </div>
-</div> 
 
 </form>
 
 <script>
-
 const SRC_FILTER_KEY = "tslac_hidden_sources_v1";
 
 function _loadHiddenSources() {
@@ -162,7 +199,8 @@ function _saveHiddenSources(hiddenSet) {
 function applySourceFilters(hidden) {
   const hiddenSet = hidden || _loadHiddenSources();
 
-  document.querySelectorAll('.candidate-card').forEach(card => {
+  // ✅ hide/show entire source CARDS
+  document.querySelectorAll('.source-card').forEach(card => {
     const src = (card.getAttribute('data-source') || '').toLowerCase() || 'unknown';
     card.style.display = hiddenSet.has(src) ? 'none' : '';
   });
@@ -209,13 +247,11 @@ function selectAll(on) {
   updateSelectedCount();
 }
 
-
 function updateSelectedCount() {
   const n = document.querySelectorAll('input[type="checkbox"][name="picked"]:checked').length;
   const el = document.getElementById('selCount');
   if (el) el.textContent = String(n);
 }
-
 
 updateSelectedCount();
 </script>

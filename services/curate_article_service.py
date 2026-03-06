@@ -15,6 +15,9 @@ from services.candidates_service import get_candidate_id
 from storage.content_id import canonical_content_id, real_web_url
 from web.errors import BadRequestError
 
+from docsys.pipeline import build_doc_candidates
+from docsys.sources import from_env
+
 
 @dataclass(frozen=True)
 class CurateView:
@@ -41,6 +44,14 @@ def _get_attr(obj: Any, name: str, default: Any = "") -> Any:
     except Exception:
         return default
 
+def _looks_like_drive_id(s: str) -> bool:
+    s = (s or "").strip()
+    if not s:
+        return False
+    # Drive file IDs are typically 25+ chars and use URL-safe chars.
+    if s.startswith(("web:", "local:", "http://", "https://")):
+        return False
+    return len(s) >= 20 and all(ch.isalnum() or ch in "-_" for ch in s)
 
 def _canon_content_id(s: str) -> str:
     s = (s or "").strip()
@@ -381,31 +392,24 @@ def build_view_by_content_id(
         )
 
     # --- GDRIVE / DOC ---
-    if cid.startswith("gdrive:") or cid.startswith("doc:"):
+    if cid.startswith("gdrive:") or cid.startswith("doc:") or _looks_like_drive_id(cid):
+
+        # If UI passed a raw Drive id, normalize it first
+        if not cid.startswith(("gdrive:", "doc:")):
+            cid = "gdrive:" + cid.strip()
+
         # Normalize doc: -> gdrive:
         cid = canonical_content_id(source="doc", raw=cid)
 
-        docs = (load_docs or doc_store.load_doc_candidates)() or []
+        def _default_load_docs() -> list[dict[str, Any]]:
+            return build_doc_candidates(from_env())
+
+        docs = (load_docs or _default_load_docs)() or []
+
         if not docs:
             raise BadRequestError("No doc candidates available. Refresh first.")
 
-        # wanted = cid[len("gdrive:"):]
-        # idx = None
-        # d = None
-        # for i, rec in enumerate(docs):
-        #     if not isinstance(rec, dict):
-        #         continue
-        #     did = (rec.get("id") or "").strip()
-        #     if did == wanted:
-        #         idx = i
-        #         d = rec
-        #         break
 
-        # if idx is None or d is None:
-        #     raise BadRequestError(f"Doc not found: {wanted}")
-
-        # doc_candidates.json stores rec["id"] as canonical ("gdrive:<id>") in your current data.
-        # Normalize both sides and match robustly.
         wanted_cid = (
             cid if cid.startswith("gdrive:") else canonical_content_id(source="doc", raw=cid)
         )
@@ -446,14 +450,18 @@ def build_view_by_content_id(
             "images": d.get("images") or [],
         }
 
+        original_url = f"https://drive.google.com/open?id={wanted_raw}" if wanted_raw else "#"
+
+
         # Candidate for doc can just be the dict; template supports dict candidate
         candidate = {
-            "url": cid,  # canonical id (important!)
-            "original_url": d.get("url") or "",
+            "url": cid,  
+            "original_url": original_url,  
             "title": d.get("title") or "",
             "json_url": "",
             "source": "doc",
         }
+
 
         return CurateView(
             idx=idx,

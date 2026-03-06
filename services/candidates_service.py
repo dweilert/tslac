@@ -8,7 +8,10 @@ from typing import Any
 from collect.collector import collect_candidates
 from collect.models import Candidate
 from collect.rules import CollectRules
-from docsys.store import load_doc_candidates
+
+from docsys.pipeline import build_doc_candidates
+from docsys.sources import from_env
+
 from storage.collector_store import (
     CANDIDATES_FILE,
     SEEN_URLS_FILE,
@@ -48,7 +51,7 @@ CollectFn = Callable[[str, CollectRules, date, set[str]], tuple[list[Any], list[
 LoadSeenFn = Callable[[Any], set[str]]
 SaveSeenFn = Callable[[Any, set[str]], None]
 SaveCandidatesFn = Callable[[Any, list[Any]], None]
-LoadDocsFn = Callable[[], list[Any]]
+LoadDocsFn = Callable[[], list[dict[str, Any]]]
 LoadCandidatesFileFn = Callable[[Any], list[Any]]
 
 
@@ -66,11 +69,16 @@ def refresh_candidates(
     def _default_collect(homepage: str, rules: CollectRules, day: date, seen_urls: set[str]):
         return collect_candidates(homepage, rules=rules, today=day, seen_urls=seen_urls)
 
+    def _default_load_docs() -> list[dict[str, Any]]:
+        # Builds doc candidates from configured source (gdrive or local),
+        # and summarizes content via OpenAI (with caching) as needed.
+        return build_doc_candidates(from_env())
+
     collect_fn = collect_fn or _default_collect
     load_seen_fn = load_seen_fn or load_seen
     save_seen_fn = save_seen_fn or save_seen
     save_candidates_fn = save_candidates_fn or save_candidates_json
-    load_docs_fn = load_docs_fn or load_doc_candidates
+    load_docs_fn = load_docs_fn or _default_load_docs
 
     seen = set() if ignore_seen else load_seen_fn(SEEN_URLS_FILE)
 
@@ -87,9 +95,7 @@ def refresh_candidates(
         seen,
     )
 
-    # ---- Merge doc candidates (from doc index) into candidates ----
-    # doc_candidates.json is allowed to remain as a temporary doc index,
-    # but docs must appear in the unified UI list by being merged here.
+    # ---- Merge doc candidates (live build from configured source) into candidates ----
     docs = load_docs_fn() or []
     doc_candidates: list[Any] = []
 
@@ -101,34 +107,23 @@ def refresh_candidates(
         if not raw_id:
             continue
 
-        title = str(d.get("title") or d.get("name") or d.get("subject") or "").strip()
-        if not title:
-            title = f"Doc {raw_id}"
+        doc_source = str(d.get("source") or "").strip() or "gdrive"  # "gdrive" or "local"
+        title = str(d.get("title") or "").strip() or f"Doc {raw_id}"
+        summary = str(d.get("summary") or "").strip()
 
-        raw_id = str(d.get("id") or "").strip()
-        if not raw_id:
-            continue
-
-        # doc_candidates.json already stores canonical ids like "gdrive:<id>".
-        # Normalize only if needed (supports legacy "doc:<id>" or bare ids).
-        if raw_id.startswith("gdrive:"):
+        # Canonical id used across app
+        if raw_id.startswith(("gdrive:", "local:")):
             cid = raw_id
-        elif raw_id.startswith("doc:"):
-            cid = "gdrive:" + raw_id[len("doc:") :].strip()
         else:
-            cid = "gdrive:" + raw_id
-
-        title = str(d.get("title") or d.get("name") or d.get("subject") or "").strip()
-        if not title:
-            title = f"Doc {cid}"
+            cid = f"{doc_source}:{raw_id}"
 
         doc_candidates.append(
             Candidate(
                 title=title,
-                url=cid,  # <-- use canonical id directly
-                source="gdrive",
+                url=cid,  # canonical id
+                source=doc_source,
                 published=None,
-                summary=str(d.get("summary") or "").strip(),
+                summary=summary,
             )
         )
 
@@ -256,28 +251,6 @@ def _as_str(x: Any) -> str:
     return "" if x is None else str(x)
 
 
-def _canon_doc_id(did: str) -> str:
-    did = (did or "").strip()
-    if not did:
-        return ""
-    if did.startswith("doc:"):
-        return "gdrive:" + did[len("doc:") :].strip()
-    return did
-
-
-def _as_str(x: Any) -> str:
-    return "" if x is None else str(x)
-
-
-def _canon_doc_id(did: str) -> str:
-    did = (did or "").strip()
-    if not did:
-        return ""
-    if did.startswith("doc:"):
-        return "gdrive:" + did[len("doc:") :].strip()
-    return did
-
-
 def _canon_web_id(u: str) -> str:
     u = (u or "").strip()
     if not u:
@@ -289,6 +262,10 @@ def unify_candidates(web_candidates: list[Any]) -> list[dict[str, Any]]:
     """
     Produce one list for candidates.html.
     Each item has: title, url (canonical content_id), source, open_url
+
+    Note: doc candidates are built live from configured source (gdrive/local).
+    open_url for docs is best-effort until we propagate stable open URLs
+    from docsys.sources/build_doc_candidates.
     """
     out: list[dict[str, Any]] = []
 
@@ -312,30 +289,39 @@ def unify_candidates(web_candidates: list[Any]) -> list[dict[str, Any]]:
         out.append(
             {
                 "title": title or open_url,
-                "url": cid,  # ✅ canonical content id
+                "url": cid,  # canonical content id
                 "source": source,
                 "open_url": open_url,
             }
         )
 
-    # --- doc candidates ---
-    docs = load_doc_candidates() or []
+    # --- doc candidates (live) ---
+    docs = build_doc_candidates(from_env()) or []
     for d in docs:
         if not isinstance(d, dict):
             continue
 
-        did = _canon_doc_id(_as_str(d.get("id")).strip())
-        if not did:
+        raw_id = _as_str(d.get("id")).strip()
+        if not raw_id:
             continue
 
+        src = _as_str(d.get("source") or "gdrive").strip() or "gdrive"
+
+        if raw_id.startswith(("gdrive:", "local:")):
+            did = raw_id
+        else:
+            did = f"{src}:{raw_id}"
+
         title = _as_str(d.get("title") or did).strip()
-        open_url = _as_str(d.get("url") or "").strip() or "#"
+
+        # Best-effort. If you later include open_url in pipeline output, this will “just work”.
+        open_url = _as_str(d.get("open_url") or d.get("url") or "").strip() or "#"
 
         out.append(
             {
                 "title": title,
-                "url": did,  # ✅ gdrive:...
-                "source": "doc",
+                "url": did,
+                "source": src,
                 "open_url": open_url,
             }
         )

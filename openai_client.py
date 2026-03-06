@@ -65,17 +65,20 @@ def _truncate_text(text: str, max_chars: int = 15000) -> str:
     return "\n\n".join(out)
 
 
+
 # ------------------------------------------------------------
 # Default OpenAI summarizer
 # ------------------------------------------------------------
-def summarize_document(text: str) -> str:
+def summarize_document(text: str, title: str | None = None) -> str:
     text = _truncate_text(text)
+
+    title_line = f"Title: {title}\n\n" if title else ""
 
     prompt = (
         "Summarize the following document in 2–4 clear sentences. "
         "Focus specifically on what the document is suggesting or recommending. "
         "Be concise.\n\n"
-        f"{text}"
+        f"{title_line}{text}"
     )
 
     client = _get_client()

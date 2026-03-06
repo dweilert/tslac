@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-
+from typing import Any
 from logutil import error
 from services import preview_service
 from web.request import Request
@@ -17,7 +17,7 @@ def register(router: Router) -> None:
     router.route_regex("GET", r"^/preview/images/.*", get_preview_image)
 
 
-def get_preview(_: Request) -> Response:
+def get_preview(req: Request, params: dict[str, Any] | None = None) -> Response:    
     html_bytes = preview_service.build_preview_html()
     return Response.html(html_bytes)
 

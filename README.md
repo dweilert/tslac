@@ -1378,5 +1378,9 @@ Curate page
 - Add a review button that will show the content and the selected image, if selected.  Use of a modal for this would be a preferred method to display the preview.  If this is significant change, please consider opening a new tab for the preview.
 
 - If the source of selected candidate article being curated is from gdrive or local the content from the document should be shown in the curate 'Source content' area.  Images located should be shown in the 'Detected images' section
- 
 
+
+- Lets clarify that when the Refresh button is pressed it checks web and gdrive/doc sources not just one or the other.
+- TinyMCE from CDN is fine.
+- Processing of documents from gdrive needs to support PDF, Word, Plan text, and G-Documents at a minimum.
+- Saving of content that is in the TinyMCE edit area can be saved as html, but must be saved in the file that contains the information about the article for later use.

@@ -75,17 +75,35 @@ def _as_gdrive_id(raw_id: str) -> str:
     return "gdrive:" + r
 
 
+# def _gdrive_open_url(content_id: str) -> str:
+#     """
+#     Convert gdrive:<id> to a clickable doc URL.
+#     Note: this assumes Google Docs. If you store other Drive file types, you can adapt.
+#     """
+#     s = _strip(content_id)
+#     if s.startswith("gdrive:"):
+#         doc_id = _strip(s[len("gdrive:") :])
+#         if doc_id:
+#             return f"https://docs.google.com/document/d/{doc_id}/edit"
+#     return s
+
+
 def _gdrive_open_url(content_id: str) -> str:
-    """
-    Convert gdrive:<id> to a clickable doc URL.
-    Note: this assumes Google Docs. If you store other Drive file types, you can adapt.
-    """
-    s = _strip(content_id)
-    if s.startswith("gdrive:"):
-        doc_id = _strip(s[len("gdrive:") :])
-        if doc_id:
-            return f"https://docs.google.com/document/d/{doc_id}/edit"
-    return s
+    # content_id is "gdrive:<file_id>" or legacy "doc:<id>"
+    cid = (content_id or "").strip()
+
+    if cid.startswith("doc:"):
+        cid = "gdrive:" + cid[len("doc:") :].strip()
+
+    if not cid.startswith("gdrive:"):
+        return ""
+
+    file_id = cid[len("gdrive:") :].strip()
+    if not file_id:
+        return ""
+
+    # Universal Drive open link: works for Docs, PDFs, DOCX, TXT, etc.
+    return f"https://drive.google.com/open?id={file_id}"
 
 
 def _ui_from_candidate(c: Any) -> UICandidate | None:

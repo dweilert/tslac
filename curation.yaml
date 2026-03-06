@@ -8,10 +8,16 @@ web:https://www.tsl.texas.gov/node/70520:
   title: T234 99
   subtitle: SS Number 99
 web:https://www.tsl.texas.gov/texasamerica250exhibit:
-  final_blurb: fds
-  updated_at: '2026-03-04T17:09:31'
-  title: Texas America250 Exhibit | Texas State Library
-  subtitle: BOB
+  final_blurb: <p>As the country celebrates 250 years since the signing of the Declaration
+    of Independence, every state has a story to tell about its own contributions to
+    the development of the nation. Texas pride permeates our culture here at home,
+    and we are always eager to promote the state&rsquo;s people, products, landscape,
+    innovations, and works of art beyond our borders, showing how the Lone Star State
+    has contributed to the legacy of America.&nbsp;</p>
+  updated_at: '2026-03-05T21:00:25'
+  title: Texas America250 Exhibit
+  subtitle: Our Anniversary
+  selected_image: https://www.tsl.texas.gov/sites/default/files/public/tslac/exhibits/txamerica250/Section%207_Case%201_map00055FRONTPAGE.png
 web:https://www.tsl.texas.gov/node/70476:
   final_blurb: "Austin, TX – The Texas State Library and Archives Commission (TSLAC)\
     \ has announced that it is accepting applications for its state fiscal year 2027\
@@ -60,3 +66,26 @@ gdrive:174V1bg--afjs5YV-91omM3zbzv-nfx0z:
   updated_at: '2026-03-05T13:04:12'
   title: Copy of G-Docs-Example.docx
   subtitle: as
+gdrive:1mz2GnMqbsdhFMOKLFzXEKrf0Lgt_NzEM:
+  final_blurb: <p>Wow does this work</p>
+  updated_at: '2026-03-05T20:51:05'
+  title: Copy of PlainText.txt
+  subtitle: zzz
+web:https://www.tsl.texas.gov/podcasts:
+  excerpts: []
+  updated_at: '2026-03-06T07:48:39'
+  final_blurb: "<p>On <strong>Texas Talking Book Voices</strong>, the podcast of the\
+    \ Talking Book Program (TBP) at the Texas State Library and Archives Commission,\
+    \ we go behind the scenes to explore different facets of the service and meet\
+    \ the people who help make reading accessible to Texans with visual, physical,\
+    \ or reading disabilities. Whether you&rsquo;re a TBP patron, a librarian, or\
+    \ a library fan, we have something here for you! Season 3, Episode 3: Learning\
+    \ a New Language</p>\r\n<p><a title=\"Testing links\" href=\"https://www.ibm.com\"\
+    >www.ibm.com</a></p>\r\n<ul>\r\n<li>bob</li>\r\n<li>larry</li>\r\n<li>ken</li>\r\
+    \n</ul>\r\n<p>Not sure how to find an audiobook you will actually enjoy? In this\
+    \ episode, TBP Reader Advisory Librarians Laura Jean and RC talk about one of\
+    \ the most common questions they get from patrons: \"How can I learn a new language?\"\
+    \ They discuss resources available through the Talking Book Program, including\
+    \ self-instruction programs in braille and a</p>"
+  title: Texas Talking Book
+  subtitle: Podcasts at the Texas State Library

@@ -28,9 +28,17 @@ def save_seen(path: Path, seen: set[str]) -> None:
 def _split_content_id(u: str) -> tuple[str, str, str]:
     """
     Returns (content_id, origin, open_url)
-    content_id: "web:<url>" or "gdrive:<id>"
-    origin: "web" | "gdrive"
-    open_url: actual openable URL
+
+    content_id:
+      - "web:<url>"
+      - "gdrive:<file_id>"
+      - "local:<path_or_id>"
+
+    origin:
+      - "web" | "gdrive" | "local"
+
+    open_url:
+      - actual openable URL (best-effort)
     """
     s = (u or "").strip()
     if not s:
@@ -41,18 +49,26 @@ def _split_content_id(u: str) -> tuple[str, str, str]:
         return (f"web:{raw}", "web", raw)
 
     if s.startswith("gdrive:"):
-        doc_id = s[len("gdrive:") :].strip()
-        open_url = f"https://docs.google.com/document/d/{doc_id}/edit" if doc_id else ""
-        return (f"gdrive:{doc_id}", "gdrive", open_url)
+        file_id = s[len("gdrive:") :].strip()
+        # Universal Drive open link works for Google Docs *and* PDFs/DOCX/TXT stored in Drive.
+        open_url = f"https://drive.google.com/open?id={file_id}" if file_id else ""
+        return (f"gdrive:{file_id}", "gdrive", open_url)
+
+    if s.startswith("local:"):
+        local_id = s[len("local:") :].strip()
+        # Browsers won't reliably open arbitrary local paths for security reasons.
+        # We'll keep this as placeholder until a local-serving route exists.
+        open_url = ""
+        return (f"local:{local_id}", "local", open_url)
 
     # Back-compat: raw http(s) treated as web
     if s.startswith("http://") or s.startswith("https://"):
         return (f"web:{s}", "web", s)
 
     # Back-compat: bare doc id treated as gdrive
-    doc_id = s
-    open_url = f"https://docs.google.com/document/d/{doc_id}/edit" if doc_id else ""
-    return (f"gdrive:{doc_id}", "gdrive", open_url)
+    file_id = s
+    open_url = f"https://drive.google.com/open?id={file_id}" if file_id else ""
+    return (f"gdrive:{file_id}", "gdrive", open_url)
 
 
 def _normalize_candidate_record(r: dict[str, Any]) -> dict[str, Any]:
@@ -72,26 +88,91 @@ def _normalize_candidate_record(r: dict[str, Any]) -> dict[str, Any]:
     return r
 
 
-def save_candidates_json(path: Path, candidates: list[Candidate]) -> None:
+def _published_to_iso(p: Any) -> str | None:
+    if isinstance(p, date):
+        return p.isoformat()
+    if isinstance(p, str):
+        s = p.strip()
+        return s or None
+    return None
+
+
+def _as_str(x: Any) -> str:
+    return "" if x is None else str(x)
+
+
+def _candidate_to_record(c: Any) -> dict[str, Any] | None:
+    """
+    Convert any candidate-like object into a JSON record.
+    Supports:
+      - collect.models.Candidate
+      - WatchCandidate
+      - dict records
+      - DocCandidate-like objects (no .published)
+    """
+    if isinstance(c, dict):
+        r = dict(c)
+        # Ensure it has canonical id/url/open_url fields
+        return _normalize_candidate_record(r)
+
+    url = _as_str(getattr(c, "url", "")).strip()
+    if not url:
+        return None
+
+    cid, origin, open_url = _split_content_id(url)
+
+    title = _as_str(getattr(c, "title", "")).strip()
+    source = _as_str(getattr(c, "source", "")).strip()
+    summary = _as_str(getattr(c, "summary", "")).strip()
+
+    published_iso = _published_to_iso(getattr(c, "published", None))
+
+    r: dict[str, Any] = {
+        "id": cid,
+        "origin": origin,
+        "title": title or cid,
+        "url": cid,          # canonical id stored everywhere
+        "open_url": open_url,  # best-effort convenience for UI/preview
+        "source": source,
+        "published": published_iso,
+        "summary": summary,
+    }
+
+    # Optional fields (won't exist on all candidate types)
+    watched = getattr(c, "watched", None)
+    if watched is not None:
+        r["watched"] = bool(watched)
+
+    site = getattr(c, "site", None)
+    if site:
+        r["site"] = _as_str(site).strip()
+
+    score = getattr(c, "score", None)
+    if score is not None:
+        r["score"] = score
+
+    best_topic = getattr(c, "best_topic", None)
+    if best_topic:
+        r["best_topic"] = _as_str(best_topic).strip()
+
+    return r
+
+
+def save_candidates_json(path: Path, candidates: list[Any]) -> None:
+    """
+    Persist a unified candidates list to JSON.
+
+    IMPORTANT:
+    - This must tolerate multiple candidate shapes without assuming attributes exist.
+    - The on-disk format remains list[dict].
+    """
     path.parent.mkdir(parents=True, exist_ok=True)
 
     payload: list[dict[str, Any]] = []
     for c in candidates:
-        cid, origin, open_url = _split_content_id(c.url)
-
-        published = c.published.isoformat() if isinstance(c.published, date) else None
-        payload.append(
-            {
-                "id": cid,
-                "origin": origin,
-                "title": c.title,
-                "url": cid,  # canonical id stored everywhere
-                "open_url": open_url,  # convenience for UI/preview
-                "source": str(c.source),
-                "published": published,
-                "summary": c.summary or "",
-            }
-        )
+        rec = _candidate_to_record(c)
+        if rec is not None:
+            payload.append(rec)
 
     path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
 

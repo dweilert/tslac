@@ -4,7 +4,7 @@ import html
 from typing import Any
 from urllib.parse import quote, unquote
 
-# from docsys.store import load_doc_candidates
+from storage.collector_store import load_candidates_file
 from storage.curation_store import get_curated_blurb, load_curation
 from storage.selected_store import load_selected
 
@@ -45,11 +45,8 @@ def _crop_style(crop: dict[str, Any]) -> str:
         if cw <= 0 or ch <= 0 or img_w <= 0 or img_h <= 0:
             return ""
 
-        # scale image so crop fills container
         w_pct = (img_w / cw) * 100.0
         h_pct = (img_h / ch) * 100.0
-
-        # shift image so crop origin aligns with container origin
         left_pct = -(ix / cw) * 100.0
         top_pct = -(iy / ch) * 100.0
 
@@ -71,9 +68,69 @@ def _is_http_url(u: str) -> bool:
     return (u or "").startswith(("http://", "https://"))
 
 
+def _normalize_selected_key(s: str) -> str:
+    s = (s or "").strip()
+    if not s:
+        return ""
+
+    # Repair accidental double-wraps like web:web:https://...
+    while s.startswith("web:web:"):
+        s = "web:" + s[len("web:web:") :]
+
+    # Repair accidental web:gdrive:... / web:local:...
+    if s.startswith("web:gdrive:"):
+        s = s[len("web:") :]
+    if s.startswith("web:local:"):
+        s = s[len("web:") :]
+
+    return s
+
+
+def _web_url_from_key(s: str) -> str:
+    s = _normalize_selected_key(s)
+    if s.startswith("web:"):
+        return s[len("web:") :].strip()
+    return s if _is_http_url(s) else ""
+
+
+def _gdrive_open_url(key: str) -> str:
+    s = (key or "").strip()
+    if not s.startswith("gdrive:"):
+        return "#"
+    file_id = s[len("gdrive:") :].strip()
+    if not file_id:
+        return "#"
+    return f"https://drive.google.com/open?id={file_id}"
+
+
+def _local_open_url(key: str) -> str:
+    # Browser generally cannot open arbitrary local filesystem paths directly.
+    # Keep placeholder until/if a local-serving route is added.
+    _ = key
+    return "#"
+
+
+def _candidate_attr(c: Any, name: str, default: str = "") -> str:
+    try:
+        v = getattr(c, name, default)
+    except Exception:
+        v = default
+    return "" if v is None else str(v)
+
+
 def build_preview_html() -> bytes:
     sel = load_selected()
     cur = load_curation()
+
+    # Unified candidate lookup from persisted candidates.json
+    candidates = load_candidates_file() or []
+    cand_by_id: dict[str, Any] = {}
+
+    for c in candidates:
+        cid = _candidate_attr(c, "url").strip()
+        if not cid:
+            continue
+        cand_by_id[cid] = c
 
     subject = (sel.get("subject") or "").strip() or DEFAULT_SUBJECT
     intro = (sel.get("intro") or "").strip() or DEFAULT_INTRO
@@ -81,57 +138,67 @@ def build_preview_html() -> bytes:
     if not isinstance(items, list):
         items = []
 
-    # # Build doc lookup (id -> doc dict)
-    # doc_candidates = load_doc_candidates()
-    # doc_by_id: dict[str, dict[str, Any]] = {}
-    # for d in doc_candidates or []:
-    #     if isinstance(d, dict):
-    #         did = (d.get("id") or "").strip()
-    #         if did:
-    #             doc_by_id[did] = d
-
     blocks: list[str] = []
+
     for it in items:
         if not isinstance(it, dict):
             continue
 
-        key = (it.get("url") or "").strip()  # still called "url" in selected.yaml
+        raw_key = (it.get("url") or it.get("id") or "").strip()
+        key = _normalize_selected_key(raw_key)
         if not key:
             continue
+
+        rec = cur.get(key) if isinstance(cur, dict) else None
+        c = cand_by_id.get(key)
 
         # ----------------------------
         # DOCUMENT ITEM (gdrive:/local:)
         # ----------------------------
         if _is_doc_id(key):
-            d = doc_by_id.get(key) or {}
-            rec = cur.get(key) if isinstance(cur, dict) else None
+            title = ""
+            subtitle = ""
+            blurb_html = ""
+            summary_fallback = ""
 
-            # Title: prefer doc candidate title, else curation-stored title, else id
-            title = (d.get("title") or "").strip()
-            if not title and isinstance(rec, dict):
-                title = (rec.get("title") or "").strip()
+            if c is not None:
+                title = _candidate_attr(c, "title").strip()
+                summary_fallback = _candidate_attr(c, "summary").strip()
+
+            if isinstance(rec, dict):
+                title = (rec.get("title") or "").strip() or title
+                subtitle = (rec.get("subtitle") or rec.get("curated_subtitle") or "").strip()
+                blurb_html = get_curated_blurb(cur, key).strip()
+
             if not title:
                 title = key
 
-            # Blurb: prefer curated final_blurb, else doc summary, else placeholder
-            blurb = get_curated_blurb(cur, key).strip() if isinstance(cur, dict) else ""
-            if not blurb:
-                blurb = (d.get("summary") or "").strip()
+            if not blurb_html and summary_fallback:
+                blurb_html = f"<p>{_esc(summary_fallback)}</p>"
 
-            # Docs usually don't have images/crops, so skip hero image
             img_html = ""
 
-            # Link: point to your doc open handler (implement/verify separately)
-            doc_href = f"/doc/open?doc_id={quote(key, safe='')}"
+            if key.startswith("gdrive:"):
+                doc_href = _gdrive_open_url(key)
+            elif key.startswith("local:"):
+                doc_href = _local_open_url(key)
+            else:
+                doc_href = "#"
+
+            subtitle_html = (
+                f'<div style="font-size:13px; color:#555; margin: 0 0 6px 0;">{_esc(subtitle)}</div>'
+                if subtitle
+                else ""
+            )
 
             blocks.append(f"""
               <tr>
                 <td style="padding: 0 18px 18px 18px; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;">
                   {img_html}
-                  <div style="font-size:12px; color:#666; margin: 0 0 6px 0;">Texas State Library and Archives Commission</div>
                   <div style="font-size:16px; font-weight:700; color:#111; margin: 0 0 6px 0;">{_esc(title)}</div>
+                  {subtitle_html}
                   <div style="font-size:14px; color:#333; line-height:1.45;">
-                    {(_esc(blurb) if blurb else "<em style='color:#777;'>No blurb saved yet. Use Curate to write one.</em>")}
+                    {(blurb_html if blurb_html else "<em style='color:#777;'>No blurb saved yet. Use Curate to write one.</em>")}
                   </div>
                   <div style="margin-top:10px; font-size:14px;">
                     <a href="{_esc(doc_href)}" target="_blank" rel="noopener" style="color:#0b57d0; text-decoration:none;">Open document</a>
@@ -143,23 +210,25 @@ def build_preview_html() -> bytes:
             continue
 
         # ----------------------------
-        # ARTICLE ITEM (http/https)
+        # ARTICLE ITEM (web:/http/https)
         # ----------------------------
-        if not _is_http_url(key):
-            # Unknown key type; skip rather than breaking preview
+        url = _web_url_from_key(key)
+        if not url:
             continue
 
-        url = key
-        rec = cur.get(url) if isinstance(cur, dict) else None
-
         title = ""
-        blurb = ""
+        subtitle = ""
+        blurb_html = ""
         img = ""
         crops: dict[str, Any] = {}
 
+        if c is not None:
+            title = _candidate_attr(c, "title").strip()
+
         if isinstance(rec, dict):
-            title = (rec.get("title") or "").strip()
-            blurb = (rec.get("final_blurb") or "").strip()
+            title = (rec.get("title") or rec.get("curated_title") or "").strip() or title
+            subtitle = (rec.get("subtitle") or rec.get("curated_subtitle") or "").strip()
+            blurb_html = (rec.get("final_blurb") or "").strip()
             img = (rec.get("selected_image") or "").strip()
             crops = rec.get("image_crops") if isinstance(rec.get("image_crops"), dict) else {}
 
@@ -169,12 +238,17 @@ def build_preview_html() -> bytes:
         if not title:
             title = url
 
-        if not blurb and isinstance(rec, dict):
+        if not blurb_html and isinstance(rec, dict):
             ex = rec.get("excerpts")
             if isinstance(ex, list):
                 ex2 = [x.strip() for x in ex if isinstance(x, str) and x.strip()]
                 if ex2:
-                    blurb = " ".join(ex2)
+                    blurb_html = f"<p>{_esc(' '.join(ex2))}</p>"
+
+        if not blurb_html and c is not None:
+            summary_fallback = _candidate_attr(c, "summary").strip()
+            if summary_fallback:
+                blurb_html = f"<p>{_esc(summary_fallback)}</p>"
 
         crop = None
         if isinstance(crops, dict) and img:
@@ -202,15 +276,37 @@ def build_preview_html() -> bytes:
             else:
                 img_html = f'<img class="hero" src="{_esc(img_src)}" alt="" />'
 
+        subtitle_html = (
+            subtitle
+        )
+
         blocks.append(f"""
           <tr>
             <td style="padding: 0 18px 18px 18px; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;">
               {img_html}
-              <div style="font-size:12px; color:#666; margin: 0 0 6px 0;">Texas State Library and Archives Commission</div>
-              <div style="font-size:16px; font-weight:700; color:#111; margin: 0 0 6px 0;">{_esc(title)}</div>
-              <div style="font-size:14px; color:#333; line-height:1.45;">
-                {(_esc(blurb) if blurb else "<em style='color:#777;'>No blurb saved yet. Use Curate to write one.</em>")}
-              </div>
+
+              <p style="text-align: center; margin: 0;" align="center">
+                <span style="font-size: 36px; color: rgb(40, 79, 161); 
+                font-weight: bold; 
+                font-family: Georgia, &quot;Times New Roman&quot;, Times, serif;">
+                {_esc(title)}
+                </span>
+              </p>
+              <p style="text-align: center; margin: 0;" align="center">
+                <span style="font-size: 23px; color: rgb(40, 79, 161); 
+                font-weight: bold; 
+                font-family: Georgia, &quot;Times New Roman&quot;, Times, serif; font-style: italic; text-decoration: underline;">
+                {subtitle_html}
+                </span>
+              </p>
+              <p style="margin 0;">
+                <span style="font-size: 16px; color: rgb(0, 0, 0); 
+                font-family: Georgia, &quot;Times New Roman&quot;, Times, serif;">
+                {(blurb_html if blurb_html else "<em style='color:#777;'>No blurb saved yet. Use Curate to write one.</em>")}
+                &nbsp;</span>
+              </p>
+
+
               <div style="margin-top:10px; font-size:14px;">
                 <a href="{_esc(url)}" target="_blank" rel="noopener" style="color:#0b57d0; text-decoration:none;">Read more</a>
               </div>
@@ -255,8 +351,8 @@ def build_preview_html() -> bytes:
     .heroCropImg {{ position:absolute; left:0; top:0; }}
 
     .heroCropImg {{
-        max-width: none !important;
-        max-height: none !important;
+      max-width: none !important;
+      max-height: none !important;
     }}
   </style>
 </head>
@@ -295,40 +391,37 @@ def build_preview_html() -> bytes:
                             style="border-radius:0; background-color:#ffffff; padding:0; border:1px solid #869198;"
                             align="center" valign="top" bgcolor="#ffffff">
 
-                            <!-- Header logo -->
                             <table width="100%" border="0" cellpadding="0" cellspacing="0">
-                            <tbody>
+                              <tbody>
                                 <tr>
-                                <td align="center" valign="top" style="padding-top:10px; padding-bottom:10px;">
+                                  <td align="center" valign="top" style="padding-top:10px; padding-bottom:10px;">
                                     <div style="position:relative; display:inline-block; max-width:100%;">
-                                    <img width="447"
-                                        src="{_esc(HEADER_LOGO_URL)}"
-                                        alt=""
-                                        style="display:block; height:auto; max-width:100%;" />
+                                      <img width="447"
+                                          src="{_esc(HEADER_LOGO_URL)}"
+                                          alt=""
+                                          style="display:block; height:auto; max-width:100%;" />
 
-                                    <!-- DRAFT overlay -->
-                                    <div style="
-                                        position:absolute;
-                                        top:50%;
-                                        left:50%;
-                                        transform:translate(-50%, -50%);
-                                        font-family:Arial, sans-serif;
-                                        font-weight:900;
-                                        font-size:96px;
-                                        color: rgba(255,0,0, 0.5) ;
-                                        letter-spacing:3px;
-                                        opacity:0.85;
-                                        pointer-events:none;
-                                    ">
+                                      <div style="
+                                          position:absolute;
+                                          top:50%;
+                                          left:50%;
+                                          transform:translate(-50%, -50%);
+                                          font-family:Arial, sans-serif;
+                                          font-weight:900;
+                                          font-size:96px;
+                                          color: rgba(255,0,0, 0.5);
+                                          letter-spacing:3px;
+                                          opacity:0.85;
+                                          pointer-events:none;
+                                      ">
                                         DRAFT
+                                      </div>
                                     </div>
-                                    </div>
-                                </td>
+                                  </td>
                                 </tr>
-                            </tbody>
+                              </tbody>
                             </table>
 
-                            <!-- Header banner -->
                             <table class="image image--mobile-scale image--mobile-center" width="100%" border="0" cellpadding="0" cellspacing="0">
                               <tbody>
                                 <tr>
@@ -340,41 +433,21 @@ def build_preview_html() -> bytes:
                               </tbody>
                             </table>
 
-                            <!-- spacer -->
                             <table width="100%" border="0" cellpadding="0" cellspacing="0">
                               <tbody><tr><td style="line-height:22px; height:22px;">&nbsp;</td></tr></tbody>
                             </table>
 
-                            <!-- Content column -->
                             <table class="layout layout--1-column" style="table-layout:fixed;" width="100%" border="0" cellpadding="0" cellspacing="0">
                               <tbody>
                                 <tr>
                                   <td class="column column--1 scale stack" style="width:100%;" align="center" valign="top">
 
-                                    <!-- Subject + intro -->
-                                    <table width="100%" border="0" cellpadding="0" cellspacing="0">
-                                      <tbody>
-                                        <tr>
-                                          <td style="padding: 0 18px 10px 18px; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;">
-                                            <div style="font-size:20px; font-weight:700; color:#111; line-height:1.25; margin:0 0 8px 0;">
-                                              {_esc(subject)}
-                                            </div>
-                                            <div style="font-size:14px; color:#333; line-height:1.45; margin:0;">
-                                              {_esc(intro)}
-                                            </div>
-                                          </td>
-                                        </tr>
-                                      </tbody>
-                                    </table>
-
-                                    <!-- Items -->
                                     <table width="100%" border="0" cellpadding="0" cellspacing="0">
                                       <tbody>
                                         {blocks_html if blocks_html else "<tr><td style='padding: 0 18px 18px 18px; color:#666; font-family:Arial,sans-serif;'>No selected items found in selected.yaml.</td></tr>"}
                                       </tbody>
                                     </table>
 
-                                    <!-- Footer note -->
                                     <table width="100%" border="0" cellpadding="0" cellspacing="0">
                                       <tbody>
                                         <tr>
