@@ -6,7 +6,7 @@ from typing import Any
 from urllib.parse import parse_qs, quote
 
 from setup.secrets_env import *
-from render import render
+from core.render import render
 from web.request import Request
 from web.response import Response
 from web.router import Router

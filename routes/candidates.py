@@ -16,7 +16,7 @@ from services.candidates_service import (
 )
 from storage.curation_store import load_curation
 from storage.selected_store import load_selected
-from templates import html_page
+from core.templates import html_page
 from web.request import Request
 from web.response import Response
 from web.router import Router
@@ -73,19 +73,6 @@ def _as_gdrive_id(raw_id: str) -> str:
         return "gdrive:" + _strip(r[len("doc:") :])
     # plain doc id
     return "gdrive:" + r
-
-
-# def _gdrive_open_url(content_id: str) -> str:
-#     """
-#     Convert gdrive:<id> to a clickable doc URL.
-#     Note: this assumes Google Docs. If you store other Drive file types, you can adapt.
-#     """
-#     s = _strip(content_id)
-#     if s.startswith("gdrive:"):
-#         doc_id = _strip(s[len("gdrive:") :])
-#         if doc_id:
-#             return f"https://docs.google.com/document/d/{doc_id}/edit"
-#     return s
 
 
 def _gdrive_open_url(content_id: str) -> str:

@@ -21,13 +21,13 @@ from services.curate_article_service import (
     save_title,
     select_image,
 )
-from templates import curate_page_html
+from core.templates import curate_page_html
 from web.errors import BadRequestError
 from web.request import Request
 from web.response import Response
 from web.router import Router
 
-from render import render
+from core.render import render
 
 
 def register(router: Router) -> None:

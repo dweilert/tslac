@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from urllib.parse import quote, unquote
 
-from render import render
+from core.render import render
 from storage.curation_store import get_curated_image_crops, load_curation
 from web.request import Request
 from web.response import Response

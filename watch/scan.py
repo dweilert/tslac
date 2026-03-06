@@ -10,7 +10,7 @@ from threading import Event
 from typing import Any
 
 from setup.config import OUT_DIR, WATCH_RESULTS_FILE
-from watch_store import load_watch
+from storage.watch_store import load_watch
 
 from .fetch import fetch
 from .parse import LinkTextParser, pick_links

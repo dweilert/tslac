@@ -4,8 +4,8 @@ from dataclasses import dataclass
 from typing import Any
 
 from setup import config_runtime 
-import watch.runtime as watcher  # NEW: compat alias for tests that patch svc.watcher
-import watch_store  # NEW: compat alias for tests that patch svc.watch_store
+import watch.runtime as watcher  
+from storage import watch_store  
 from watch.scan import load_latest_results
 
 

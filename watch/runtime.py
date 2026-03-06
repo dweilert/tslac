@@ -6,7 +6,7 @@ from datetime import datetime
 from threading import Event, Lock
 from typing import Any
 
-from watch_store import load_watch
+from storage.watch_store import load_watch
 
 from .scan import run_watch_scan
 

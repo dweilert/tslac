@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from urllib.parse import parse_qs, urlencode
 
-from logutil import error
+from util.logutil import error
 from services import watch_service
 from web.request import Request
 from web.response import Response

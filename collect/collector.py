@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import date, datetime
 from typing import Any
 
-from logutil import debug
+from util.logutil import debug
 from models import Candidate
 from web.fetch import FetchError, fetch_html
 

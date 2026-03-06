@@ -6,13 +6,13 @@ from urllib.parse import urljoin
 
 from bs4 import BeautifulSoup
 
-from logutil import debug
+from util.logutil import debug
 
 from .models import RawCandidate
 
 
 def parse_homepage_candidates(html: str, *, base_url: str) -> list[RawCandidate]:
-    from logutil import info
+    from util.logutil import info
 
     debug(f"parse_homepage: start html_len={len(html)} base_url={base_url}")
 

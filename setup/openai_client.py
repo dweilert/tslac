@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import os
 from collections.abc import Callable
-from logutil import debug, info
+from util.logutil import debug, info
 
 import httpx
 from openai import OpenAI

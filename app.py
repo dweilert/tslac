@@ -5,7 +5,7 @@ from http.server import ThreadingHTTPServer
 
 # import config_ui
 from setup import config_ui
-from logutil import info
+from util.logutil import info
 from routes import (
     api,
     candidates,

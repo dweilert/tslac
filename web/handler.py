@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from http.server import BaseHTTPRequestHandler
 
-from logutil import error
+from util.logutil import error
 from web.errors import BadRequestError
 from web.request import build_request
 from web.response import Response
