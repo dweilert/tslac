@@ -5,7 +5,7 @@ from typing import Any
 
 import yaml
 
-from config import WATCH_FILE
+from setup.config import WATCH_FILE
 
 
 @dataclass

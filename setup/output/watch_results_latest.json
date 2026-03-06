@@ -1,0 +1,233 @@
+{
+  "ran_at": "2026-03-06T10:49:21",
+  "topics": [
+    "grants",
+    "archival",
+    "digitization"
+  ],
+  "sites": [
+    "https://www.tsl.texas.gov/info"
+  ],
+  "settings": {
+    "max_links_per_site": 25,
+    "fetch_timeout_seconds": 15,
+    "same_domain_only": true,
+    "exclude_patterns": [
+      "search",
+      "advanced",
+      "browse",
+      "facet",
+      "filter",
+      "sort=",
+      "page=",
+      "?"
+    ],
+    "max_total_pages": 60,
+    "max_seconds": 45
+  },
+  "results": [
+    {
+      "site": "https://www.tsl.texas.gov/info",
+      "url": "https://www.tsl.texas.gov/node/70476",
+      "title": "Public Libraries Invited to Apply for TSLAC Texas Reads Grants | Texas State Library",
+      "snippet": "Skip to main content Contact Us | Visit Us | About Us | Donate | Governance Translate this page Translate this page Search Site TRAIL Library Catalog Find a Library Archives and Reference Services for Libraries Talking Book Program Records",
+      "matched_topics": [
+        "grants",
+        "archival"
+      ],
+      "best_topic_index": 0,
+      "score": 170
+    },
+    {
+      "site": "https://www.tsl.texas.gov/info",
+      "url": "https://www.tsl.texas.gov/",
+      "title": "| Texas State Library",
+      "snippet": "Skip to main content Contact Us | Visit Us | About Us | Donate | Governance Translate this page Translate this page Search Site TRAIL Library Catalog Find a Library Archives and Reference Services for Libraries Talking Book Program Records",
+      "matched_topics": [
+        "grants"
+      ],
+      "best_topic_index": 0,
+      "score": 60
+    },
+    {
+      "site": "https://www.tsl.texas.gov/info",
+      "url": "https://www.tsl.texas.gov/ldn",
+      "title": "Services for Libraries | Texas State Library",
+      "snippet": "Skip to main content Contact Us | Visit Us | About Us | Donate | Governance Translate this page Translate this page Search Site TRAIL Library Catalog Find a Library Archives and Reference Services for Libraries Talking Book Program Records",
+      "matched_topics": [
+        "grants"
+      ],
+      "best_topic_index": 0,
+      "score": 60
+    },
+    {
+      "site": "https://www.tsl.texas.gov/info",
+      "url": "https://www.tsl.texas.gov/aggregator",
+      "title": "Our TSLAC Blogs | Texas State Library",
+      "snippet": "Skip to main content Contact Us | Visit Us | About Us | Donate | Governance Translate this page Translate this page Search Site TRAIL Library Catalog Find a Library Archives and Reference Services for Libraries Talking Book Program Records",
+      "matched_topics": [
+        "grants",
+        "archival"
+      ],
+      "best_topic_index": 0,
+      "score": 50
+    },
+    {
+      "site": "https://www.tsl.texas.gov/info",
+      "url": "https://www.tsl.texas.gov/socialmedia",
+      "title": "Social Media Overview - Connect with TSLAC Online | Texas State Library",
+      "snippet": "Skip to main content Contact Us | Visit Us | About Us | Donate | Governance Translate this page Translate this page Search Site TRAIL Library Catalog Find a Library Archives and Reference Services for Libraries Talking Book Program Records",
+      "matched_topics": [
+        "grants",
+        "archival"
+      ],
+      "best_topic_index": 0,
+      "score": 50
+    },
+    {
+      "site": "https://www.tsl.texas.gov/info",
+      "url": "https://www.tsl.texas.gov/node/70432",
+      "title": "Students Invited to Participate in 2025-2026 Letters About Literature Texas Competition—Deadline Jan. 26 | Texas State Library",
+      "snippet": "Skip to main content Contact Us | Visit Us | About Us | Donate | Governance Translate this page Translate this page Search Site TRAIL Library Catalog Find a Library Archives and Reference Services for Libraries Talking Book Program Records",
+      "matched_topics": [
+        "grants",
+        "archival"
+      ],
+      "best_topic_index": 0,
+      "score": 50
+    },
+    {
+      "site": "https://www.tsl.texas.gov/info",
+      "url": "https://www.tsl.texas.gov/about",
+      "title": "About Us | Texas State Library",
+      "snippet": "Skip to main content Contact Us | Visit Us | About Us | Donate | Governance Translate this page Translate this page Search Site TRAIL Library Catalog Find a Library Archives and Reference Services for Libraries Talking Book Program Records",
+      "matched_topics": [
+        "archival"
+      ],
+      "best_topic_index": 1,
+      "score": 60
+    },
+    {
+      "site": "https://www.tsl.texas.gov/info",
+      "url": "https://www.tsl.texas.gov/arc",
+      "title": "Archives and Reference | Texas State Library",
+      "snippet": "Skip to main content Contact Us | Visit Us | About Us | Donate | Governance Translate this page Translate this page Search Site TRAIL Library Catalog Find a Library Archives and Reference Services for Libraries Talking Book Program Records",
+      "matched_topics": [
+        "archival"
+      ],
+      "best_topic_index": 1,
+      "score": 40
+    },
+    {
+      "site": "https://www.tsl.texas.gov/info",
+      "url": "https://www.tsl.texas.gov/node/70520",
+      "title": "Texas Library and Archives Foundation Announces 2026 Research Fellowships in Texas History at State Archives | Texas State Library",
+      "snippet": "Skip to main content Contact Us | Visit Us | About Us | Donate | Governance Translate this page Translate this page Search Site TRAIL Library Catalog Find a Library Archives and Reference Services for Libraries Talking Book Program Records",
+      "matched_topics": [
+        "archival"
+      ],
+      "best_topic_index": 1,
+      "score": 40
+    },
+    {
+      "site": "https://www.tsl.texas.gov/info",
+      "url": "https://www.tsl.texas.gov/shc",
+      "title": "Sam Houston Regional Library and Research Center | Texas State Library",
+      "snippet": "Skip to main content Contact Us | Visit Us | About Us | Donate | Governance Translate this page Translate this page Search Site TRAIL Library Catalog Find a Library Archives and Reference Services for Libraries Talking Book Program Records",
+      "matched_topics": [
+        "archival"
+      ],
+      "best_topic_index": 1,
+      "score": 40
+    },
+    {
+      "site": "https://www.tsl.texas.gov/info",
+      "url": "https://www.tsl.texas.gov/contact",
+      "title": "Contact Us | Texas State Library",
+      "snippet": "Skip to main content Contact Us | Visit Us | About Us | Donate | Governance Translate this page Translate this page Search Site TRAIL Library Catalog Find a Library Archives and Reference Services for Libraries Talking Book Program Records",
+      "matched_topics": [
+        "archival"
+      ],
+      "best_topic_index": 1,
+      "score": 20
+    },
+    {
+      "site": "https://www.tsl.texas.gov/info",
+      "url": "https://www.tsl.texas.gov/visit",
+      "title": "Visit Us | Texas State Library",
+      "snippet": "Skip to main content Contact Us | Visit Us | About Us | Donate | Governance Translate this page Translate this page Search Site TRAIL Library Catalog Find a Library Archives and Reference Services for Libraries Talking Book Program Records",
+      "matched_topics": [
+        "archival"
+      ],
+      "best_topic_index": 1,
+      "score": 20
+    },
+    {
+      "site": "https://www.tsl.texas.gov/info",
+      "url": "https://www.tsl.texas.gov/node/70513",
+      "title": "Sam Houston Center to Host “Texas Women and the Right to Vote” Event Featuring Professor Jessica Brannon-Wranosky on March 28 | Texas State Library",
+      "snippet": "Skip to main content Contact Us | Visit Us | About Us | Donate | Governance Translate this page Translate this page Search Site TRAIL Library Catalog Find a Library Archives and Reference Services for Libraries Talking Book Program Records",
+      "matched_topics": [
+        "archival"
+      ],
+      "best_topic_index": 1,
+      "score": 20
+    },
+    {
+      "site": "https://www.tsl.texas.gov/info",
+      "url": "https://www.tsl.texas.gov/node/70512",
+      "title": "Family Place Libraries™ Project Grant Recipients Announced by State Library | Texas State Library",
+      "snippet": "Skip to main content Contact Us | Visit Us | About Us | Donate | Governance Translate this page Translate this page Search Site TRAIL Library Catalog Find a Library Archives and Reference Services for Libraries Talking Book Program Records",
+      "matched_topics": [
+        "archival"
+      ],
+      "best_topic_index": 1,
+      "score": 20
+    },
+    {
+      "site": "https://www.tsl.texas.gov/info",
+      "url": "https://www.tsl.texas.gov/node/70484",
+      "title": "New in the Lone Star Libraries Series: J. Erik Jonsson Central Library, Dallas Public Library | Texas State Library",
+      "snippet": "Skip to main content Contact Us | Visit Us | About Us | Donate | Governance Translate this page Translate this page Search Site TRAIL Library Catalog Find a Library Archives and Reference Services for Libraries Talking Book Program Records",
+      "matched_topics": [
+        "archival"
+      ],
+      "best_topic_index": 1,
+      "score": 20
+    },
+    {
+      "site": "https://www.tsl.texas.gov/info",
+      "url": "https://www.tsl.texas.gov/node/70472",
+      "title": "Popular E-Read Texas Library Service Moving to CloudLibrary Mobile App This Spring | Texas State Library",
+      "snippet": "Skip to main content Contact Us | Visit Us | About Us | Donate | Governance Translate this page Translate this page Search Site TRAIL Library Catalog Find a Library Archives and Reference Services for Libraries Talking Book Program Records",
+      "matched_topics": [
+        "archival"
+      ],
+      "best_topic_index": 1,
+      "score": 20
+    },
+    {
+      "site": "https://www.tsl.texas.gov/info",
+      "url": "https://www.tsl.texas.gov/node/70448",
+      "title": "Celebrate Texas America250 with a New Exhibit at the State Archives | Texas State Library",
+      "snippet": "Skip to main content Contact Us | Visit Us | About Us | Donate | Governance Translate this page Translate this page Search Site TRAIL Library Catalog Find a Library Archives and Reference Services for Libraries Talking Book Program Records",
+      "matched_topics": [
+        "archival"
+      ],
+      "best_topic_index": 1,
+      "score": 20
+    },
+    {
+      "site": "https://www.tsl.texas.gov/info",
+      "url": "https://www.tsl.texas.gov/node/70443",
+      "title": "Free Family History Workshop with the Texas Society Daughters of the American Revolution (TXDAR) | Texas State Library",
+      "snippet": "Skip to main content Contact Us | Visit Us | About Us | Donate | Governance Translate this page Translate this page Search Site TRAIL Library Catalog Find a Library Archives and Reference Services for Libraries Talking Book Program Records",
+      "matched_topics": [
+        "archival"
+      ],
+      "best_topic_index": 1,
+      "score": 20
+    }
+  ],
+  "errors": []
+}

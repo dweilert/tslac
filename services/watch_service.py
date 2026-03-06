@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
-import config_runtime
+from setup import config_runtime 
 import watch.runtime as watcher  # NEW: compat alias for tests that patch svc.watcher
 import watch_store  # NEW: compat alias for tests that patch svc.watch_store
 from watch.scan import load_latest_results

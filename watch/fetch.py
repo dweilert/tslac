@@ -4,7 +4,7 @@ from __future__ import annotations
 import re
 from urllib.request import Request, urlopen
 
-from config import HEADERS
+from setup.config import HEADERS
 
 
 def fetch(url: str, timeout_s: int) -> tuple[str, str]:

@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 
-import preview_generator
+from preview import preview_generator
 
 
 @dataclass(frozen=True)

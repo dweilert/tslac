@@ -40,9 +40,8 @@ def test_refresh_candidates_persists_candidates_and_seen(monkeypatch):
     monkeypatch.setattr(svc, "save_seen", fake_save_seen)
     monkeypatch.setattr(svc, "save_candidates_json", fake_save_candidates_json)
     monkeypatch.setattr(svc, "collect_candidates", fake_collect_candidates)
-    monkeypatch.setattr(svc, "load_doc_candidates", fake_load_doc_candidates)
 
-    res = svc.refresh_candidates()
+    res = svc.refresh_candidates(load_docs_fn=fake_load_doc_candidates)
 
     assert res.doc_count == 1
     assert res.candidate_count == 2  # 1 web + 1 doc

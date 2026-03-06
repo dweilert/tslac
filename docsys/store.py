@@ -4,7 +4,7 @@ import json
 from pathlib import Path
 from typing import Any
 
-from config import STATE_DIR
+from setup.config import STATE_DIR
 from logutil import info, warn
 
 DOC_CANDIDATES_FILE = Path(STATE_DIR) / "doc_candidates.json"

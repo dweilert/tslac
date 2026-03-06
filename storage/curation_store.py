@@ -8,7 +8,7 @@ from urllib.parse import urlparse, urlunparse
 
 import yaml
 
-from config import CURATION_FILE
+from setup.config import CURATION_FILE
 
 print(CURATION_FILE)
 

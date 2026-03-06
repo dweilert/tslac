@@ -10,7 +10,7 @@ from typing import Any
 
 import yaml
 
-from config import DEFAULT_INTRO, DEFAULT_SUBJECT, SELECTED_FILE
+from setup.config import DEFAULT_INTRO, DEFAULT_SUBJECT, SELECTED_FILE
 
 
 # ----------------------------

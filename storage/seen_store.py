@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 
-from config import SEEN_FILE
+from setup.config import SEEN_FILE
 
 
 def load_seen() -> set[str]:

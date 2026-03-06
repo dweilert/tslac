@@ -3,7 +3,8 @@ from __future__ import annotations
 import os
 from http.server import ThreadingHTTPServer
 
-import config_ui
+# import config_ui
+from setup import config_ui
 from logutil import info
 from routes import (
     api,
@@ -26,10 +27,10 @@ def build_router(server) -> Router:
     r = Router()
     api.register(r)
     candidates.register(r)
-    config_ui.register(r),
+    config_ui.register(r)
     crop.register(r)
     curate_article.register(r)
-    export_routes.register(r),
+    export_routes.register(r)
     health.register(r)
     img_proxy.register(r)
     preview.register(r)
