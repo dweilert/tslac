@@ -1,11 +1,12 @@
 # templates.py
 from __future__ import annotations
-import os
+
 import html
 from typing import Any
 from urllib.parse import quote
 
 from core.render import render
+
 
 def _esc(s: object) -> str:
     return html.escape("" if s is None else str(s), quote=True)

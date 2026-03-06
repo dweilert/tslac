@@ -1384,3 +1384,30 @@ Curate page
 - TinyMCE from CDN is fine.
 - Processing of documents from gdrive needs to support PDF, Word, Plan text, and G-Documents at a minimum.
 - Saving of content that is in the TinyMCE edit area can be saved as html, but must be saved in the file that contains the information about the article for later use.
+
+
+===============================
+
+TSLAC Newsletter Helper – Project Context Header
+
+Project Name: TSLAC Newsletter Helper
+Repo: https://github.com/dweilert/tslac
+Repo Branch: main
+
+Runtime: Custom Python web app (custom web/router, not Flask/Django)
+Python Version: 3.12
+Architecture Style: Routes → Services → Storage → Templates
+Rendering: Server-side templates (render() helper)
+Data Storage: YAML + JSON files in local filesystem
+ 
+Milestone 4:
+
+Modify the main page 'candidates.html' to remove the 'Reset seen URLs' button and within the code remove the logic that creates and maintains the checking to determine it a site has been seen in the past.
+
+Modify the logic to automatically update the selected.yaml file when the check box for the article is checked or un-checked.  If checked add the item to the yaml file if un-checked remove the item.  The selected.yaml is in the root.
+
+Remvoe the 'Save Selection' button and associated logic once the above task is implemented. Keed the information 'Selected: ' followed by the number of selected articles on the home page.
+
+Remove the 'Select all' and 'Select none' buttons and the associated logic.
+
+I'm providng a zip of the latest version of the code in the repository.

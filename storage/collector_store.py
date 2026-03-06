@@ -131,7 +131,7 @@ def _candidate_to_record(c: Any) -> dict[str, Any] | None:
         "id": cid,
         "origin": origin,
         "title": title or cid,
-        "url": cid,          # canonical id stored everywhere
+        "url": cid,  # canonical id stored everywhere
         "open_url": open_url,  # best-effort convenience for UI/preview
         "source": source,
         "published": published_iso,

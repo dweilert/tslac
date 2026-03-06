@@ -73,7 +73,6 @@ IMPORT_TO_PACKAGE = {
     "docx": "python-docx",
     "dotenv": "python-dotenv",
     "lxml": "lxml",
-    "docx": "python-docx",
     "pypdf": "pypdf",
     "striprtf": "striprtf",
 }

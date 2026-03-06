@@ -6,13 +6,14 @@ from typing import Any
 
 from services.content_ids import canonical_content_id, split_content_id
 
+
 @dataclass(frozen=True)
 class UICandidate:
-    url: str       # canonical content_id (yes, keep name "url" for template compat)
+    url: str  # canonical content_id (yes, keep name "url" for template compat)
     open_url: str  # openable URL
     title: str
-    source: str    # "web" | "watch" | "gdrive" | ...
-    origin: str    # "web" | "gdrive" | "local"
+    source: str  # "web" | "watch" | "gdrive" | ...
+    origin: str  # "web" | "gdrive" | "local"
 
 
 def _strip(x: Any) -> str:

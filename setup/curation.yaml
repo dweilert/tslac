@@ -26,8 +26,13 @@ web:https://www.tsl.texas.gov/node/70513:
   title: Texas Women & Right to Vote
   subtitle: ''
 web:https://www.tsl.texas.gov/node/70520:
-  final_blurb: <p>Showing Gene</p>
-  updated_at: '2026-03-06T09:25:32'
+  final_blurb: <p>Bonnie Ernst, PhD, is an assistant professor in the Department of
+    Criminology and Criminal Justice at Indiana University Bloomington and will conduct
+    research at TSLAC in support of her project, &ldquo;Black Women and Convict Leasing
+    in the Jim Crow South.&rdquo; Her research on Black women in Texas prisons at
+    the turn of the twentieth century will shed light on the approach that Texas took
+    and how that fits into the broader history of the American South.</p>
+  updated_at: '2026-03-06T15:18:51'
   title: Texas Library and Archives Foundation Announces 2026 Research Fellowships
     in Texas History at State Archives | Texas State Library
   subtitle: ''
@@ -36,4 +41,14 @@ web:https://www.tsl.texas.gov/texasamerica250exhibit:
   updated_at: '2026-03-06T10:30:59'
   final_blurb: <p>asdf</p>
   title: Texas America250 Exhibit | Texas State Library
+  subtitle: ''
+web:https://www.tsl.texas.gov/podcasts:
+  final_blurb: <p>On&nbsp;<strong>Texas Talking Book Voices</strong>, the podcast
+    of the&nbsp;<a href="https://www.tsl.texas.gov/tbp">Talking Book Program</a> (TBP)
+    at the Texas State Library and Archives Commission, we go behind the scenes to
+    explore different facets of the service and meet the people who help make reading
+    accessible to Texans with visual, physical, or reading disabilities. Whether you&rsquo;re
+    a TBP patron, a librarian, or a library fan, we have something here for you!</p>
+  updated_at: '2026-03-06T15:00:21'
+  title: Texas Talking Book Voices & More!
   subtitle: ''

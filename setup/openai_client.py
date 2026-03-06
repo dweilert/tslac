@@ -3,10 +3,11 @@ from __future__ import annotations
 
 import os
 from collections.abc import Callable
-from util.logutil import debug, info
 
 import httpx
 from openai import OpenAI
+
+from util.logutil import info
 
 MODEL = os.getenv("OPENAI_SUMMARY_MODEL", "gpt-4.1-mini")
 
@@ -25,8 +26,8 @@ def _get_client() -> OpenAI:
     if _client is None:
         api_key = os.getenv("OPENAI_API_KEY")
         print()
-        
-        info("Initializing OpenAI client...")   
+
+        info("Initializing OpenAI client...")
         info(f"OpenAI key: {api_key}")
 
         if not api_key:
@@ -69,7 +70,6 @@ def _truncate_text(text: str, max_chars: int = 15000) -> str:
         total += len(p)
 
     return "\n\n".join(out)
-
 
 
 # ------------------------------------------------------------

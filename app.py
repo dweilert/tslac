@@ -3,9 +3,6 @@ from __future__ import annotations
 import os
 from http.server import ThreadingHTTPServer
 
-# import config_ui
-from setup import config_ui
-from util.logutil import info
 from routes import (
     api,
     candidates,
@@ -19,6 +16,10 @@ from routes import (
     static_files,
     watch,
 )
+
+# import config_ui
+from setup import config_ui
+from util.logutil import info
 from web.handler import RoutedHandler
 from web.router import Router
 

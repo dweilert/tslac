@@ -6,11 +6,12 @@ from typing import Literal
 
 Origin = Literal["web", "gdrive", "local"]
 
+
 @dataclass(frozen=True)
 class ContentRef:
-    content_id: str   # canonical: web:..., gdrive:..., local:...
+    content_id: str  # canonical: web:..., gdrive:..., local:...
     origin: Origin
-    open_url: str     # real URL for opening in browser (or empty for local if not applicable)
+    open_url: str  # real URL for opening in browser (or empty for local if not applicable)
 
 
 def canonical_content_id(raw: str) -> str:

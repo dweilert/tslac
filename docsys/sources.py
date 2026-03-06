@@ -225,8 +225,6 @@ class GDriveSource(DocumentSource):
         return count
 
 
-
-
 def from_env() -> DocumentSource:
     """
     Build the appropriate DocumentSource based on environment configuration.

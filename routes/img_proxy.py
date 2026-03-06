@@ -6,7 +6,7 @@ from web.request import Request
 from web.response import Response
 from web.router import Router
 
-#UA style (keep it simple + browser-like)
+# UA style (keep it simple + browser-like)
 UA = {
     "User-Agent": (
         "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "

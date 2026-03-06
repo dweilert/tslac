@@ -10,12 +10,11 @@ from typing import Any
 import services.api_service as api_service
 import storage.collector_store as collector_store
 import storage.curation_store as curation_store
+from docsys.pipeline import build_doc_candidates
+from docsys.sources import from_env
 from services.candidates_service import get_candidate_id
 from storage.content_id import canonical_content_id, real_web_url
 from web.errors import BadRequestError
-
-from docsys.pipeline import build_doc_candidates
-from docsys.sources import from_env
 
 
 @dataclass(frozen=True)
@@ -43,6 +42,7 @@ def _get_attr(obj: Any, name: str, default: Any = "") -> Any:
     except Exception:
         return default
 
+
 def _looks_like_drive_id(s: str) -> bool:
     s = (s or "").strip()
     if not s:
@@ -51,6 +51,7 @@ def _looks_like_drive_id(s: str) -> bool:
     if s.startswith(("web:", "local:", "http://", "https://")):
         return False
     return len(s) >= 20 and all(ch.isalnum() or ch in "-_" for ch in s)
+
 
 def _canon_content_id(s: str) -> str:
     s = (s or "").strip()
@@ -408,7 +409,6 @@ def build_view_by_content_id(
         if not docs:
             raise BadRequestError("No doc candidates available. Refresh first.")
 
-
         wanted_cid = (
             cid if cid.startswith("gdrive:") else canonical_content_id(source="doc", raw=cid)
         )
@@ -451,16 +451,14 @@ def build_view_by_content_id(
 
         original_url = f"https://drive.google.com/open?id={wanted_raw}" if wanted_raw else "#"
 
-
         # Candidate for doc can just be the dict; template supports dict candidate
         candidate = {
-            "url": cid,  
-            "original_url": original_url,  
+            "url": cid,
+            "original_url": original_url,
             "title": d.get("title") or "",
             "json_url": "",
             "source": "doc",
         }
-
 
         return CurateView(
             idx=idx,

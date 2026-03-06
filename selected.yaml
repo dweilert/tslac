@@ -1,13 +1,14 @@
 month: 2026-03
-subject: ''
-intro: ''
+subject: Monthly Update — New from the Texas State Library
+intro: Hello everyone—here are highlights and resources recently published by the
+  Texas State Library and Archives Commission.
 items:
-- id: web:web:https://www.tsl.texas.gov/podcasts
+- id: web:https://www.tsl.texas.gov/podcasts
   url: web:https://www.tsl.texas.gov/podcasts
-- id: web:web:https://www.tsl.texas.gov/node/70520
-  url: web:https://www.tsl.texas.gov/node/70520
-- id: web:web:https://www.tsl.texas.gov/texasamerica250exhibit
+- id: web:https://www.tsl.texas.gov/texasamerica250exhibit
   url: web:https://www.tsl.texas.gov/texasamerica250exhibit
-- id: web:gdrive:1mz2GnMqbsdhFMOKLFzXEKrf0Lgt_NzEM
+- id: gdrive:1mz2GnMqbsdhFMOKLFzXEKrf0Lgt_NzEM
   url: gdrive:1mz2GnMqbsdhFMOKLFzXEKrf0Lgt_NzEM
-updated_at: '2026-03-05T21:39:31'
+- id: web:https://www.tsl.texas.gov/node/70520
+  url: web:https://www.tsl.texas.gov/node/70520
+updated_at: '2026-03-06T14:58:19'

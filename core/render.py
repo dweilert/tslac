@@ -3,7 +3,6 @@ from __future__ import annotations
 import json
 import urllib.parse
 from pathlib import Path
-from typing import Any
 
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 from markupsafe import Markup

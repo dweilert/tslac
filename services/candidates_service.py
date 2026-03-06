@@ -8,19 +8,14 @@ from typing import Any
 from collect.collector import collect_candidates
 from collect.models import Candidate
 from collect.rules import CollectRules
-
 from docsys.pipeline import build_doc_candidates
 from docsys.sources import from_env
-
 from storage.collector_store import (
     CANDIDATES_FILE,
-    SEEN_URLS_FILE,
     load_candidates_file,
-    load_seen,
     save_candidates_json,
-    save_seen,
 )
-from storage.selected_store import save_selected
+from storage.selected_store import remove_selected_item, save_selected, save_selected_item
 from watch.scan import load_latest_results
 
 HOMEPAGE_URL = "https://www.tsl.texas.gov/"
@@ -48,8 +43,6 @@ class RefreshResult:
 
 # Dependency-injection callable types
 CollectFn = Callable[[str, CollectRules, date, set[str]], tuple[list[Any], list[Any]]]
-LoadSeenFn = Callable[[Any], set[str]]
-SaveSeenFn = Callable[[Any, set[str]], None]
 SaveCandidatesFn = Callable[[Any, list[Any]], None]
 LoadDocsFn = Callable[[], list[dict[str, Any]]]
 LoadCandidatesFileFn = Callable[[Any], list[Any]]
@@ -59,10 +52,7 @@ def refresh_candidates(
     *,
     today: date | None = None,
     months_back: int = 3,
-    ignore_seen: bool = False,
     collect_fn: CollectFn | None = None,
-    load_seen_fn: LoadSeenFn | None = None,
-    save_seen_fn: SaveSeenFn | None = None,
     save_candidates_fn: SaveCandidatesFn | None = None,
     load_docs_fn: LoadDocsFn | None = None,
 ) -> RefreshResult:
@@ -75,12 +65,8 @@ def refresh_candidates(
         return build_doc_candidates(from_env())
 
     collect_fn = collect_fn or _default_collect
-    load_seen_fn = load_seen_fn or load_seen
-    save_seen_fn = save_seen_fn or save_seen
     save_candidates_fn = save_candidates_fn or save_candidates_json
     load_docs_fn = load_docs_fn or _default_load_docs
-
-    seen = set() if ignore_seen else load_seen_fn(SEEN_URLS_FILE)
 
     rules = CollectRules(
         months_back=months_back,
@@ -92,7 +78,7 @@ def refresh_candidates(
         HOMEPAGE_URL,
         rules,
         today or date.today(),
-        seen,
+        set(),
     )
 
     # ---- Merge doc candidates (live build from configured source) into candidates ----
@@ -165,30 +151,11 @@ def refresh_candidates(
 
     save_candidates_fn(CANDIDATES_FILE, candidates)
 
-    def _cand_url(c: Any) -> str:
-        if hasattr(c, "url"):
-            return str(c.url or "").strip()
-        if isinstance(c, dict):
-            return str(c.get("url") or "").strip()
-        return ""
-
-    seen.update(u for u in (_cand_url(c) for c in candidates) if u)
-    save_seen_fn(SEEN_URLS_FILE, seen)
-
     return RefreshResult(
         doc_count=len(docs),
         candidate_count=len(candidates),
         error_count=len(errors),
     )
-
-
-def reset_seen_urls(*, save_seen_fn: SaveSeenFn | None = None) -> None:
-    """
-    Wipe seen_urls.json so refresh can rediscover previously seen URLs.
-    DI param exists to make unit tests easy.
-    """
-    save_seen_fn = save_seen_fn or save_seen
-    save_seen_fn(SEEN_URLS_FILE, set())
 
 
 def save_picks(*, subject: str, intro: str, picked_urls: list[str]) -> int:
@@ -197,6 +164,13 @@ def save_picks(*, subject: str, intro: str, picked_urls: list[str]) -> int:
     """
     save_selected(subject, intro, picked_urls)
     return len(picked_urls)
+
+
+def toggle_pick(*, url: str, selected: bool) -> bool:
+    """Toggle one selected item in selected.yaml. Returns True if file changed."""
+    if selected:
+        return save_selected_item(url)
+    return remove_selected_item(url)
 
 
 def load_persisted_candidates(

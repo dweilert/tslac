@@ -10,16 +10,6 @@
 <div class="toolbar">
   <a class="btn" id="refreshBtn" href="/refresh">Refresh article list</a>
 
-  <form method="post" action="/seen/reset" style="display:inline; margin-left:8px;">
-    <input type="hidden" name="confirm" value="1" />
-    <button class="btn" type="submit"
-            onclick="return confirm('Reset seen URLs? This clears seen_urls.json and allows refresh to rediscover old links.');">
-      Reset seen URLs
-    </button>
-  </form>
-
-  <button class="btn" type="button" onclick="selectAll(true)">Select all</button>
-  <button class="btn" type="button" onclick="selectAll(false)">Select none</button>
   <a class="btn" href="/preview">Preview newsletter</a>
 
   {% if show_export_zip %}
@@ -27,10 +17,8 @@
   {% endif %}
 </div>
 
-<form method="post" action="/save">
 
   <div class="toolbar">
-    <button class="btn" type="submit">Save Selection</button>
     <div class="small muted">Selected: <span id="selCount">{{ selected_count }}</span></div>
   </div>
 
@@ -127,7 +115,7 @@
                   <div>
                     <input type="checkbox" name="picked" value="{{ c.url }}"
                            {% if c.url in prechecked %}checked{% endif %}
-                           onchange="updateSelectedCount()"/>
+                           onchange="handlePickToggle(this)"/>
                   </div>
 
                   <div style="flex:1;">
@@ -170,8 +158,6 @@
     {% endfor %}
 
   </div>
-
-</form>
 
 <script>
 const SRC_FILTER_KEY = "tslac_hidden_sources_v1";
@@ -242,15 +228,53 @@ function wireSourceToggles() {
   wireSourceToggles();
 })();
 
-function selectAll(on) {
-  document.querySelectorAll('input[type="checkbox"][name="picked"]').forEach(cb => cb.checked = on);
-  updateSelectedCount();
+function updateSelectedCount(count) {
+  const el = document.getElementById('selCount');
+  if (!el) return;
+
+  if (typeof count === 'number' && Number.isFinite(count)) {
+    el.textContent = String(count);
+    return;
+  }
+
+  const n = document.querySelectorAll('input[type="checkbox"][name="picked"]:checked').length;
+  el.textContent = String(n);
 }
 
-function updateSelectedCount() {
-  const n = document.querySelectorAll('input[type="checkbox"][name="picked"]:checked').length;
-  const el = document.getElementById('selCount');
-  if (el) el.textContent = String(n);
+async function handlePickToggle(cb) {
+  if (!cb) return;
+
+  const prev = !cb.checked;
+  const url = cb.value || '';
+  const selected = cb.checked;
+
+  updateSelectedCount();
+  cb.disabled = true;
+
+  try {
+    const body = new URLSearchParams();
+    body.set('url', url);
+    body.set('selected', selected ? '1' : '0');
+
+    const resp = await fetch('/selection/toggle', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8' },
+      body: body.toString(),
+    });
+
+    const data = await resp.json();
+    if (!resp.ok || !data.ok) {
+      throw new Error((data && data.error) ? data.error : 'Selection update failed');
+    }
+
+    updateSelectedCount(typeof data.count === 'number' ? data.count : undefined);
+  } catch (err) {
+    cb.checked = prev;
+    updateSelectedCount();
+    alert((err && err.message) ? err.message : 'Selection update failed');
+  } finally {
+    cb.disabled = false;
+  }
 }
 
 updateSelectedCount();

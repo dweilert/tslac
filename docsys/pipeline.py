@@ -4,8 +4,8 @@ import hashlib
 import time
 from typing import Any
 
-from util.logutil import debug, info, warn
 from setup.openai_client import summarize_document
+from util.logutil import debug, info, warn
 
 from .cache import load_cached_summary, save_cached_summary
 from .extract import extract_text

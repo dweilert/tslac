@@ -2,10 +2,11 @@
 from __future__ import annotations
 
 import os
-
 from typing import Any
 from urllib.parse import parse_qs, urlencode
 
+from core.render import render
+from core.templates import curate_page_html
 from services.curate_article_service import (
     add_excerpt,
     build_view_by_content_id,
@@ -21,13 +22,10 @@ from services.curate_article_service import (
     save_title,
     select_image,
 )
-from core.templates import curate_page_html
 from web.errors import BadRequestError
 from web.request import Request
 from web.response import Response
 from web.router import Router
-
-from core.render import render
 
 
 def register(router: Router) -> None:
@@ -104,7 +102,7 @@ def get_curate_by_id(req: Request, params: dict[str, Any] | None = None) -> Resp
         return Response.redirect("/?" + urlencode({"status": f"Curate failed: {e}"}, doseq=False))
 
     status = req.query_first.get("status", "") or ""
-    tinymce_api_key=os.getenv("TINYMCE_API_KEY", ""),
+    tinymce_api_key = (os.getenv("TINYMCE_API_KEY", ""),)
 
     body = curate_page_html(
         view.idx,
@@ -225,7 +223,6 @@ def post_curate_clear_selected_image(
 def post_curate_review(req: Request) -> Response:
     form = _parse_post_form(req)
 
-    
     def _first(name: str) -> str:
         vals = form.get(name)
         if vals is None:

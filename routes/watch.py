@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from urllib.parse import parse_qs, urlencode
 
-from util.logutil import error
 from services import watch_service
+from util.logutil import error
 from web.request import Request
 from web.response import Response
 from web.router import Router

@@ -3,19 +3,18 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from typing import Any
-from urllib.parse import parse_qs, urlencode, urlparse
+from urllib.parse import parse_qs, urlencode
 
 import storage.curation_store as curation_store
+from core.templates import html_page
 from services import watch_service
 from services.candidates_service import (
     load_persisted_candidates,
     refresh_candidates,
-    reset_seen_urls,
-    save_picks,
+    toggle_pick,
 )
 from storage.curation_store import load_curation
 from storage.selected_store import load_selected
-from core.templates import html_page
 from web.request import Request
 from web.response import Response
 from web.router import Router
@@ -149,8 +148,7 @@ def _ui_from_candidate(c: Any) -> UICandidate | None:
 def register(router: Router) -> None:
     router.get("/", get_main)
     router.get("/refresh", get_refresh)
-    router.post("/save", post_save)
-    router.post("/seen/reset", post_seen_reset)
+    router.post("/selection/toggle", post_selection_toggle)
 
 
 def _redir_status(status: str) -> Response:
@@ -163,22 +161,9 @@ def _parse_post_form(req: Request) -> dict[str, list[str]]:
     return parse_qs(raw, keep_blank_values=True)
 
 
-def post_seen_reset(req: Request, params: dict[str, Any] | None = None) -> Response:
-    form = _parse_post_form(req)
-    if form.get("confirm", [""])[0] != "1":
-        return _redir_status("Reset seen URLs cancelled")
-
-    reset_seen_urls()
-    return _redir_status("Reset seen URLs (seen_urls.json cleared)")
-
-
 def get_refresh(req: Request) -> Response:
     try:
-        parsed = urlparse(req.path)
-        qs = parse_qs(parsed.query)
-        ignore_seen = qs.get("ignore_seen", ["0"])[0] == "1"
-
-        res = refresh_candidates(ignore_seen=ignore_seen)
+        res = refresh_candidates()
 
         watch_note = ""
         try:
@@ -188,31 +173,41 @@ def get_refresh(req: Request) -> Response:
             watch_note = f" + watch scan failed: {e}"
 
         err_note = f" (errors:{res.error_count})" if getattr(res, "error_count", 0) else ""
-        note = " (ignored seen URLs)" if ignore_seen else ""
-
         doc_count = getattr(res, "doc_count", 0)
-        return _redir_status(
-            f"Refreshed candidate list (docs:{doc_count}){err_note}{note}{watch_note}"
-        )
+        return _redir_status(f"Refreshed candidate list (docs:{doc_count}){err_note}{watch_note}")
 
     except Exception as e:
         return _redir_status(f"Refresh failed: {e}")
 
 
-def post_save(req: Request) -> Response:
+def post_selection_toggle(req: Request) -> Response:
     try:
         form = _parse_post_form(req)
+        url = _strip(form.get("url", [""])[0])
+        selected_raw = _strip(form.get("selected", [""])[0]).lower()
 
-        picked = form.get("picked", [])
+        if not url:
+            return Response.json({"ok": False, "error": "Missing url"}, status=400)
 
-        subject = ""
-        intro = ""
+        if selected_raw not in {"1", "true", "yes", "on", "0", "false", "no", "off"}:
+            return Response.json({"ok": False, "error": "Invalid selected value"}, status=400)
 
-        n = save_picks(subject=subject, intro=intro, picked_urls=picked)
-        return _redir_status(f"Saved {n} item(s) to selected.yaml")
+        selected = selected_raw in {"1", "true", "yes", "on"}
+        changed = toggle_pick(url=url, selected=selected)
+
+        sel = load_selected()
+        count = 0
+        if isinstance(sel, dict):
+            count = sum(
+                1
+                for it in (sel.get("items") or [])
+                if isinstance(it, dict) and _strip(it.get("url"))
+            )
+
+        return Response.json({"ok": True, "changed": changed, "selected": selected, "count": count})
 
     except Exception as e:
-        return _redir_status(f"Save failed: {e}")
+        return Response.json({"ok": False, "error": str(e)}, status=500)
 
 
 # ----------------------------

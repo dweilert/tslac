@@ -3,9 +3,9 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
-from setup import config_runtime 
-import watch.runtime as watcher  
-from storage import watch_store  
+import watch.runtime as watcher
+from setup import config_runtime
+from storage import watch_store
 from watch.scan import load_latest_results
 
 

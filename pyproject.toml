@@ -39,6 +39,7 @@ ignore = [
   "E501",    # line length: let Black handle formatting
   "SIM102",  # optional: sometimes suggests combining nested if/with; can reduce clarity
   "SIM103",  # ignore
+  "SIM108",  # skip Use ternary operator
   # Keep SIM105 enabled (contextlib.suppress), but we’ll handle it carefully (see below).
 ]
 

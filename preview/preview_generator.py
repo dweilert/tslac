@@ -132,8 +132,8 @@ def build_preview_html() -> bytes:
             continue
         cand_by_id[cid] = c
 
-    subject = (sel.get("subject") or "").strip() or DEFAULT_SUBJECT
-    intro = (sel.get("intro") or "").strip() or DEFAULT_INTRO
+    # subject = (sel.get("subject") or "").strip() or DEFAULT_SUBJECT
+
     items = sel.get("items") or []
     if not isinstance(items, list):
         items = []
@@ -276,9 +276,7 @@ def build_preview_html() -> bytes:
             else:
                 img_html = f'<img class="hero" src="{_esc(img_src)}" alt="" />'
 
-        subtitle_html = (
-            subtitle
-        )
+        subtitle_html = subtitle
 
         blocks.append(f"""
           <tr>
@@ -286,21 +284,21 @@ def build_preview_html() -> bytes:
               {img_html}
 
               <p style="text-align: center; margin: 0;" align="center">
-                <span style="font-size: 36px; color: rgb(40, 79, 161); 
-                font-weight: bold; 
+                <span style="font-size: 36px; color: rgb(40, 79, 161);
+                font-weight: bold;
                 font-family: Georgia, &quot;Times New Roman&quot;, Times, serif;">
                 {_esc(title)}
                 </span>
               </p>
               <p style="text-align: center; margin: 0;" align="center">
-                <span style="font-size: 23px; color: rgb(40, 79, 161); 
-                font-weight: bold; 
+                <span style="font-size: 23px; color: rgb(40, 79, 161);
+                font-weight: bold;
                 font-family: Georgia, &quot;Times New Roman&quot;, Times, serif; font-style: italic; text-decoration: underline;">
                 {subtitle_html}
                 </span>
               </p>
               <p style="margin 0;">
-                <span style="font-size: 16px; color: rgb(0, 0, 0); 
+                <span style="font-size: 16px; color: rgb(0, 0, 0);
                 font-family: Georgia, &quot;Times New Roman&quot;, Times, serif;">
                 {(blurb_html if blurb_html else "<em style='color:#777;'>No blurb saved yet. Use Curate to write one.</em>")}
                 &nbsp;</span>
@@ -333,7 +331,7 @@ def build_preview_html() -> bytes:
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>{_esc(subject)}</title>
+  <title>Preview</title>
 
   <style>
     img {{ display:block; height:auto; max-width:100%; border:0; outline:none; text-decoration:none; }}

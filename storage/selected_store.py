@@ -10,7 +10,10 @@ from typing import Any
 
 import yaml
 
-from setup.config import DEFAULT_INTRO, DEFAULT_SUBJECT, SELECTED_FILE
+from setup.config import DEFAULT_INTRO, DEFAULT_SUBJECT
+
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+SELECTED_FILE = PROJECT_ROOT / "selected.yaml"
 
 
 # ----------------------------
@@ -33,9 +36,13 @@ def _norm_urls(urls: list[str]) -> list[str]:
     return out
 
 
-def _web_id_for_url(url: str) -> str:
+def _content_id_for_url(url: str) -> str:
     u = (url or "").strip()
-    return f"web:{u}" if u else ""
+    if not u:
+        return ""
+    if u.startswith(("web:", "gdrive:", "local:")):
+        return u
+    return f"web:{u}"
 
 
 def _atomic_write_text(path: Path, text: str, *, encoding: str = "utf-8") -> None:
@@ -91,7 +98,7 @@ def load_selected() -> dict[str, Any]:
         for it in items:
             if isinstance(it, dict):
                 if not it.get("id") and isinstance(it.get("url"), str) and it["url"].strip():
-                    it["id"] = _web_id_for_url(it["url"])
+                    it["id"] = _content_id_for_url(it["url"])
 
     return doc
 
@@ -119,9 +126,83 @@ def save_selected(subject: str, intro: str, urls: list[str]) -> None:
         "month": now.strftime("%Y-%m"),
         "subject": (subject or "").strip() or DEFAULT_SUBJECT,
         "intro": (intro or "").strip() or DEFAULT_INTRO,
-        "items": [{"id": _web_id_for_url(u), "url": u} for u in urls2],
+        "items": [{"id": _content_id_for_url(u), "url": u} for u in urls2],
         "updated_at": now.isoformat(timespec="seconds"),
     }
 
     text = yaml.safe_dump(doc, sort_keys=False, allow_unicode=True)
     _atomic_write_text(SELECTED_FILE, text, encoding="utf-8")
+
+
+def save_selected_item(url: str) -> bool:
+    """
+    Add one item to selected.yaml. Returns True if the file changed.
+    Preserves existing subject/intro/month metadata.
+    """
+    u = (url or "").strip()
+    if not u:
+        return False
+
+    doc = load_selected()
+    subject = (doc.get("subject") or "").strip() if isinstance(doc, dict) else ""
+    intro = (doc.get("intro") or "").strip() if isinstance(doc, dict) else ""
+
+    items = []
+    existing_urls: set[str] = set()
+    if isinstance(doc, dict):
+        for it in doc.get("items") or []:
+            if not isinstance(it, dict):
+                continue
+            existing_url = (it.get("url") or "").strip()
+            if not existing_url or existing_url in existing_urls:
+                continue
+            existing_urls.add(existing_url)
+            items.append(
+                {
+                    "id": (it.get("id") or _content_id_for_url(existing_url)).strip(),
+                    "url": existing_url,
+                }
+            )
+
+    if u in existing_urls:
+        return False
+
+    items.append({"id": _content_id_for_url(u), "url": u})
+    save_selected(subject, intro, [it["url"] for it in items])
+    return True
+
+
+def remove_selected_item(url: str) -> bool:
+    """
+    Remove one item from selected.yaml. Returns True if the file changed.
+    Preserves existing subject/intro/month metadata.
+    """
+    u = (url or "").strip()
+    if not u:
+        return False
+
+    doc = load_selected()
+    subject = (doc.get("subject") or "").strip() if isinstance(doc, dict) else ""
+    intro = (doc.get("intro") or "").strip() if isinstance(doc, dict) else ""
+
+    kept_urls: list[str] = []
+    removed = False
+
+    if isinstance(doc, dict):
+        for it in doc.get("items") or []:
+            if not isinstance(it, dict):
+                continue
+            existing_url = (it.get("url") or "").strip()
+            if not existing_url:
+                continue
+            if existing_url == u:
+                removed = True
+                continue
+            if existing_url not in kept_urls:
+                kept_urls.append(existing_url)
+
+    if not removed:
+        return False
+
+    save_selected(subject, intro, kept_urls)
+    return True
