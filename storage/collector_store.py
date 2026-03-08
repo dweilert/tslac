@@ -11,20 +11,6 @@ from collect.models import Candidate
 # If you already have STATE_DIR defined elsewhere, import it instead.
 STATE_DIR = "state"  # change to match your existing convention
 CANDIDATES_FILE = Path(STATE_DIR) / "candidates.json"
-SEEN_URLS_FILE = Path(STATE_DIR) / "seen_urls.json"
-
-
-def load_seen(path: Path) -> set[str]:
-    if not path.exists():
-        return set()
-    return set(json.loads(path.read_text(encoding="utf-8")))
-
-
-def save_seen(path: Path, seen: set[str]) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(sorted(seen), indent=2), encoding="utf-8")
-
-
 def _split_content_id(u: str) -> tuple[str, str, str]:
     """
     Returns (content_id, origin, open_url)

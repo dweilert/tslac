@@ -42,7 +42,7 @@ class RefreshResult:
 
 
 # Dependency-injection callable types
-CollectFn = Callable[[str, CollectRules, date, set[str]], tuple[list[Any], list[Any]]]
+CollectFn = Callable[[str, CollectRules, date], tuple[list[Any], list[Any]]]
 SaveCandidatesFn = Callable[[Any, list[Any]], None]
 LoadDocsFn = Callable[[], list[dict[str, Any]]]
 LoadCandidatesFileFn = Callable[[Any], list[Any]]
@@ -56,8 +56,8 @@ def refresh_candidates(
     save_candidates_fn: SaveCandidatesFn | None = None,
     load_docs_fn: LoadDocsFn | None = None,
 ) -> RefreshResult:
-    def _default_collect(homepage: str, rules: CollectRules, day: date, seen_urls: set[str]):
-        return collect_candidates(homepage, rules=rules, today=day, seen_urls=seen_urls)
+    def _default_collect(homepage: str, rules: CollectRules, day: date):
+        return collect_candidates(homepage, rules=rules, today=day)
 
     def _default_load_docs() -> list[dict[str, Any]]:
         # Builds doc candidates from configured source (gdrive or local),
@@ -78,7 +78,6 @@ def refresh_candidates(
         HOMEPAGE_URL,
         rules,
         today or date.today(),
-        set(),
     )
 
     # ---- Merge doc candidates (live build from configured source) into candidates ----

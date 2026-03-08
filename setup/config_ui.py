@@ -120,7 +120,6 @@ def _derive_paths() -> dict[str, str]:
         "app_dir": str(APP_DIR),
         "out_dir": str(out_dir),
         "state_dir": str(state_dir),
-        "seen_file": str(state_dir / "seen_urls.json"),
         "candidates_file": str(out_dir / "candidates_latest.json"),
         "selected_file": str(APP_DIR / "selected.yaml"),
         "curation_file": str(APP_DIR / "curation.yaml"),

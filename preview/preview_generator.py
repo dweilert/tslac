@@ -314,7 +314,7 @@ def build_preview_html() -> bytes:
         """)
 
     if not blocks:
-        blocks_html = "<p class='muted'>No selected items found in selected.yaml.</p>"
+        blocks_html = "<p class='muted'>No selected items found.</p>"
     else:
         blocks_html = "\n".join(blocks)
 
@@ -442,15 +442,16 @@ def build_preview_html() -> bytes:
 
                                     <table width="100%" border="0" cellpadding="0" cellspacing="0">
                                       <tbody>
-                                        {blocks_html if blocks_html else "<tr><td style='padding: 0 18px 18px 18px; color:#666; font-family:Arial,sans-serif;'>No selected items found in selected.yaml.</td></tr>"}
+                                        {blocks_html if blocks_html else "<tr><td style='padding: 0 18px 18px 18px; color:#666; font-family:Arial,sans-serif;'>No selected items found.</td></tr>"}
                                       </tbody>
                                     </table>
 
                                     <table width="100%" border="0" cellpadding="0" cellspacing="0">
                                       <tbody>
                                         <tr>
-                                          <td style="padding: 12px 18px 18px 18px; font-family:Arial,sans-serif; font-size:12px; color:#777;">
-                                            Preview only (styled close to Constant Contact). Export will generate a ZIP with real cropped images.
+                                          <td style="padding: 12px 18px 18px 18px; font-family:Arial,sans-serif; font-size:12px; 
+                                          color:#fff; background-color: #000; text-align: center;">
+                                            This is a DRAFT Preview only (styled close to Constant Contact).
                                           </td>
                                         </tr>
                                       </tbody>

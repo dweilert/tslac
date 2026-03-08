@@ -9,24 +9,14 @@ class _Cand:
 
 
 def test_refresh_candidates_di(monkeypatch):
-    # NEW: deterministic – disable watch merge
     monkeypatch.setattr(svc, "load_latest_results", lambda: {"results": []})
-
-    def load_seen_fn(_path):
-        return {"https://old.example/a"}
-
-    saved_seen = {}
-
-    def save_seen_fn(_path, seen):
-        saved_seen["seen"] = set(seen)
 
     saved_candidates = {}
 
     def save_candidates_fn(_path, candidates):
         saved_candidates["cands"] = list(candidates)
 
-    def collect_fn(_homepage, _rules, _day, seen_urls):
-        assert "https://old.example/a" in seen_urls
+    def collect_fn(_homepage, _rules, _day):
         return [_Cand("https://new.example/1")], ["err"]
 
     def load_docs_fn():
@@ -34,8 +24,6 @@ def test_refresh_candidates_di(monkeypatch):
 
     res = svc.refresh_candidates(
         collect_fn=collect_fn,
-        load_seen_fn=load_seen_fn,
-        save_seen_fn=save_seen_fn,
         save_candidates_fn=save_candidates_fn,
         load_docs_fn=load_docs_fn,
     )
@@ -45,13 +33,6 @@ def test_refresh_candidates_di(monkeypatch):
     assert res.error_count == 1
 
     assert {c.url for c in saved_candidates["cands"]} == {
-        "https://new.example/1",
-        "gdrive:d1",
-        "gdrive:d2",
-    }
-
-    assert saved_seen["seen"] == {
-        "https://old.example/a",
         "https://new.example/1",
         "gdrive:d1",
         "gdrive:d2",

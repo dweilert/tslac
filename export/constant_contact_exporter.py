@@ -345,7 +345,7 @@ def build_constant_contact_zip() -> tuple[bytes, str]:
     <div style="background:#fff;border:1px solid #e5e7eb;border-radius:14px;padding:18px;">
       <div style="font-size:22px;font-weight:700;margin:0 0 10px 0;">{_esc(subject)}</div>
       <div style="color:#374151;margin:0 0 14px 0;line-height:1.4;">{_esc(intro)}</div>
-      {''.join(html_blocks) if html_blocks else '<div style="color:#6b7280;">No selected items found in selected.yaml.</div>'}
+      {''.join(html_blocks) if html_blocks else '<div style="color:#6b7280;">No selected items found.</div>'}
       <div style="margin-top:14px;font-size:12px;color:#6b7280;">
         Import into Constant Contact using “New Email from .ZIP”.
       </div>

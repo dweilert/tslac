@@ -13,7 +13,6 @@ APP_DIR = Path(__file__).resolve().parent
 OUT_DIR = APP_DIR / "output"
 STATE_DIR = APP_DIR / "state"
 
-SEEN_FILE = STATE_DIR / "seen_urls.json"
 CANDIDATES_FILE = OUT_DIR / "candidates_latest.json"
 SELECTED_FILE = APP_DIR / "selected.yaml"
 CURATION_FILE = APP_DIR / "curation.yaml"

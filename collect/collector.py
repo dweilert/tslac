@@ -121,13 +121,10 @@ def collect_candidates(
     *,
     rules: CollectRules,
     today: date | None = None,
-    timeout_s: float = 15.0,
-    seen_urls: set[str] | None = None,
+    timeout_s: float = 15.0
 ) -> tuple[list[Candidate], list[str]]:
     if today is None:
         today = date.today()
-    if seen_urls is None:
-        seen_urls = set()
 
     errors: list[str] = []
 
@@ -182,7 +179,6 @@ def collect_candidates(
     # Combine + seen filter
     # ---------------------------
     raw = list(home_raw) + list(news_raw)
-    raw = [c for c in raw if c.url not in seen_urls]
 
     # ---------------------------
     # Apply rules + finalize

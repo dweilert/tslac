@@ -10,34 +10,20 @@ class _Cand:
     url: str
 
 
-def test_refresh_candidates_persists_candidates_and_seen(monkeypatch):
-    seen_in = {"https://old.example/a"}
-
-    def fake_load_seen(_path):
-        return set(seen_in)
-
-    saved_seen = {}
-
-    def fake_save_seen(_path, seen):
-        saved_seen["value"] = set(seen)
-
+def test_refresh_candidates_persists_candidates(monkeypatch):
     saved_candidates = {}
 
     def fake_save_candidates_json(_path, candidates):
         saved_candidates["value"] = list(candidates)
 
-    def fake_collect_candidates(_homepage, rules, today, seen_urls):
+    def fake_collect_candidates(_homepage, rules, today):
         cands = [_Cand("https://new.example/1")]
         return cands, []
 
     def fake_load_doc_candidates():
         return [{"id": "doc1"}]
 
-    # NEW: make watch merge deterministic (no extra candidates)
     monkeypatch.setattr(svc, "load_latest_results", lambda: {"results": []})
-
-    monkeypatch.setattr(svc, "load_seen", fake_load_seen)
-    monkeypatch.setattr(svc, "save_seen", fake_save_seen)
     monkeypatch.setattr(svc, "save_candidates_json", fake_save_candidates_json)
     monkeypatch.setattr(svc, "collect_candidates", fake_collect_candidates)
 
@@ -46,6 +32,10 @@ def test_refresh_candidates_persists_candidates_and_seen(monkeypatch):
     assert res.doc_count == 1
     assert res.candidate_count == 2  # 1 web + 1 doc
     assert res.error_count == 0
+    assert [c.url for c in saved_candidates["value"]] == [
+        "https://new.example/1",
+        "gdrive:doc1",
+    ]
 
 
 def test_save_picks_calls_save_selected(monkeypatch):
