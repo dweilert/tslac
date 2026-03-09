@@ -1411,3 +1411,26 @@ Remvoe the 'Save Selection' button and associated logic once the above task is i
 Remove the 'Select all' and 'Select none' buttons and the associated logic.
 
 I'm providng a zip of the latest version of the code in the repository.
+
+===================
+===================
+
+TSLAC Newsletter Helper – Project Context Header
+
+Project Name: TSLAC Newsletter Helper
+Repo: https://github.com/dweilert/tslac
+Repo Branch: main
+
+Runtime: Custom Python web app (custom web/router, not Flask/Django)
+Python Version: 3.12
+Architecture Style: Routes → Services → Storage → Templates
+Rendering: Server-side templates (render() helper)
+Data Storage: YAML + JSON files in local filesystem
+ 
+Milestone 5:
+
+Modify the main page to include a count of selected article from each source category. Move the red or green dot indicating an image is selected to the same line as the source badge and move the 'curated' badge to follow the moved imaged selected indicator. 
+
+Modify the curate page to eliminate to use of the Excerpts.  This will mean when text is select in the 'Source content' section and the 'Add Selected Text' button is pressed the content needs to be appended to any existing content in the TinyMCE editor area.  This will also mean removal of the buttons and logic for the 'Remove Last', and 'Clear' and 'Combine -> Filan Blurb'. Also remove the button 'Review article' and that code also.  Be sure not to get this Review process confussed with the Review process that is invoked from the 'Home Page'.
+
+I'm including a zip of the latest version of the code from the github repository.  

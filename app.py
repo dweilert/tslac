@@ -22,6 +22,7 @@ from setup import config_ui
 from util.logutil import info
 from web.handler import RoutedHandler
 from web.router import Router
+from setup import config_ui, secrets_env
 
 
 def build_router(server) -> Router:
@@ -43,6 +44,8 @@ def build_router(server) -> Router:
 
 
 def main() -> None:
+    secrets_env.load_env()
+    
     host = os.environ.get("HOST", "127.0.0.1")
     port = int(os.environ.get("PORT", "8000"))
 

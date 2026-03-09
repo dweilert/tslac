@@ -29,36 +29,43 @@
     <label class="small" style="display:inline-flex; align-items:center; gap:6px;">
       <input type="checkbox" class="srcToggle" data-src="carousel" />
       <span class="badge badge-carousel">Carousel</span>
+      <span class="small muted src-count" data-source-count="carousel">{{ selected_count_by_source.get("carousel", 0) }} selected</span>
     </label>
 
     <label class="small" style="display:inline-flex; align-items:center; gap:6px;">
       <input type="checkbox" class="srcToggle" data-src="featured" />
       <span class="badge badge-featured">Featured</span>
+      <span class="small muted src-count" data-source-count="featured">{{ selected_count_by_source.get("featured", 0) }} selected</span>
     </label>
 
     <label class="small" style="display:inline-flex; align-items:center; gap:6px;">
       <input type="checkbox" class="srcToggle" data-src="news" />
       <span class="badge badge-news">News</span>
+      <span class="small muted src-count" data-source-count="news">{{ selected_count_by_source.get("news", 0) }} selected</span>
     </label>
 
     <label class="small" style="display:inline-flex; align-items:center; gap:6px;">
       <input type="checkbox" class="srcToggle" data-src="watch" />
       <span class="badge badge-watch">Watch</span>
+      <span class="small muted src-count" data-source-count="watch">{{ selected_count_by_source.get("watch", 0) }} selected</span>
     </label>
 
     <label class="small" style="display:inline-flex; align-items:center; gap:6px;">
       <input type="checkbox" class="srcToggle" data-src="gdrive" />
       <span class="badge badge-gdrive">GDrive</span>
+      <span class="small muted src-count" data-source-count="gdrive">{{ selected_count_by_source.get("gdrive", 0) }} selected</span>
     </label>
 
     <label class="small" style="display:inline-flex; align-items:center; gap:6px;">
       <input type="checkbox" class="srcToggle" data-src="local" />
       <span class="badge badge-local">Local</span>
+      <span class="small muted src-count" data-source-count="local">{{ selected_count_by_source.get("local", 0) }} selected</span>
     </label>
 
     <label class="small" style="display:inline-flex; align-items:center; gap:6px;">
       <input type="checkbox" class="srcToggle" data-src="unknown" />
       <span class="badge badge-unknown">Unknown</span>
+      <span class="small muted src-count" data-source-count="unknown">{{ selected_count_by_source.get("unknown", 0) }} selected</span>
     </label>
   </div>
 
@@ -101,6 +108,9 @@
                 <span class="small muted" style="margin-left:8px;">
                   {{ items|length }} item{% if items|length != 1 %}s{% endif %}
                 </span>
+                <span class="small muted group-selected-count" data-group-source="{{ group_src }}" style="margin-left:8px;">
+                  {{ selected_count_by_source.get(group_src, 0) }} selected
+                </span>
               </div>
             </div>
           </div>
@@ -119,27 +129,25 @@
                   </div>
 
                   <div style="flex:1;">
-                    <div class="title">
-                      {{ c.title }}
-                      {% if has_blurb_by_url.get(c.url) %}
-                        <span class="badge badge-curated">curated</span>
-                      {% endif %}
-                    </div>
+                    <div class="title">{{ c.title }}</div>
 
-                    <div class="small">
+                    <div class="small candidate-meta-line">
                       Source:
                       <span class="badge badge-{{ group_src }}">{{ group_src }}</span>
-                    </div>
-
-                    <div class="small">
-                      <a href="{{ c.open_url or '#' }}" target="_blank" rel="noreferrer">Open</a>
-                      &nbsp;•&nbsp;
 
                       {% set has_img = has_image_by_url.get(c.url) %}
                       <span class="statusdot">
                         <span class="dot {% if has_img %}ok{% else %}bad{% endif %}"></span>
                         {% if has_img %}Image{% else %}No image{% endif %}
                       </span>
+
+                      {% if has_blurb_by_url.get(c.url) %}
+                        <span class="badge badge-curated">curated</span>
+                      {% endif %}
+                    </div>
+
+                    <div class="small">
+                      <a href="{{ c.open_url or '#' }}" target="_blank" rel="noreferrer">Open</a>
                     </div>
 
                     <div class="small muted"><code>{{ c.url }}</code></div>
@@ -228,17 +236,49 @@ function wireSourceToggles() {
   wireSourceToggles();
 })();
 
+function updateSourceSelectedCounts() {
+  const counts = {
+    carousel: 0,
+    featured: 0,
+    news: 0,
+    watch: 0,
+    gdrive: 0,
+    local: 0,
+    unknown: 0,
+  };
+
+  document.querySelectorAll('.candidate-row').forEach(row => {
+    const src = (row.getAttribute('data-source') || 'unknown').toLowerCase();
+    const cb = row.querySelector('input[type="checkbox"][name="picked"]');
+    if (cb && cb.checked) {
+      counts[src] = (counts[src] || 0) + 1;
+    }
+  });
+
+  document.querySelectorAll('[data-source-count]').forEach(el => {
+    const src = (el.getAttribute('data-source-count') || 'unknown').toLowerCase();
+    el.textContent = `${counts[src] || 0} selected`;
+  });
+
+  document.querySelectorAll('[data-group-source]').forEach(el => {
+    const src = (el.getAttribute('data-group-source') || 'unknown').toLowerCase();
+    el.textContent = `${counts[src] || 0} selected`;
+  });
+}
+
 function updateSelectedCount(count) {
   const el = document.getElementById('selCount');
   if (!el) return;
 
   if (typeof count === 'number' && Number.isFinite(count)) {
     el.textContent = String(count);
+    updateSourceSelectedCounts();
     return;
   }
 
   const n = document.querySelectorAll('input[type="checkbox"][name="picked"]:checked').length;
   el.textContent = String(n);
+  updateSourceSelectedCounts();
 }
 
 async function handlePickToggle(cb) {

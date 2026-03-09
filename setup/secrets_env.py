@@ -7,7 +7,7 @@ from pathlib import Path
 
 # Repo root assumed to be the directory containing this file.
 # If your layout differs, adjust ENV_PATH accordingly.
-APP_DIR = Path(__file__).resolve().parent
+APP_DIR = Path(__file__).resolve().parent.parent
 ENV_PATH = APP_DIR / ".env"
 
 _ENV_LINE_RE = re.compile(r"^\s*([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*)\s*$")

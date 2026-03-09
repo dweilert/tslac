@@ -2,8 +2,10 @@
 from __future__ import annotations
 
 import html
+import os
 from typing import Any
 from urllib.parse import quote
+from util.logutil import info
 
 from core.render import render
 
@@ -20,8 +22,10 @@ def html_page(
     status,
     has_blurb_by_url,
     has_image_by_url=None,
+    selected_count_by_source=None,
 ) -> bytes:
     has_image_by_url = has_image_by_url or {}
+    selected_count_by_source = selected_count_by_source or {}
 
     html = render(
         "candidates.html",
@@ -39,6 +43,7 @@ def html_page(
         selected_count=len(prechecked),
         show_export_zip=True,
         has_image_by_url=has_image_by_url,
+        selected_count_by_source=selected_count_by_source,
     )
     return html.encode("utf-8")
 
@@ -60,7 +65,6 @@ def curate_page_html(
     prev_id: str = "",
     next_id: str = "",
     final_blurb="",
-    excerpts=None,
     selected_image="",
     status="",
     crops=None,
@@ -71,7 +75,6 @@ def curate_page_html(
 
     c = candidate
     idx = index
-    excerpts = excerpts or []
     crops = crops or {}
 
     # Candidate fields (object or dict)
@@ -129,6 +132,10 @@ def curate_page_html(
             if isinstance(v, list):
                 images = v
 
+    tinymce_api_key = os.getenv("TINYMCE_API_KEY", "")
+
+    info(tinymce_api_key)
+
     html = render(
         "curate_article.html",
         title=title,
@@ -143,7 +150,6 @@ def curate_page_html(
         prev_url=prev_url,
         next_url=next_url,
         final_blurb=final_blurb or "",
-        excerpts=excerpts,
         images=images,
         selected_image=selected_image or "",
         crops=crops,

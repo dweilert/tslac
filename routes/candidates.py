@@ -246,6 +246,17 @@ def _is_curated(cur: dict[str, Any], key: str) -> bool:
     return False
 
 
+def _normalize_source_name(source: str) -> str:
+    s = _strip(source).lower()
+    if s in {"carousel", "featured", "news", "watch", "gdrive", "local", "unknown"}:
+        return s
+    if s in {"doc", "drive", "google_drive"}:
+        return "gdrive"
+    if s in {"web", "website"}:
+        return "unknown"
+    return s or "unknown"
+
+
 def get_main(req: Request, params: dict[str, Any] | None = None) -> Response:
     status = req.query_first.get("status") or ""
 
@@ -278,10 +289,16 @@ def get_main(req: Request, params: dict[str, Any] | None = None) -> Response:
 
     has_blurb_by_url: dict[str, bool] = {}
     has_image_by_url: dict[str, bool] = {}
+    selected_count_by_source: dict[str, int] = {}
 
     for c in candidates:
         has_blurb_by_url[c.url] = _is_curated(cur, c.url)
         has_image_by_url[c.url] = bool(curation_store.get_curated_selected_image(cur, c.url))
+
+        src = _normalize_source_name(c.source)
+        selected_count_by_source.setdefault(src, 0)
+        if c.url in prechecked:
+            selected_count_by_source[src] += 1
 
     # 4) Render
     body = html_page(
@@ -292,5 +309,6 @@ def get_main(req: Request, params: dict[str, Any] | None = None) -> Response:
         status=status,
         has_blurb_by_url=has_blurb_by_url,
         has_image_by_url=has_image_by_url,
+        selected_count_by_source=selected_count_by_source,
     )
     return Response.html(body)
